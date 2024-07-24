@@ -1,0 +1,23 @@
+[workspace]
+members = ["engine", "app"]
+default-members = ["app"]
+resolver = "2"
+
+[profile.dev]
+opt-level = 3
+panic = "abort"
+debug = false
+
+[profile.release]
+panic = "abort"
+lto = "fat"
+codegen-units = 1
+incremental = false
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+cast_lossless = "allow"
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+module_name_repetitions = "allow"

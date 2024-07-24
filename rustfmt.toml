@@ -1,0 +1,4 @@
+use_small_heuristics = "Max"
+max_width = 108
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
