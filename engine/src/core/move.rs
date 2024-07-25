@@ -55,6 +55,6 @@ impl fmt::Display for Move {
             Some(Promotion::Queen) => "q",
             None => "",
         };
-        write!(f, "{} {}{}", self.from(), self.to(), promote)
+        write!(f, "{}{}{}", self.from(), self.to(), promote)
     }
 }

@@ -17,9 +17,14 @@ pub fn main() -> eyre::Result<()> {
     Ok(())
 }
 
-#[derive(Default)]
 pub struct Application {
     engine: Engine,
+}
+
+impl Default for Application {
+    fn default() -> Self {
+        Self { engine: Engine::new(Board::start_pos()) }
+    }
 }
 
 impl Application {
@@ -38,7 +43,7 @@ impl Application {
     }
     fn process_go_command(&mut self, _command: &str) -> eyre::Result<()> {
         let best_move = self.engine.search();
-        println!("bestmove{best_move}");
+        println!("bestmove {best_move}");
         Ok(())
     }
 }

@@ -27,6 +27,8 @@ impl Colour {
         }
     }
     /// What is considered a beneficial score for this colour
+    #[inline]
+    #[must_use]
     pub fn positive(self) -> i32 {
         -self.forward() as i32
     }

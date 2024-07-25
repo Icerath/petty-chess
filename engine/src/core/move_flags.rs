@@ -50,6 +50,9 @@ impl MoveFlags {
             _ => return None,
         })
     }
+    pub fn is_capture(self) -> bool {
+        self as u8 & 0b0100 == 0b0100
+    }
 }
 
 impl From<Castle> for MoveFlags {

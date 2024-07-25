@@ -163,6 +163,11 @@ impl Board {
     pub fn gen_legal_moves(&self) -> Moves {
         MoveGenerator::new(self.clone()).gen_moves()
     }
+    pub fn gen_capture_moves(&self) -> Moves {
+        let mut moves = self.gen_legal_moves();
+        moves.retain(|mov| mov.flags().is_capture());
+        moves
+    }
 }
 
 impl Index<Pos> for Board {

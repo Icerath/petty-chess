@@ -17,5 +17,7 @@ pub mod prelude {
         r#move::Move,
     };
 
+    pub use super::ai::Engine;
+
     pub type Moves = SmallVec<[Move; 64]>;
 }
