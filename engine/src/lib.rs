@@ -11,7 +11,7 @@ pub mod prelude {
         colour::Colour,
         move_flags::{Castle, MoveFlags, Promotion},
         piece::{Piece, PieceKind},
-        position::{Col, Pos, Row},
+        position::{File, Pos, Rank},
         r#move::Move,
     };
 }

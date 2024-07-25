@@ -12,17 +12,17 @@ impl Board {
         for pos in (0..64).map(Pos) {
             if let Some(piece) = self[pos] {
                 if let Some(prev) = prev {
-                    if let Some(dif @ 1..) = pos.col().0.checked_sub((prev.col().0 + 1) % 8) {
+                    if let Some(dif @ 1..) = pos.file().0.checked_sub((prev.file().0 + 1) % 8) {
                         buf.push((dif + b'0') as char);
                     }
                 }
                 buf.push(piece.symbol());
                 prev = Some(pos);
             }
-            if pos != Pos(63) && pos.col().0 == 7 {
+            if pos != Pos(63) && pos.file().0 == 7 {
                 if self[pos].is_none() {
                     if let Some(prev) = prev {
-                        if let dif @ 1.. = 8 - (prev.col().0 + 1) % 8 {
+                        if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
                             buf.push((dif + b'0') as char);
                         }
                     }
@@ -92,19 +92,19 @@ impl Board {
 }
 
 fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
-    let mut row = 0;
-    let mut col = 0;
+    let mut rank = 0;
+    let mut file = 0;
 
     let mut pieces = [None; 64];
     for c in fen.bytes() {
         let kind = match c.to_ascii_lowercase() {
             b'1'..=b'9' => {
-                col += c - b'0';
+                file += c - b'0';
                 continue;
             }
             b'/' => {
-                col = 0;
-                row += 1;
+                file = 0;
+                rank += 1;
                 continue;
             }
             b'p' => Pawn,
@@ -116,9 +116,9 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
             _ => return None,
         };
         let colour = if c.is_ascii_uppercase() { White } else { Black };
-        let pos = Pos::new(Row(row), Col(col));
+        let pos = Pos::new(Rank(rank), File(file));
         pieces[pos.0 as usize] = Some(Piece::new(kind, colour));
-        col += 1;
+        file += 1;
     }
 
     Some(pieces)

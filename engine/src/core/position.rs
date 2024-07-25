@@ -6,40 +6,40 @@ pub struct Pos(pub u8);
 impl Pos {
     #[must_use]
     #[inline]
-    pub fn new(row: Row, col: Col) -> Self {
-        Self(col.0 + row.0 * 8)
+    pub fn new(rank: Rank, file: File) -> Self {
+        Self(file.0 + rank.0 * 8)
     }
     #[must_use]
     #[inline]
-    pub fn col(self) -> Col {
-        Col(self.0 % 8)
+    pub fn file(self) -> File {
+        File(self.0 % 8)
     }
     #[must_use]
     #[inline]
-    pub fn row(self) -> Row {
-        Row(self.0 / 8)
+    pub fn rank(self) -> Rank {
+        Rank(self.0 / 8)
     }
     #[must_use]
     #[inline]
-    pub fn add_row(self, row: i8) -> Option<Self> {
-        let row = self.row().checked_add(row)?;
-        Some(Self::new(row, self.col()))
+    pub fn add_rank(self, rank: i8) -> Option<Self> {
+        let rank = self.rank().checked_add(rank)?;
+        Some(Self::new(rank, self.file()))
     }
     #[must_use]
     #[inline]
-    pub fn add_col(self, col: i8) -> Option<Self> {
-        let col = self.col().checked_add(col)?;
-        Some(Self::new(self.row(), col))
+    pub fn add_col(self, file: i8) -> Option<Self> {
+        let file = self.file().checked_add(file)?;
+        Some(Self::new(self.rank(), file))
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Row(pub u8);
+pub struct File(pub u8);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Col(pub u8);
+pub struct Rank(pub u8);
 
-impl Row {
+impl Rank {
     #[must_use]
     #[allow(clippy::cast_possible_wrap)]
     #[inline]
@@ -49,7 +49,7 @@ impl Row {
     }
 }
 
-impl Col {
+impl File {
     #[must_use]
     #[allow(clippy::cast_possible_wrap)]
     #[inline]
