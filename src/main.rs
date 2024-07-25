@@ -1,8 +1,8 @@
 use std::io::{stdin, BufRead};
 
-use engine::prelude::*;
+use petty_chess::prelude::*;
 
-pub fn main() -> eyre::Result<()> {
+fn main() -> eyre::Result<()> {
     let mut stdin = stdin().lock();
     let mut line = String::new();
     let mut engine = Application::default();

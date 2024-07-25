@@ -1,5 +1,5 @@
-pub mod ai;
 pub mod core;
+pub mod engine;
 
 pub mod prelude {
     use smallvec::SmallVec;
@@ -17,7 +17,7 @@ pub mod prelude {
         r#move::Move,
     };
 
-    pub use super::ai::Engine;
+    pub use super::engine::Engine;
 
     pub type Moves = SmallVec<[Move; 64]>;
 }

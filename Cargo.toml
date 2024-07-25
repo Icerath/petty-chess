@@ -1,7 +1,14 @@
-[workspace]
-members = ["engine"]
-default-members = ["engine"]
-resolver = "2"
+[package]
+name = "petty-chess"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2.6.0"
+derive-try-from-primitive = "1.0.0"
+eyre = "0.6.12"
+rand = "0.8.5"
+smallvec = "1.13.2"
 
 [profile.dev]
 opt-level = 3
@@ -14,7 +21,7 @@ lto = "fat"
 codegen-units = 1
 incremental = false
 
-[workspace.lints.clippy]
+[lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 cast_lossless = "allow"
 cast_precision_loss = "allow"
