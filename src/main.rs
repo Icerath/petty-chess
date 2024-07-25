@@ -38,7 +38,7 @@ impl Application {
             _ if line.starts_with("position startpos moves") => {
                 self.startpos_moves(line.trim_start_matches("position startpos moves"))?;
             }
-            _ if line.starts_with("go") => self.process_go_command(line.trim_start_matches("go "))?,
+            _ if line.starts_with("go") => self.process_go_command(line.trim_start_matches("go ")),
             _ => {}
         }
 
@@ -48,8 +48,8 @@ impl Application {
         let moves = input
             .split_whitespace()
             .map(|mov| {
-                let from: Pos = mov[..2].parse().unwrap();
-                let to: Pos = mov[2..4].parse().unwrap();
+                let from: Pos = mov[..2].parse()?;
+                let to: Pos = mov[2..4].parse()?;
                 let promote: Option<Promotion> = mov[4..].parse().ok();
                 Ok((from, to, promote))
             })
@@ -67,9 +67,8 @@ impl Application {
 
         Ok(())
     }
-    fn process_go_command(&mut self, _command: &str) -> eyre::Result<()> {
+    fn process_go_command(&mut self, _command: &str) {
         let best_move = self.engine.search();
         println!("bestmove {best_move}");
-        Ok(())
     }
 }

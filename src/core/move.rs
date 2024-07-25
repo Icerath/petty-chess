@@ -12,18 +12,19 @@ impl Move {
         Self((from.0 as u16) | (to.0 as u16) << 6 | (flags as u16) << 12)
     }
     #[inline]
+    #[must_use]
     pub fn from(self) -> Pos {
-        Pos((self.0 & 0b111111) as i8)
+        Pos((self.0 & 0b11_1111) as i8)
     }
     #[must_use]
     #[inline]
     pub fn to(self) -> Pos {
-        Pos(((self.0 >> 6) & 0b111111) as i8)
+        Pos(((self.0 >> 6) & 0b11_1111) as i8)
     }
     #[must_use]
     #[inline]
     pub fn flags(self) -> MoveFlags {
-        MoveFlags::try_from((self.0 >> 12) as u8).unwrap()
+        MoveFlags::try_from((self.0 >> 12) as u8).unwrap_or(MoveFlags::Quiet)
     }
 }
 

@@ -11,15 +11,18 @@ pub struct MoveGenerator {
 }
 
 impl MoveGenerator {
+    #[must_use]
     pub fn new_pseudo_legal(board: Board) -> Self {
         Self { moves: Moves::default(), board, is_pseudolegal: true }
     }
+    #[must_use]
     pub fn new(board: Board) -> Self {
         Self { moves: Moves::default(), board, is_pseudolegal: false }
     }
 }
 
 impl MoveGenerator {
+    #[must_use]
     pub fn gen_moves(mut self) -> Moves {
         if self.is_pseudolegal {
             self.pseudolegal_moves()
@@ -46,7 +49,7 @@ impl MoveGenerator {
             }
             match piece.kind() {
                 PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
-                    self.gen_sliding_moves(from, piece)
+                    self.gen_sliding_moves(from, piece);
                 }
                 PieceKind::Pawn => self.gen_pawn_moves(from),
                 PieceKind::Knight => self.gen_knight_moves(from),

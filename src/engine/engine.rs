@@ -9,6 +9,7 @@ pub struct Engine {
 }
 
 impl Engine {
+    #[must_use]
     pub fn new(board: Board) -> Self {
         Self { board, time_started: Instant::now(), time_available: Duration::from_secs(1) }
     }

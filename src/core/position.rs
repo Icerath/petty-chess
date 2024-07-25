@@ -71,14 +71,30 @@ impl fmt::Display for Pos {
     }
 }
 
+#[derive(Debug)]
+pub struct InvalidPos;
+
+impl fmt::Display for InvalidPos {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self, f)
+    }
+}
+
+impl std::error::Error for InvalidPos {}
+
 impl FromStr for Pos {
-    type Err = ();
+    type Err = InvalidPos;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as i8)).ok_or(())
+        Self::SQUARES
+            .iter()
+            .position(|&square| square == input)
+            .map(|index| Pos(index as i8))
+            .ok_or(InvalidPos)
     }
 }
 
 impl Pos {
+    #[must_use]
     pub fn algebraic(self) -> &'static str {
         Self::SQUARES[self.0 as usize]
     }

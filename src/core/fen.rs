@@ -7,19 +7,25 @@ pub const PERFT_POSITION_3: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -";
 pub const PERFT_POSITION_4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 pub const PERFT_POSITION_5: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 
+#[allow(clippy::missing_panics_doc)]
 impl Board {
+    #[must_use]
     pub fn start_pos() -> Self {
         Self::from_fen(STARTING_FEN).expect("Starting FEN should be valid FEN")
     }
+    #[must_use]
     pub fn kiwipete() -> Self {
         Self::from_fen(KIWIPETE).expect("Kiwipete should be valid FEN")
     }
+    #[must_use]
     pub fn perft_position_3() -> Self {
         Self::from_fen(PERFT_POSITION_3).expect("Should be valid FEN")
     }
+    #[must_use]
     pub fn perft_position_4() -> Self {
         Self::from_fen(PERFT_POSITION_4).expect("Should be valid FEN")
     }
+    #[must_use]
     pub fn perft_position_5() -> Self {
         Self::from_fen(PERFT_POSITION_5).expect("Should be valid FEN")
     }
@@ -93,11 +99,13 @@ impl Board {
             let _ = write!(buf, " {counter}");
         }
     }
+    #[must_use]
     pub fn to_fen(&self) -> String {
         let mut builder = String::new();
         self.to_fen_into(&mut builder);
         builder
     }
+    #[must_use]
     pub fn from_fen(fen: &str) -> Option<Self> {
         let mut fields = fen.split(' ');
         let pieces = parse_pieces(fields.next()?)?;
@@ -176,6 +184,7 @@ fn parse_can_castle(fen: &str) -> Option<CanCastle> {
     Some(can_castle)
 }
 
+#[allow(clippy::option_option)]
 fn parse_en_passant(fen: &str) -> Option<Option<Pos>> {
     if fen == "-" {
         return Some(None);

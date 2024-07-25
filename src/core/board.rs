@@ -24,6 +24,8 @@ pub struct Unmake {
 }
 
 impl Board {
+    /// # Panics
+    ///  - TODO
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
         let unmake = Unmake {
@@ -125,21 +127,28 @@ impl Board {
         //     self[mov.to()] = unmake.captured_piece;
         // }
     }
+
+    #[inline]
     pub fn swap(&mut self, lhs: Pos, rhs: Pos) {
-        self.pieces.swap(lhs.0 as usize, rhs.0 as usize)
+        self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
     }
+    #[must_use]
+    #[inline]
     pub fn active_king_pos(&self) -> Pos {
         match self.active_colour {
             Colour::White => self.white_king_pos,
             Colour::Black => self.black_king_pos,
         }
     }
+    #[must_use]
+    #[inline]
     pub fn inactive_king_pos(&self) -> Pos {
         match self.active_colour {
             Colour::White => self.black_king_pos,
             Colour::Black => self.white_king_pos,
         }
     }
+    #[inline]
     fn set_active_king_pos(&mut self, pos: Pos) {
         match self.active_colour {
             Colour::White => self.white_king_pos = pos,
@@ -157,12 +166,15 @@ impl Board {
             }
         }
     }
+    #[must_use]
     pub fn gen_pseudolegal_moves(&self) -> Moves {
         MoveGenerator::new_pseudo_legal(self.clone()).gen_moves()
     }
+    #[must_use]
     pub fn gen_legal_moves(&self) -> Moves {
         MoveGenerator::new(self.clone()).gen_moves()
     }
+    #[must_use]
     pub fn gen_capture_moves(&self) -> Moves {
         let mut moves = self.gen_legal_moves();
         moves.retain(|mov| mov.flags().is_capture());
