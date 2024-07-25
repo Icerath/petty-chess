@@ -183,3 +183,9 @@ impl fmt::Debug for Board {
         write!(f, "{}", self.to_fen())
     }
 }
+
+impl Default for Board {
+    fn default() -> Self {
+        Self::start_pos()
+    }
+}

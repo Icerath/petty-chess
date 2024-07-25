@@ -45,3 +45,16 @@ fn test_move_repr() {
     assert_eq!(mov.to(), Pos::A7);
     assert_eq!(mov.flags(), flags);
 }
+
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let promote = match self.flags().promotion() {
+            Some(Promotion::Knight) => "k",
+            Some(Promotion::Bishop) => "b",
+            Some(Promotion::Rook) => "r",
+            Some(Promotion::Queen) => "q",
+            None => "",
+        };
+        write!(f, "{} {}{}", self.from(), self.to(), promote)
+    }
+}

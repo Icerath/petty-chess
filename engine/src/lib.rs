@@ -1,5 +1,5 @@
-mod ai;
-mod core;
+pub mod ai;
+pub mod core;
 
 pub mod prelude {
     use smallvec::SmallVec;

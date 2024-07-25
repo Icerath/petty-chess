@@ -38,6 +38,20 @@ pub enum Promotion {
     Queen,
 }
 
+impl MoveFlags {
+    #[must_use]
+    #[inline]
+    pub fn promotion(self) -> Option<Promotion> {
+        Some(match self {
+            Self::BishopPromotion | Self::BishopPromotionCapture => Promotion::Bishop,
+            Self::KnightPromotion | Self::KnightPromotionCapture => Promotion::Knight,
+            Self::RookPromotion | Self::RookPromotionCapture => Promotion::Rook,
+            Self::QueenPromotion | Self::QueenPromotionCapture => Promotion::Queen,
+            _ => return None,
+        })
+    }
+}
+
 impl From<Castle> for MoveFlags {
     fn from(value: Castle) -> Self {
         match value {

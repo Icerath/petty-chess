@@ -1,12 +1,15 @@
 [workspace]
-members = ["engine", "app"]
-default-members = ["app"]
+members = ["engine"]
+default-members = ["engine"]
 resolver = "2"
 
 [profile.dev]
 opt-level = 3
 panic = "abort"
 debug = false
+
+[profile.dev.package."*"]
+opt-level = 0
 
 [profile.release]
 panic = "abort"
