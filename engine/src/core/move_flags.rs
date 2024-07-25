@@ -1,4 +1,4 @@
-use std::ops::BitOr;
+use std::{ops::BitOr, str::FromStr};
 
 use derive_try_from_primitive::TryFromPrimitive;
 
@@ -86,6 +86,19 @@ impl BitOr<Promotion> for MoveFlags {
     type Output = Self;
     fn bitor(self, rhs: Promotion) -> Self::Output {
         self | Self::from(rhs)
+    }
+}
+
+impl FromStr for Promotion {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.trim() {
+            "n" => Self::Knight,
+            "b" => Self::Bishop,
+            "r" => Self::Rook,
+            "q" => Self::Queen,
+            _ => return Err(()),
+        })
     }
 }
 
