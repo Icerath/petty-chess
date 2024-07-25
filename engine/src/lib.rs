@@ -7,10 +7,11 @@ pub mod prelude {
 
     pub use super::core::{
         board::Board,
+        can_castle::CanCastle,
         colour::Colour,
         move_flags::{Castle, MoveFlags, Promotion},
         piece::{Piece, PieceKind},
-        position::Pos,
+        position::{Col, Pos, Row},
         r#move::Move,
     };
 }

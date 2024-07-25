@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Pos(pub u8);
@@ -33,10 +33,10 @@ impl Pos {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Row(pub u8);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Col(pub u8);
 
 impl Row {
@@ -71,7 +71,17 @@ impl fmt::Display for Pos {
     }
 }
 
+impl FromStr for Pos {
+    type Err = ();
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as u8)).ok_or(())
+    }
+}
+
 impl Pos {
+    pub fn algebraic(self) -> &'static str {
+        Self::SQUARES[self.0 as usize]
+    }
     #[rustfmt::skip]
     pub const SQUARES: [&'static str; 64] = [
         "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8",

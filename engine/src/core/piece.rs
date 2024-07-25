@@ -62,6 +62,23 @@ impl Piece {
 impl Piece {
     #[must_use]
     #[inline]
+    pub fn symbol(self) -> char {
+        let mut symbol = match self.kind() {
+            PieceKind::Pawn => 'p',
+            PieceKind::Knight => 'n',
+            PieceKind::Bishop => 'b',
+            PieceKind::Rook => 'r',
+            PieceKind::Queen => 'q',
+            PieceKind::King => 'k',
+        };
+
+        if self.is_white() {
+            symbol.make_ascii_uppercase();
+        };
+        symbol
+    }
+    #[must_use]
+    #[inline]
     pub fn is_white(self) -> bool {
         self.colour().is_white()
     }
