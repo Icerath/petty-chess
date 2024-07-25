@@ -10,7 +10,8 @@ impl Board {
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Pos>;
         for pos in (0..64).map(Pos) {
-            if let Some(piece) = self[pos] {
+            let rpos = Pos(63 - pos.0);
+            if let Some(piece) = self[rpos] {
                 if let Some(prev) = prev {
                     if let Some(dif @ 1..) = pos.file().0.checked_sub((prev.file().0 + 1) % 8) {
                         buf.push((dif + b'0') as char);
@@ -20,7 +21,7 @@ impl Board {
                 prev = Some(pos);
             }
             if pos != Pos(63) && pos.file().0 == 7 {
-                if self[pos].is_none() {
+                if self[rpos].is_none() {
                     if let Some(prev) = prev {
                         if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
                             buf.push((dif + b'0') as char);
@@ -120,7 +121,7 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
         pieces[pos.0 as usize] = Some(Piece::new(kind, colour));
         file += 1;
     }
-
+    pieces.reverse();
     Some(pieces)
 }
 
