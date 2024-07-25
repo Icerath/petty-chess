@@ -4,5 +4,6 @@ pub mod colour;
 pub mod fen;
 pub mod r#move;
 pub mod move_flags;
+pub mod movegen;
 pub mod piece;
 pub mod position;

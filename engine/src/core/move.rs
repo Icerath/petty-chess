@@ -13,12 +13,12 @@ impl Move {
     }
     #[inline]
     pub fn from(self) -> Pos {
-        Pos((self.0 & 0b111111) as u8)
+        Pos((self.0 & 0b111111) as i8)
     }
     #[must_use]
     #[inline]
     pub fn to(self) -> Pos {
-        Pos(((self.0 >> 6) & 0b111111) as u8)
+        Pos(((self.0 >> 6) & 0b111111) as i8)
     }
     #[must_use]
     #[inline]

@@ -1,22 +1,22 @@
 use std::{fmt, str::FromStr};
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Pos(pub u8);
+pub struct Pos(pub i8);
 
 impl Pos {
     #[must_use]
     #[inline]
-    pub fn new(rank: Rank, file: File) -> Self {
+    pub const fn new(rank: Rank, file: File) -> Self {
         Self(file.0 + rank.0 * 8)
     }
     #[must_use]
     #[inline]
-    pub fn file(self) -> File {
+    pub const fn file(self) -> File {
         File(self.0 % 8)
     }
     #[must_use]
     #[inline]
-    pub fn rank(self) -> Rank {
+    pub const fn rank(self) -> Rank {
         Rank(self.0 / 8)
     }
     #[must_use]
@@ -34,18 +34,18 @@ impl Pos {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct File(pub u8);
+pub struct File(pub i8);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Rank(pub u8);
+pub struct Rank(pub i8);
 
 impl Rank {
     #[must_use]
     #[allow(clippy::cast_possible_wrap)]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = (self.0 as i8) + rhs;
-        (0..8).contains(&out).then_some(Self(out as u8))
+        let out = self.0 + rhs;
+        (0..8).contains(&out).then_some(Self(out))
     }
 }
 
@@ -54,8 +54,8 @@ impl File {
     #[allow(clippy::cast_possible_wrap)]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = (self.0 as i8) + rhs;
-        (0..8).contains(&out).then_some(Self(out as u8))
+        let out = self.0 + rhs;
+        (0..8).contains(&out).then_some(Self(out))
     }
 }
 
@@ -74,7 +74,7 @@ impl fmt::Display for Pos {
 impl FromStr for Pos {
     type Err = ();
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as u8)).ok_or(())
+        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as i8)).ok_or(())
     }
 }
 
