@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Board {
     pub pieces: [Option<Piece>; 64],
     pub active_colour: Colour,
@@ -16,11 +16,12 @@ pub struct Board {
 }
 
 pub struct Unmake {
-    board: Board,
-    // mov: Move,
-    // captured_piece: Option<Piece>,
-    // can_castle: CanCastle,
-    // en_passant_target_square: Option<Pos>,
+    white_king_pos: Pos,
+    black_king_pos: Pos,
+    mov: Move,
+    captured_piece: Option<Piece>,
+    can_castle: CanCastle,
+    en_passant_target_square: Option<Pos>,
 }
 
 impl Board {
@@ -28,12 +29,13 @@ impl Board {
     ///  - TODO
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
-        let unmake = Unmake {
-            board: self.clone(),
-            // mov,
-            // captured_piece: self[mov.to()],
-            // can_castle: self.can_castle,
-            // en_passant_target_square: self.en_passant_target_square,
+        let mut unmake = Unmake {
+            white_king_pos: self.white_king_pos,
+            black_king_pos: self.black_king_pos,
+            mov,
+            captured_piece: self[mov.to()],
+            can_castle: self.can_castle,
+            en_passant_target_square: self.en_passant_target_square,
         };
         self.en_passant_target_square = None;
         if from_piece.kind() == PieceKind::King {
@@ -61,6 +63,7 @@ impl Board {
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
                 debug_assert_eq!(self[back], Some(Piece::new(Pawn, !self.active_colour)));
+                unmake.captured_piece = self[back];
                 self[back] = None;
             }
             MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
@@ -90,42 +93,44 @@ impl Board {
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
-        *self = unmake.board;
-        // let mov = unmake.mov;
+        let mov = unmake.mov;
+        let mut from_piece = self[mov.to()].unwrap();
 
-        // let from_piece = self[mov.to()].unwrap();
+        self.active_colour = !self.active_colour;
+        self.en_passant_target_square = unmake.en_passant_target_square;
+        self.can_castle = unmake.can_castle;
 
-        // self.active_colour = !self.active_colour;
-        // self.en_passant_target_square = unmake.en_passant_target_square;
-        // self.can_castle = unmake.can_castle;
+        match mov.flags() {
+            MoveFlags::EnPassant => {
+                let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
+                debug_assert!(unmake.captured_piece.is_some());
+                self[back] = unmake.captured_piece;
+            }
+            MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
+            MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
+            MoveFlags::KingCastle if self.active_colour.is_white() => self.swap(Pos::F1, Pos::H1),
+            MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
+            MoveFlags::KnightPromotion
+            | MoveFlags::KnightPromotionCapture
+            | MoveFlags::BishopPromotion
+            | MoveFlags::BishopPromotionCapture
+            | MoveFlags::RookPromotion
+            | MoveFlags::RookPromotionCapture
+            | MoveFlags::QueenPromotion
+            | MoveFlags::QueenPromotionCapture => {
+                from_piece = Piece::new(Pawn, self.active_colour);
+            }
+            _ => {}
+        }
 
-        // match mov.flags() {
-        //     MoveFlags::EnPassant => {
-        //         let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
-        //         debug_assert!(unmake.captured_piece.is_some());
-        //         self[back] = unmake.captured_piece;
-        //     }
-        //     MoveFlags::KingCastle if self.active_colour.is_white() => self.swap(Pos::F1, Pos::H1),
-        //     MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
-        //     MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
-        //     MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
-        //     MoveFlags::KnightPromotion
-        //     | MoveFlags::KnightPromotionCapture
-        //     | MoveFlags::BishopPromotion
-        //     | MoveFlags::BishopPromotionCapture
-        //     | MoveFlags::RookPromotion
-        //     | MoveFlags::RookPromotionCapture
-        //     | MoveFlags::QueenPromotion
-        //     | MoveFlags::QueenPromotionCapture => {
-        //         self[mov.to()] = Some(Piece::new(Pawn, self.active_colour))
-        //     }
-        //     _ => {}
-        // }
-
-        // self[mov.from()] = Some(from_piece);
-        // if mov.flags() != MoveFlags::EnPassant {
-        //     self[mov.to()] = unmake.captured_piece;
-        // }
+        self[mov.from()] = Some(from_piece);
+        if mov.flags() == MoveFlags::EnPassant {
+            self[mov.to()] = None;
+        } else {
+            self[mov.to()] = unmake.captured_piece;
+        }
+        self.white_king_pos = unmake.white_king_pos;
+        self.black_king_pos = unmake.black_king_pos;
     }
 
     #[inline]
