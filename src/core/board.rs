@@ -181,9 +181,9 @@ impl Board {
     }
     #[must_use]
     pub fn gen_capture_moves(&self) -> Moves {
-        let mut moves = self.gen_legal_moves();
-        moves.retain(|mov| mov.flags().is_capture());
-        moves
+        let mut movegen = MoveGenerator::new(self.clone());
+        movegen.captures_only = true;
+        movegen.gen_moves()
     }
 }
 

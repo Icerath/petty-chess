@@ -8,37 +8,33 @@ pub struct MoveGenerator {
     moves: Moves,
     is_pseudolegal: bool,
     board: Board,
+    pub captures_only: bool,
 }
 
 impl MoveGenerator {
     #[must_use]
     pub fn new_pseudo_legal(board: Board) -> Self {
-        Self { moves: Moves::default(), board, is_pseudolegal: true }
+        Self { moves: Moves::default(), board, is_pseudolegal: true, captures_only: false }
     }
     #[must_use]
     pub fn new(board: Board) -> Self {
-        Self { moves: Moves::default(), board, is_pseudolegal: false }
+        Self { moves: Moves::default(), board, is_pseudolegal: false, captures_only: false }
     }
 }
 
 impl MoveGenerator {
     #[must_use]
     pub fn gen_moves(mut self) -> Moves {
-        if self.is_pseudolegal {
-            self.pseudolegal_moves()
-        } else {
-            self.legal_moves()
-        }
-    }
-    fn legal_moves(&mut self) -> Moves {
         let mut moves = self.pseudolegal_moves();
-        moves.retain(|&mut mov| {
-            let unmake = self.board.make_move(mov);
-            let king_pos = self.board.inactive_king_pos();
-            let is_attacked = self.is_square_attacked(king_pos);
-            self.board.unmake_move(unmake);
-            !is_attacked
-        });
+        if !self.is_pseudolegal {
+            moves.retain(|&mut mov| {
+                let unmake = self.board.make_move(mov);
+                let king_pos = self.board.inactive_king_pos();
+                let is_attacked = self.is_square_attacked(king_pos);
+                self.board.unmake_move(unmake);
+                !is_attacked
+            });
+        }
         moves
     }
     fn pseudolegal_moves(&mut self) -> Moves {
@@ -76,7 +72,9 @@ impl MoveGenerator {
                     self.moves.push(Move::new(from, target_square, MoveFlags::Capture));
                     break;
                 }
-                self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
+                if !self.captures_only {
+                    self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
+                }
             }
         }
     }
@@ -86,28 +84,29 @@ impl MoveGenerator {
         let can_promote = (self.board.active_colour.is_white() && from.rank().0 == 6)
             || (self.board.active_colour.is_black() && from.rank().0 == 1);
 
-        let to = Pos(from.0 + forward * 8);
-        if self.board[to].is_none() {
-            let can_double_push = (self.board.active_colour.is_white() && from.rank().0 == 1)
-                || (self.board.active_colour.is_black() && from.rank().0 == 6);
+        if !self.captures_only {
+            let to = Pos(from.0 + forward * 8);
+            if self.board[to].is_none() {
+                let can_double_push = (self.board.active_colour.is_white() && from.rank().0 == 1)
+                    || (self.board.active_colour.is_black() && from.rank().0 == 6);
 
-            if !can_promote {
-                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
-            }
-
-            if can_double_push {
-                let to = Pos(from.0 + forward * 16);
-                if self.board[to].is_none() {
-                    self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
+                if !can_promote {
+                    self.moves.push(Move::new(from, to, MoveFlags::Quiet));
                 }
-            } else if can_promote {
-                self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
-                self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
-                self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
-                self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
+
+                if can_double_push {
+                    let to = Pos(from.0 + forward * 16);
+                    if self.board[to].is_none() {
+                        self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
+                    }
+                } else if can_promote {
+                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
+                }
             }
         }
-
         if let Some(to) = Pos(from.0 + forward * 8).add_file(1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
@@ -146,7 +145,9 @@ impl MoveGenerator {
             let target_colour = self.board[to].map(Piece::colour);
 
             if target_colour.is_none() {
-                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
+                if !self.captures_only {
+                    self.moves.push(Move::new(from, to, MoveFlags::Quiet));
+                }
             } else if target_colour == Some(!self.board.active_colour) {
                 self.moves.push(Move::new(from, to, MoveFlags::Capture));
             }
@@ -169,7 +170,12 @@ impl MoveGenerator {
                 self.moves.push(Move::new(from, target_square, MoveFlags::Capture));
                 continue;
             }
-            self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
+            if !self.captures_only {
+                self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
+            }
+        }
+        if self.captures_only {
+            return;
         }
         if self.board.active_colour.is_white() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
