@@ -1,8 +1,13 @@
 use std::io::{stdin, BufRead};
 
 use petty_chess::prelude::*;
+use tracing::info;
 
 fn main() -> eyre::Result<()> {
+    let file_appender = tracing_appender::rolling::hourly("./", "prefix.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing_subscriber::fmt().with_ansi(false).with_writer(non_blocking).init();
+
     let mut stdin = stdin().lock();
     let mut line = String::new();
     let mut engine = Application::default();
@@ -29,6 +34,7 @@ impl Default for Application {
 
 impl Application {
     fn process_line(&mut self, line: &str) -> eyre::Result<bool> {
+        info!("{line}");
         match line {
             "quit" => return Ok(true),
             "uci" => println!("uciok"),
@@ -69,6 +75,11 @@ impl Application {
     }
     fn process_go_command(&mut self, _command: &str) {
         let best_move = self.engine.search();
+        info!(
+            "Move={}, Depth={}, Nodes={}",
+            best_move, self.engine.depth_reached, self.engine.nodes_evaluated
+        );
+
         println!("bestmove {best_move}");
     }
 }

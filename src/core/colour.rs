@@ -30,7 +30,7 @@ impl Colour {
     #[inline]
     #[must_use]
     pub fn positive(self) -> i32 {
-        -self.forward() as i32
+        self.forward() as i32
     }
 }
 

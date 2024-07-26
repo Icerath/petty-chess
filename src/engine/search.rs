@@ -8,6 +8,7 @@ impl Engine {
     #[allow(clippy::unnecessary_wraps)]
     pub fn search(&mut self) -> Move {
         self.time_started = Instant::now();
+        self.nodes_evaluated = 0;
 
         let beta = i32::MAX;
 
@@ -40,7 +41,7 @@ impl Engine {
                     alpha = score;
                 }
             }
-
+            self.depth_reached = depth;
             final_best_moves = best_moves;
         }
         final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])
