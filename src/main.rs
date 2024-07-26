@@ -1,5 +1,6 @@
 use std::io::{stdin, BufRead};
 
+use eyre::ContextCompat;
 use petty_chess::prelude::*;
 use tracing::info;
 
@@ -41,6 +42,9 @@ impl Application {
             "ucinewgame" => {}
             "isready" => println!("readyok"),
             "position startpos" => self.engine.board = Board::start_pos(),
+            _ if line.starts_with("position fen") => {
+                self.fen_position(line.trim_start_matches("position fen").trim())?;
+            }
             _ if line.starts_with("position startpos moves") => {
                 self.startpos_moves(line.trim_start_matches("position startpos moves"))?;
             }
@@ -73,11 +77,19 @@ impl Application {
 
         Ok(())
     }
+    fn fen_position(&mut self, fen: &str) -> eyre::Result<()> {
+        self.engine.board = Board::from_fen(fen).wrap_err("InvalidFen")?;
+        Ok(())
+    }
+
     fn process_go_command(&mut self, _command: &str) {
         let best_move = self.engine.search();
         info!(
-            "Move={}, Depth={}, Nodes={}",
-            best_move, self.engine.depth_reached, self.engine.nodes_evaluated
+            "Move={}, Depth={}, Nodes={}, TotalNodes={}",
+            best_move,
+            self.engine.depth_reached,
+            self.engine.nodes_evaluated_for_heighest_depth,
+            self.engine.nodes_evaluated,
         );
 
         println!("bestmove {best_move}");

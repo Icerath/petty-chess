@@ -13,11 +13,10 @@ impl Engine {
         let beta = i32::MAX;
 
         let mut moves = self.board.gen_legal_moves();
-        self.order_moves(&mut moves);
-
-        let mut final_best_moves = moves.clone();
+        let mut final_best_moves = Moves::new();
 
         'outer: for depth in 1..=255 {
+            self.order_moves(&mut moves, &final_best_moves);
             let mut best_moves = Moves::new();
             let mut alpha = -beta;
 
@@ -41,6 +40,7 @@ impl Engine {
                     alpha = score;
                 }
             }
+            self.nodes_evaluated_for_heighest_depth = self.nodes_evaluated;
             self.depth_reached = depth;
             final_best_moves = best_moves;
         }
@@ -53,7 +53,7 @@ impl Engine {
         }
 
         let mut moves = self.board.gen_legal_moves();
-        self.order_moves(&mut moves);
+        self.order_moves(&mut moves, &[]);
 
         for mov in moves {
             let unmake = self.board.make_move(mov);
@@ -74,7 +74,7 @@ impl Engine {
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
         let mut moves = self.board.gen_capture_moves();
-        self.order_moves(&mut moves);
+        self.order_moves(&mut moves, &[]);
 
         let eval = self.evaluate();
         if eval >= beta {

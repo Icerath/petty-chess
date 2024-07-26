@@ -12,6 +12,7 @@ pub struct Engine {
     pub time_available: Duration,
     pub depth_reached: u8,
     pub nodes_evaluated: u64,
+    pub nodes_evaluated_for_heighest_depth: u64,
 }
 
 impl Engine {
@@ -20,9 +21,10 @@ impl Engine {
         Self {
             board,
             time_started: Instant::now(),
-            time_available: Duration::from_secs(1),
+            time_available: Duration::from_secs(4),
             depth_reached: 0,
             nodes_evaluated: 0,
+            nodes_evaluated_for_heighest_depth: 0,
         }
     }
 
