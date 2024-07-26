@@ -1,4 +1,5 @@
 mod evaluation;
+mod move_ordering;
 mod search;
 
 use std::time::{Duration, Instant};

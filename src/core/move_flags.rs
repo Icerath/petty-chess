@@ -1,6 +1,7 @@
 use std::{ops::BitOr, str::FromStr};
 
 use derive_try_from_primitive::TryFromPrimitive;
+use crate::prelude::*;
 
 #[repr(u8)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TryFromPrimitive)]
@@ -72,6 +73,17 @@ impl From<Promotion> for MoveFlags {
             Promotion::Bishop => Self::BishopPromotion,
             Promotion::Rook => Self::RookPromotion,
             Promotion::Queen => Self::QueenPromotion,
+        }
+    }
+}
+
+impl From<Promotion> for PieceKind {
+    fn from(promotion: Promotion) -> Self {
+        match promotion {
+            Promotion::Knight => Knight,
+            Promotion::Bishop => Bishop,
+            Promotion::Rook => Rook,
+            Promotion::Queen => Queen,
         }
     }
 }

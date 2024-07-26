@@ -12,8 +12,8 @@ impl Engine {
 
         let beta = i32::MAX;
 
-        let moves = self.board.gen_legal_moves();
-        // order_moves(board, &mut moves);
+        let mut moves = self.board.gen_legal_moves();
+        self.order_moves(&mut moves);
 
         let mut final_best_moves = moves.clone();
 
@@ -52,8 +52,8 @@ impl Engine {
             return self.negamax_search_all_captures(alpha, beta);
         }
 
-        let moves = self.board.gen_legal_moves();
-        // order_moves(board, &mut moves);
+        let mut moves = self.board.gen_legal_moves();
+        self.order_moves(&mut moves);
 
         for mov in moves {
             let unmake = self.board.make_move(mov);
@@ -73,8 +73,8 @@ impl Engine {
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        let moves = self.board.gen_capture_moves();
-        // order_moves(board, &mut moves);
+        let mut moves = self.board.gen_capture_moves();
+        self.order_moves(&mut moves);
 
         let eval = self.evaluate();
         if eval >= beta {
