@@ -1,6 +1,5 @@
-use crate::prelude::*;
-
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
+use crate::prelude::*;
 
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], priority_moves: &[Move]) {

@@ -1,6 +1,7 @@
 use std::{ops::BitOr, str::FromStr};
 
 use derive_try_from_primitive::TryFromPrimitive;
+
 use crate::prelude::*;
 
 #[repr(u8)]

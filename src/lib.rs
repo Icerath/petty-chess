@@ -6,18 +6,19 @@ pub mod prelude {
     pub use Colour::*;
     pub use PieceKind::*;
 
-    pub use super::core::{
-        board::Board,
-        can_castle::CanCastle,
-        colour::Colour,
-        move_flags::{Castle, MoveFlags, Promotion},
-        movegen::MoveGenerator,
-        piece::{Piece, PieceKind},
-        position::{File, Pos, Rank},
-        r#move::Move,
+    pub use super::{
+        core::{
+            board::Board,
+            can_castle::CanCastle,
+            colour::Colour,
+            move_flags::{Castle, MoveFlags, Promotion},
+            movegen::MoveGenerator,
+            piece::{Piece, PieceKind},
+            position::{File, Pos, Rank},
+            r#move::Move,
+        },
+        engine::Engine,
     };
-
-    pub use super::engine::Engine;
 
     pub type Moves = SmallVec<[Move; 64]>;
 }

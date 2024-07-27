@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::{Index, IndexMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::prelude::*;
 
@@ -11,13 +11,17 @@ pub struct Board {
     pub en_passant_target_square: Option<Pos>,
     pub halfmove_clock: Option<u8>,
     pub fullmove_counter: Option<u16>,
-    pub white_king_pos: Pos,
-    pub black_king_pos: Pos,
+    pub cached: Cached,
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct Cached {
+    pub active_king_pos: Pos,
+    pub inactive_king_pos: Pos,
 }
 
 pub struct Unmake {
-    white_king_pos: Pos,
-    black_king_pos: Pos,
+    cached: Cached,
     mov: Move,
     captured_piece: Option<Piece>,
     can_castle: CanCastle,
@@ -25,13 +29,48 @@ pub struct Unmake {
 }
 
 impl Board {
-    /// # Panics
-    ///  - TODO
+    pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
+        (0..64).map(Pos).filter_map(|pos| self[pos])
+    }
+    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> + '_ {
+        (0..64).map(Pos).filter_map(|pos| self[pos].map(|piece| (pos, piece)))
+    }
+    pub fn create_cache(&mut self) {
+        let mut active_king_pos =
+            self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, White)).unwrap().0;
+        let mut inactive_king_pos =
+            self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, Black)).unwrap().0;
+
+        if self.active_colour.is_black() {
+            std::mem::swap(&mut active_king_pos, &mut inactive_king_pos);
+        };
+
+        let cached = Cached { active_king_pos, inactive_king_pos };
+        self.cached = cached;
+    }
+    #[inline]
+    pub fn increment_ply(&mut self) {
+        if self.active_colour.is_black() {
+            self.fullmove_counter.as_mut().map(|counter| *counter += 1);
+        }
+        self.halfmove_clock.as_mut().map(|clock| *clock += 1);
+        self.active_colour = !self.active_colour;
+        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+    }
+    #[inline]
+    pub fn decrement_ply(&mut self) {
+        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        self.active_colour = !self.active_colour;
+        self.halfmove_clock.as_mut().map(|clock| *clock -= 1);
+        if self.active_colour.is_black() {
+            self.fullmove_counter.as_mut().map(|counter| *counter -= 1);
+        }
+    }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
+
         let mut unmake = Unmake {
-            white_king_pos: self.white_king_pos,
-            black_king_pos: self.black_king_pos,
+            cached: self.cached.clone(),
             mov,
             captured_piece: self[mov.to()],
             can_castle: self.can_castle,
@@ -39,7 +78,7 @@ impl Board {
         };
         self.en_passant_target_square = None;
         if from_piece.kind() == PieceKind::King {
-            self.set_active_king_pos(mov.to());
+            self.active_king_pos = mov.to();
             if self.active_colour.is_white() {
                 self.can_castle.remove(CanCastle::BOTH_WHITE);
             } else {
@@ -88,22 +127,20 @@ impl Board {
             }
             _ => {}
         }
-
-        self.active_colour = !self.active_colour;
+        self.increment_ply();
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
-        let mov = unmake.mov;
-        let mut from_piece = self[mov.to()].unwrap();
-
-        self.active_colour = !self.active_colour;
+        self.decrement_ply();
+        self.cached = unmake.cached;
         self.en_passant_target_square = unmake.en_passant_target_square;
         self.can_castle = unmake.can_castle;
+
+        let mov = unmake.mov;
 
         match mov.flags() {
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
-                debug_assert!(unmake.captured_piece.is_some());
                 self[back] = unmake.captured_piece;
             }
             MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
@@ -118,58 +155,22 @@ impl Board {
             | MoveFlags::RookPromotionCapture
             | MoveFlags::QueenPromotion
             | MoveFlags::QueenPromotionCapture => {
-                from_piece = Piece::new(Pawn, self.active_colour);
+                self[mov.to()] = Some(Piece::new(Pawn, self.active_colour));
             }
             _ => {}
         }
 
-        self[mov.from()] = Some(from_piece);
+        self[mov.from()] = self[mov.to()];
         if mov.flags() == MoveFlags::EnPassant {
             self[mov.to()] = None;
         } else {
             self[mov.to()] = unmake.captured_piece;
         }
-        self.white_king_pos = unmake.white_king_pos;
-        self.black_king_pos = unmake.black_king_pos;
     }
 
     #[inline]
     pub fn swap(&mut self, lhs: Pos, rhs: Pos) {
         self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
-    }
-    #[must_use]
-    #[inline]
-    pub fn active_king_pos(&self) -> Pos {
-        match self.active_colour {
-            Colour::White => self.white_king_pos,
-            Colour::Black => self.black_king_pos,
-        }
-    }
-    #[must_use]
-    #[inline]
-    pub fn inactive_king_pos(&self) -> Pos {
-        match self.active_colour {
-            Colour::White => self.black_king_pos,
-            Colour::Black => self.white_king_pos,
-        }
-    }
-    #[inline]
-    fn set_active_king_pos(&mut self, pos: Pos) {
-        match self.active_colour {
-            Colour::White => self.white_king_pos = pos,
-            Colour::Black => self.black_king_pos = pos,
-        }
-    }
-    pub fn find_king_positions(&mut self) {
-        for pos in (0..64).map(Pos) {
-            let Some(piece) = self[pos] else { continue };
-            if piece == Piece::new(King, White) {
-                self.white_king_pos = pos;
-            }
-            if piece == Piece::new(King, Black) {
-                self.black_king_pos = pos;
-            }
-        }
     }
     #[must_use]
     pub fn gen_pseudolegal_moves(&self) -> Moves {
@@ -209,5 +210,19 @@ impl fmt::Debug for Board {
 impl Default for Board {
     fn default() -> Self {
         Self::start_pos()
+    }
+}
+
+// This is bad practice but shame.
+impl Deref for Board {
+    type Target = Cached;
+    fn deref(&self) -> &Self::Target {
+        &self.cached
+    }
+}
+
+impl DerefMut for Board {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cached
     }
 }

@@ -29,7 +29,7 @@ impl MoveGenerator {
         if !self.is_pseudolegal {
             moves.retain(|&mut mov| {
                 let unmake = self.board.make_move(mov);
-                let king_pos = self.board.inactive_king_pos();
+                let king_pos = self.board.inactive_king_pos;
                 let is_attacked = self.is_square_attacked(king_pos);
                 self.board.unmake_move(unmake);
                 !is_attacked
@@ -210,7 +210,7 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn can_castle_through(&self, squares: [Pos; 2]) -> bool {
+    fn can_castle_through(&mut self, squares: [Pos; 2]) -> bool {
         if self.board[squares[0]].is_some() || self.board[squares[1]].is_some() {
             return false;
         }
@@ -223,9 +223,7 @@ impl MoveGenerator {
         temp.is_pseudolegal = true;
         temp.board.active_colour = !self.board.active_colour;
         let moves = temp.pseudolegal_moves();
-        !moves
-            .into_iter()
-            .any(|mov| squares.contains(&mov.to()) || mov.to() == self.board.active_king_pos())
+        !moves.into_iter().any(|mov| squares.contains(&mov.to()) || mov.to() == self.board.active_king_pos)
     }
     fn is_square_attacked(&self, square: Pos) -> bool {
         let mut temp = self.clone();

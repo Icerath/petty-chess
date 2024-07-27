@@ -1,6 +1,6 @@
 use std::{fmt, str::FromStr};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Pos(pub i8);
 
 impl Pos {

@@ -1,8 +1,9 @@
-use crate::prelude::*;
-use rand::prelude::*;
 use std::time::Instant;
 
+use rand::prelude::*;
+
 use super::Engine;
+use crate::prelude::*;
 
 impl Engine {
     #[allow(clippy::unnecessary_wraps)]

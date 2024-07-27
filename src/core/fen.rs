@@ -1,5 +1,7 @@
-use crate::prelude::*;
 use std::fmt::Write;
+
+use super::board::Cached;
+use crate::prelude::*;
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 pub const KIWIPETE: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
@@ -108,6 +110,7 @@ impl Board {
     #[must_use]
     pub fn from_fen(fen: &str) -> Option<Self> {
         let mut fields = fen.split(' ');
+
         let pieces = parse_pieces(fields.next()?)?;
         let active_colour = match fields.next()? {
             "w" => White,
@@ -119,18 +122,16 @@ impl Board {
         let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok());
         let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok());
 
-        let mut board = Self {
+        let mut board = Board {
             pieces,
             active_colour,
             can_castle,
             en_passant_target_square,
             halfmove_clock,
             fullmove_counter,
-            white_king_pos: Pos(0),
-            black_king_pos: Pos(0),
+            cached: Cached::default(),
         };
-        board.find_king_positions();
-
+        board.create_cache();
         Some(board)
     }
 }
