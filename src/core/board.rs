@@ -29,12 +29,6 @@ pub struct Unmake {
 }
 
 impl Board {
-    pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
-        (0..64).map(Pos).filter_map(|pos| self[pos])
-    }
-    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> + '_ {
-        (0..64).map(Pos).filter_map(|pos| self[pos].map(|piece| (pos, piece)))
-    }
     pub fn create_cache(&mut self) {
         let mut active_king_pos =
             self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, White)).unwrap().0;
@@ -48,24 +42,7 @@ impl Board {
         let cached = Cached { active_king_pos, inactive_king_pos };
         self.cached = cached;
     }
-    #[inline]
-    pub fn increment_ply(&mut self) {
-        if self.active_colour.is_black() {
-            self.fullmove_counter.as_mut().map(|counter| *counter += 1);
-        }
-        self.halfmove_clock.as_mut().map(|clock| *clock += 1);
-        self.active_colour = !self.active_colour;
-        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
-    }
-    #[inline]
-    pub fn decrement_ply(&mut self) {
-        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
-        self.active_colour = !self.active_colour;
-        self.halfmove_clock.as_mut().map(|clock| *clock -= 1);
-        if self.active_colour.is_black() {
-            self.fullmove_counter.as_mut().map(|counter| *counter -= 1);
-        }
-    }
+
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
 
@@ -167,24 +144,38 @@ impl Board {
             self[mov.to()] = unmake.captured_piece;
         }
     }
+    #[inline]
+    fn increment_ply(&mut self) {
+        if self.active_colour.is_black() {
+            self.fullmove_counter.as_mut().map(|counter| *counter += 1);
+        }
+        self.halfmove_clock.as_mut().map(|clock| *clock += 1);
+        self.active_colour = !self.active_colour;
+        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+    }
+    #[inline]
+    fn decrement_ply(&mut self) {
+        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        self.active_colour = !self.active_colour;
+        self.halfmove_clock.as_mut().map(|clock| *clock -= 1);
+        if self.active_colour.is_black() {
+            self.fullmove_counter.as_mut().map(|counter| *counter -= 1);
+        }
+    }
+}
 
+impl Board {
     #[inline]
     pub fn swap(&mut self, lhs: Pos, rhs: Pos) {
         self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
     }
-    #[must_use]
-    pub fn gen_pseudolegal_moves(&self) -> Moves {
-        MoveGenerator::new_pseudo_legal(self.clone()).gen_moves()
+    #[inline]
+    pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
+        (0..64).map(Pos).filter_map(|pos| self[pos])
     }
-    #[must_use]
-    pub fn gen_legal_moves(&self) -> Moves {
-        MoveGenerator::new(self.clone()).gen_moves()
-    }
-    #[must_use]
-    pub fn gen_capture_moves(&self) -> Moves {
-        let mut movegen = MoveGenerator::new(self.clone());
-        movegen.captures_only = true;
-        movegen.gen_moves()
+    #[inline]
+    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> + '_ {
+        (0..64).map(Pos).filter_map(|pos| self[pos].map(|piece| (pos, piece)))
     }
 }
 

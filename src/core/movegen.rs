@@ -11,6 +11,23 @@ pub struct MoveGenerator {
     pub captures_only: bool,
 }
 
+impl Board {
+    #[must_use]
+    pub fn gen_pseudolegal_moves(&self) -> Moves {
+        MoveGenerator::new_pseudo_legal(self.clone()).gen_moves()
+    }
+    #[must_use]
+    pub fn gen_legal_moves(&self) -> Moves {
+        MoveGenerator::new(self.clone()).gen_moves()
+    }
+    #[must_use]
+    pub fn gen_capture_moves(&self) -> Moves {
+        let mut movegen = MoveGenerator::new(self.clone());
+        movegen.captures_only = true;
+        movegen.gen_moves()
+    }
+}
+
 impl MoveGenerator {
     #[must_use]
     pub fn new_pseudo_legal(board: Board) -> Self {
