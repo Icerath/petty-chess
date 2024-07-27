@@ -5,7 +5,7 @@ use petty_chess::prelude::*;
 use tracing::info;
 
 fn main() -> eyre::Result<()> {
-    let file_appender = tracing_appender::rolling::hourly("./", "prefix.log");
+    let file_appender = tracing_appender::rolling::hourly("./log", "prefix.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt().with_ansi(false).with_writer(non_blocking).init();
 
