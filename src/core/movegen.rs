@@ -9,6 +9,7 @@ pub struct MoveGenerator {
     is_pseudolegal: bool,
     board: Board,
     pub captures_only: bool,
+    pub attacked_squares: Option<Bitboard>,
 }
 
 impl Board {
@@ -31,15 +32,24 @@ impl Board {
 impl MoveGenerator {
     #[must_use]
     pub fn new_pseudo_legal(board: Board) -> Self {
-        Self { moves: Moves::default(), board, is_pseudolegal: true, captures_only: false }
+        Self {
+            moves: Moves::default(),
+            board,
+            is_pseudolegal: true,
+            captures_only: false,
+            attacked_squares: None,
+        }
     }
     #[must_use]
     pub fn new(board: Board) -> Self {
-        Self { moves: Moves::default(), board, is_pseudolegal: false, captures_only: false }
+        Self {
+            moves: Moves::default(),
+            board,
+            is_pseudolegal: false,
+            captures_only: false,
+            attacked_squares: None,
+        }
     }
-}
-
-impl MoveGenerator {
     #[must_use]
     pub fn gen_moves(mut self) -> Moves {
         let mut moves = self.pseudolegal_moves();
@@ -53,6 +63,66 @@ impl MoveGenerator {
             });
         }
         moves
+    }
+    pub fn attack_map(&mut self) -> Bitboard {
+        if self.attacked_squares.is_none() {
+            self.gen_attack_map();
+        }
+        self.attacked_squares.unwrap()
+    }
+    // Generate attack map for enemy pieces
+    #[allow(clippy::needless_range_loop)]
+    pub fn gen_attack_map(&mut self) {
+        let forward = -self.board.active_colour.forward();
+        let mut attacked_squares = Bitboard(0);
+
+        for (from, piece) in self.board.piece_positions() {
+            if piece.colour() == self.board.active_colour {
+                continue;
+            }
+            match piece.kind() {
+                PieceKind::Pawn => {
+                    if let Some(to) = Pos(from.0 + forward * 8).add_file(1) {
+                        attacked_squares.insert(to);
+                    }
+                    if let Some(to) = Pos(from.0 + forward * 8).add_file(-1) {
+                        attacked_squares.insert(to);
+                    }
+                }
+                PieceKind::Knight => {
+                    for (file, rank) in
+                        [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+                    {
+                        if let Some(to) = from.add_file(file).and_then(|from| from.add_rank(rank)) {
+                            attacked_squares.insert(to);
+                        };
+                    }
+                }
+                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
+                    let start_index = if piece.kind() == Bishop { 4 } else { 0 };
+                    let end_index = if piece.kind() == Rook { 4 } else { 8 };
+
+                    for direction_index in start_index..end_index {
+                        for n in 0..NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] {
+                            let target_square = Pos(from.0 + DIRECTION_OFFSETS[direction_index] * (n + 1));
+                            attacked_squares.insert(target_square);
+                            if self.board[target_square].map(Piece::colour).is_some() {
+                                break;
+                            }
+                        }
+                    }
+                }
+                PieceKind::King => {
+                    for direction_index in 0..8 {
+                        if NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] > 0 {
+                            let target_square = Pos((from.0) + DIRECTION_OFFSETS[direction_index]);
+                            attacked_squares.insert(target_square);
+                        }
+                    }
+                }
+            }
+        }
+        self.attacked_squares = Some(attacked_squares);
     }
     fn pseudolegal_moves(&mut self) -> Moves {
         for from in (0..64).map(Pos) {
@@ -234,17 +304,13 @@ impl MoveGenerator {
         if self.is_pseudolegal {
             return true;
         }
-
-        let mut temp = self.clone();
-        temp.moves.clear();
-        temp.is_pseudolegal = true;
-        temp.board.active_colour = !self.board.active_colour;
-        let moves = temp.pseudolegal_moves();
-        !moves.into_iter().any(|mov| squares.contains(&mov.to()) || mov.to() == self.board.active_king_pos)
+        let map = self.attack_map();
+        !(map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos))
     }
-    fn is_square_attacked(&self, square: Pos) -> bool {
+    pub(crate) fn is_square_attacked(&self, square: Pos) -> bool {
         let mut temp = self.clone();
         temp.moves.clear();
+        temp.captures_only = true;
         temp.is_pseudolegal = true;
         let moves = temp.pseudolegal_moves();
         moves.into_iter().any(|mov| mov.to() == square)
@@ -288,7 +354,7 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
 
 #[test]
 fn perft_start() {
-    let results = [1, 20, 400, 8_902, 197_281, 4_865_609 /*119_060_324*/];
+    let results = [1, 20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
     for (depth, &result) in results.iter().enumerate() {
         let count = perft(&mut Board::start_pos(), depth as u8);
         assert_eq!(count, result, "depth: {depth}");
@@ -297,7 +363,7 @@ fn perft_start() {
 
 #[test]
 fn perft_kiwi() {
-    let results = [1, 48, 2_039, 97_862, 4_085_603 /*193_690_690*/];
+    let results = [1, 48, 2_039, 97_862, 4_085_603, 193_690_690];
     for (depth, &result) in results.iter().enumerate() {
         let count = perft(&mut Board::kiwipete(), depth as u8);
         assert_eq!(count, result, "depth: {depth}");
@@ -314,7 +380,7 @@ fn perft_position_3() {
 
 #[test]
 fn perft_position_4() {
-    let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /* 706045033 */];
+    let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*706_045_033*/];
     for (depth, &result) in results.iter().enumerate() {
         let count = perft(&mut Board::perft_position_4(), depth as u8);
         assert_eq!(count, result, "depth: {depth}");
@@ -323,7 +389,7 @@ fn perft_position_4() {
 
 #[test]
 fn perft_talk() {
-    let results = [1, 44, 1_486, 62_379, 2_103_487 /*89_941_194*/];
+    let results = [1, 44, 1_486, 62_379, 2_103_487, 89_941_194];
     for (depth, &result) in results.iter().enumerate() {
         let count = perft(&mut Board::perft_position_5(), depth as u8);
         assert_eq!(count, result, "depth: {depth}");

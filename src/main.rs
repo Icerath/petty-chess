@@ -48,7 +48,8 @@ impl Application {
             _ if line.starts_with("position startpos moves") => {
                 self.startpos_moves(line.trim_start_matches("position startpos moves"))?;
             }
-            _ if line.starts_with("go") => self.process_go_command(line.trim_start_matches("go ")),
+            _ if line.starts_with("go perft") => self.go_perft(line.trim_start_matches("go perft")),
+            _ if line.starts_with("go") => self.go(line.trim_start_matches("go")),
             _ => {}
         }
 
@@ -82,7 +83,7 @@ impl Application {
         Ok(())
     }
 
-    fn process_go_command(&mut self, _command: &str) {
+    fn go(&mut self, _command: &str) {
         let best_move = self.engine.search();
         info!(
             "Move={}, Depth={}, Nodes={}, TotalNodes={}",
@@ -94,4 +95,35 @@ impl Application {
 
         println!("bestmove {best_move}");
     }
+    fn go_perft(&mut self, rest: &str) {
+        let depth = rest.trim().parse().unwrap_or(1);
+        let total = perft(&mut self.engine.board, depth, true);
+
+        println!("\nNodes searched: {total}");
+    }
+}
+
+fn perft(board: &mut Board, depthleft: u8, print: bool) -> u64 {
+    if depthleft == 0 {
+        return 1;
+    } else if depthleft == 1 && !print {
+        return board.gen_legal_moves().len() as u64;
+    }
+    let mut total = 0;
+    let mut moves = board.gen_legal_moves();
+    if print {
+        moves.sort_by_key(|mov| mov.from().0 + mov.to().0);
+    }
+
+    for mov in moves {
+        let unmake = board.make_move(mov);
+        let count = perft(board, depthleft - 1, false);
+        total += count;
+        board.unmake_move(unmake);
+
+        if print {
+            println!("{mov}: {count}");
+        }
+    }
+    total
 }

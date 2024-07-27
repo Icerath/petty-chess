@@ -145,7 +145,7 @@ impl Board {
         }
     }
     #[inline]
-    fn increment_ply(&mut self) {
+    pub fn increment_ply(&mut self) {
         if self.active_colour.is_black() {
             self.fullmove_counter.as_mut().map(|counter| *counter += 1);
         }
@@ -154,7 +154,7 @@ impl Board {
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
     }
     #[inline]
-    fn decrement_ply(&mut self) {
+    pub fn decrement_ply(&mut self) {
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.active_colour = !self.active_colour;
         self.halfmove_clock.as_mut().map(|clock| *clock -= 1);

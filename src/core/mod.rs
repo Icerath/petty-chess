@@ -1,3 +1,4 @@
+pub mod bitboard;
 pub mod board;
 pub mod can_castle;
 pub mod colour;

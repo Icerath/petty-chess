@@ -8,6 +8,7 @@ pub mod prelude {
 
     pub use super::{
         core::{
+            bitboard::Bitboard,
             board::Board,
             can_castle::CanCastle,
             colour::Colour,
