@@ -1,4 +1,4 @@
-mod evaluation;
+pub mod evaluation;
 mod move_ordering;
 mod search;
 

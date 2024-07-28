@@ -3,7 +3,10 @@ use std::time::Instant;
 use rand::prelude::*;
 
 use super::Engine;
-use crate::prelude::*;
+use crate::{
+    prelude::*,
+    uci::{Info, Score, UciResponse},
+};
 
 impl Engine {
     #[allow(clippy::unnecessary_wraps)]
@@ -46,6 +49,16 @@ impl Engine {
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
             final_best_moves = best_moves;
+
+            let absolute_eval = alpha * self.board.active_colour.positive();
+
+            println!(
+                "{}",
+                UciResponse::Info(vec![
+                    Info::Depth(depth as u32),
+                    Info::Score(Score::Centipawns { cp: absolute_eval, bounds: None })
+                ])
+            );
         }
         final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])
     }

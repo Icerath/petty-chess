@@ -1,6 +1,6 @@
 use std::{
     io::BufRead as _,
-    time::{Duration, Instant, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use petty_chess::{
@@ -81,7 +81,6 @@ impl Application {
     }
     fn startpos_moves(&mut self, position: Board, moves: Moves) {
         self.engine.board = position;
-        let start = Instant::now();
         for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
             let mov = *legal_moves
@@ -93,7 +92,6 @@ impl Application {
                 .unwrap();
             self.engine.board.make_move(mov);
         }
-        eprintln!("{:?}", start.elapsed());
     }
     fn go(&mut self, command: GoCommand) {
         self.set_time_available(command.time_control);

@@ -16,10 +16,12 @@ impl Engine {
     }
 }
 
+#[must_use]
 pub fn piece_value(piece: Piece) -> i32 {
     abs_piece_value(piece.kind()) * piece.colour().positive()
 }
 
+#[must_use]
 pub fn abs_piece_value(piece: PieceKind) -> i32 {
     match piece {
         PieceKind::Pawn => 100,
@@ -31,13 +33,19 @@ pub fn abs_piece_value(piece: PieceKind) -> i32 {
     }
 }
 
+#[must_use]
 pub fn piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_square_value(pos, piece.kind(), endgame) * piece.colour().positive()
+    abs_piece_square_value(pos, piece, endgame) * piece.colour().positive()
 }
 
-pub fn abs_piece_square_value(pos: Pos, piece: PieceKind, endgame: f32) -> i32 {
-    let index = Pos::new(Rank(7 - pos.rank().0), pos.file()).0 as usize;
-    match piece {
+#[must_use]
+pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+    let index = if piece.is_white() {
+        Pos::new(Rank(7 - pos.rank().0), pos.file()).0 as usize
+    } else {
+        pos.0 as usize
+    };
+    match piece.kind() {
         PieceKind::Pawn => square_tables::PAWN[index],
         PieceKind::Knight => square_tables::KNIGHT[index],
         PieceKind::Bishop => square_tables::BISHOP[index],
@@ -57,7 +65,7 @@ mod square_tables {
         50, 50, 50, 50, 50, 50, 50, 50,
         10, 10, 20, 30, 30, 20, 10, 10,
         5,  5, 10, 25, 25, 10,  5,  5,
-        0,  0,  0, 20, 20,  0,  0,  0,
+        0,  0,  0, 20, 200,  0,  0,  0,
         5, -5,-10,  0,  0,-10, -5,  5,
         5, 10, 10,-20,-20, 10, 10,  5,
         0,  0,  0,  0,  0,  0,  0,  0

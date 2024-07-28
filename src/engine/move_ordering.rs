@@ -9,8 +9,8 @@ impl Engine {
 
             let piece = self.board[mov.from()].unwrap_or(Piece::DEFAULT);
 
-            score += abs_piece_square_value(mov.to(), piece.kind(), self.endgame())
-                - abs_piece_square_value(mov.from(), piece.kind(), self.endgame());
+            score += abs_piece_square_value(mov.to(), piece, self.endgame())
+                - abs_piece_square_value(mov.from(), piece, self.endgame());
 
             if let Some(target_piece) = self.board[mov.to()] {
                 score += abs_piece_value(target_piece.kind()) - abs_piece_value(piece.kind());
