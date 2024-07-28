@@ -94,12 +94,7 @@ impl Board {
             _ => buf.push('-'),
         }
 
-        if let Some(halfmove) = self.halfmove_clock {
-            let _ = write!(buf, " {halfmove}");
-        }
-        if let Some(counter) = self.fullmove_counter {
-            let _ = write!(buf, " {counter}");
-        }
+        let _ = write!(buf, " {} {}", self.halfmove_clock, self.fullmove_counter);
     }
     #[must_use]
     pub fn to_fen(&self) -> String {
@@ -119,8 +114,8 @@ impl Board {
         };
         let can_castle = parse_can_castle(fields.next()?)?;
         let en_passant_target_square = parse_en_passant(fields.next()?)?;
-        let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok());
-        let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok());
+        let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
+        let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
 
         let mut board = Board {
             pieces,
@@ -201,7 +196,12 @@ fn test_fen_parsing() {
 
     for fen in [KIWIPETE, PERFT_POSITION_3, PERFT_POSITION_4, PERFT_POSITION_5] {
         let board = Board::from_fen(fen).expect("Failed to parse fen string");
-        assert_eq!(board.to_fen(), fen);
+        let mut board_fen = board.to_fen();
+        if fen.split_whitespace().count() == 4 {
+            // Todo - account for double digit counters.
+            board_fen.truncate(board_fen.len() - 4);
+        }
+        assert_eq!(board_fen, fen);
     }
 }
 

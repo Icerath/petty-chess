@@ -1,5 +1,6 @@
 pub mod core;
 pub mod engine;
+pub mod uci;
 
 pub mod prelude {
     use smallvec::SmallVec;
@@ -12,6 +13,7 @@ pub mod prelude {
             board::Board,
             can_castle::CanCastle,
             colour::Colour,
+            fen,
             move_flags::{Castle, MoveFlags, Promotion},
             movegen::MoveGenerator,
             piece::{Piece, PieceKind},

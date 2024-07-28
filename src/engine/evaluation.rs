@@ -5,7 +5,7 @@ impl Engine {
         self.raw_evaluation() * self.board.active_colour.positive()
     }
     pub fn raw_evaluation(&mut self) -> i32 {
-        self.nodes_evaluated += 1;
+        self.total_nodes += 1;
         let mut sum = 0;
         for pos in (0..64).map(Pos) {
             let Some(piece) = self.board[pos] else { continue };

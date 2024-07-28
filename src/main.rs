@@ -1,23 +1,34 @@
-use std::io::{stdin, BufRead};
+use std::{
+    io::BufRead as _,
+    time::{Duration, Instant, UNIX_EPOCH},
+};
 
-use eyre::ContextCompat;
-use petty_chess::prelude::*;
-use tracing::info;
+use petty_chess::{
+    prelude::*,
+    uci::{GoCommand, TimeControl, UciMessage, UciResponse},
+};
+use tracing::{debug, info, Level};
 
 fn main() -> eyre::Result<()> {
-    let file_appender = tracing_appender::rolling::hourly("./log", "prefix.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    tracing_subscriber::fmt().with_ansi(false).with_writer(non_blocking).init();
+    let duration = UNIX_EPOCH.elapsed().unwrap();
+    let _ = std::fs::create_dir("./log");
+    let logfile = std::fs::File::create(format!("./log/log-{duration:?}.log"))?;
+    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(logfile).init();
 
-    let mut stdin = stdin().lock();
     let mut line = String::new();
-    let mut engine = Application::default();
-    loop {
+    let mut stdin = std::io::stdin().lock();
+    let mut app = Application::default();
+    while app.running {
         line.clear();
         stdin.read_line(&mut line)?;
-        let exit = engine.process_line(line.trim())?;
-        if exit {
-            break;
+        let line = line.trim();
+        debug!("{line}");
+
+        if let Some(message) = UciMessage::parse(line) {
+            app.process_message(message);
+        } else {
+            tracing::warn!("Unknown command: '{line}'");
+            println!("Unknown command: '{line}'. Type help for more information.",);
         }
     }
     Ok(())
@@ -25,81 +36,101 @@ fn main() -> eyre::Result<()> {
 
 pub struct Application {
     engine: Engine,
+    running: bool,
+    debug: bool,
 }
 
 impl Default for Application {
     fn default() -> Self {
-        Self { engine: Engine::new(Board::start_pos()) }
+        Self { engine: Engine::new(Board::start_pos()), running: true, debug: false }
     }
 }
 
+#[allow(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
 impl Application {
-    fn process_line(&mut self, line: &str) -> eyre::Result<bool> {
-        info!("{line}");
-        match line {
-            "quit" => return Ok(true),
-            "uci" => println!("uciok"),
-            "ucinewgame" => {}
-            "isready" => println!("readyok"),
-            "position startpos" => self.engine.board = Board::start_pos(),
-            _ if line.starts_with("position fen") => {
-                self.fen_position(line.trim_start_matches("position fen").trim())?;
+    fn process_message(&mut self, msg: UciMessage) {
+        use UciMessage as Uci;
+
+        match msg {
+            Uci::Uci => self.respond_with_id(),
+            Uci::Isready => self.respond(UciResponse::Readyok),
+            Uci::Setoption { .. } => {}
+            Uci::Debug(on) => self.debug = on,
+            Uci::Register(_reg) => {}
+            Uci::Ucinewgame => {}
+            Uci::Position { fen, moves } => {
+                if let Some(board) = Board::from_fen(&fen) {
+                    self.startpos_moves(board, moves);
+                } else {
+                    tracing::error!("Invalid fen position {fen}");
+                }
             }
-            _ if line.starts_with("position startpos moves") => {
-                self.startpos_moves(line.trim_start_matches("position startpos moves"))?;
-            }
-            _ if line.starts_with("go perft") => self.go_perft(line.trim_start_matches("go perft")),
-            _ if line.starts_with("go") => self.go(line.trim_start_matches("go")),
-            _ => {}
+            Uci::Go(command) => self.go(command),
+            Uci::Stop => self.engine.force_cancelled = true,
+            Uci::PonderHit => {}
+            Uci::Quit => self.running = false,
+            Uci::Perft { depth } => self.go_perft(depth.unwrap_or(1) as u8),
         }
-
-        Ok(false)
     }
-    fn startpos_moves(&mut self, input: &str) -> eyre::Result<()> {
-        let moves = input
-            .split_whitespace()
-            .map(|mov| {
-                let from: Pos = mov[..2].parse()?;
-                let to: Pos = mov[2..4].parse()?;
-                let promote: Option<Promotion> = mov[4..].parse().ok();
-                Ok((from, to, promote))
-            })
-            .collect::<eyre::Result<Vec<_>>>()?;
-
-        self.engine.board = Board::start_pos();
-        for (from, to, promote) in moves {
+    fn respond_with_id(&self) {
+        self.respond(UciResponse::Id { name: "Petty Chess".into(), author: "Dorje Gilfillan".into() });
+        self.respond(UciResponse::Uciok);
+    }
+    fn respond(&self, response: UciResponse) {
+        println!("{response}");
+    }
+    fn startpos_moves(&mut self, position: Board, moves: Moves) {
+        self.engine.board = position;
+        let start = Instant::now();
+        for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
             let mov = *legal_moves
                 .iter()
-                .find(|mov| mov.from() == from && mov.to() == to && mov.flags().promotion() == promote)
+                .find(|m| {
+                    (m.from(), m.to(), m.flags().promotion())
+                        == (mov.from(), mov.to(), mov.flags().promotion())
+                })
                 .unwrap();
             self.engine.board.make_move(mov);
         }
-
-        Ok(())
+        eprintln!("{:?}", start.elapsed());
     }
-    fn fen_position(&mut self, fen: &str) -> eyre::Result<()> {
-        self.engine.board = Board::from_fen(fen).wrap_err("InvalidFen")?;
-        Ok(())
-    }
-
-    fn go(&mut self, _command: &str) {
+    fn go(&mut self, command: GoCommand) {
+        self.set_time_available(command.time_control);
         let best_move = self.engine.search();
+
         info!(
-            "Move={}, Depth={}, Nodes={}, TotalNodes={}",
-            best_move,
-            self.engine.depth_reached,
-            self.engine.nodes_evaluated_for_heighest_depth,
-            self.engine.nodes_evaluated,
+            best_move = best_move.to_string(),
+            depth_reached = self.engine.depth_reached,
+            effective_nodes = self.engine.effective_nodes,
+            total_nodes = self.engine.total_nodes,
+            time_taken = tracing::field::debug(self.engine.time_started.elapsed()),
         );
 
         println!("bestmove {best_move}");
     }
-    fn go_perft(&mut self, rest: &str) {
-        let depth = rest.trim().parse().unwrap_or(1);
+    fn go_perft(&mut self, depth: u8) {
         let total = perft(&mut self.engine.board, depth, true);
-
         println!("\nNodes searched: {total}");
+    }
+    fn set_time_available(&mut self, time_control: TimeControl) {
+        match time_control {
+            // TODO - ponder
+            TimeControl::Ponder => self.engine.time_available = Duration::MAX,
+            TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
+                let (total, incr) = if self.engine.board.active_colour.is_white() {
+                    (wtime, wincr)
+                } else {
+                    (btime, bincr)
+                };
+                let estimated_total_moves = i32::from(30.max(self.engine.board.fullmove_counter + 10));
+                let moves_to_end = estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
+                let time_per_move = total.div_f32(moves_to_end as f32);
+                self.engine.time_available = (time_per_move + incr.mul_f32(0.9)).min(total);
+            }
+            TimeControl::MoveTime(time) => self.engine.time_available = time,
+            TimeControl::Infinite => self.engine.time_available = Duration::MAX,
+        }
     }
 }
 

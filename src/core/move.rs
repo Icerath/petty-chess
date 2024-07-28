@@ -1,4 +1,5 @@
 use core::fmt;
+use std::str::FromStr;
 
 use crate::prelude::*;
 
@@ -38,15 +39,6 @@ impl fmt::Debug for Move {
     }
 }
 
-#[test]
-fn test_move_repr() {
-    let flags = MoveFlags::Capture | MoveFlags::RookPromotion;
-    let mov = Move::new(Pos::H8, Pos::A7, flags);
-    assert_eq!(mov.from(), Pos::H8);
-    assert_eq!(mov.to(), Pos::A7);
-    assert_eq!(mov.flags(), flags);
-}
-
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let promote = match self.flags().promotion() {
@@ -58,4 +50,39 @@ impl fmt::Display for Move {
         };
         write!(f, "{}{}{}", self.from(), self.to(), promote)
     }
+}
+
+impl FromStr for Move {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let 4..=5 = s.len() else { return Err(()) };
+
+        let from = s[..2].parse().map_err(|_| ())?;
+        let to = s[2..4].parse().map_err(|_| ())?;
+
+        let flags = match s.as_bytes().get(4) {
+            Some(b'n') => MoveFlags::KnightPromotion,
+            Some(b'b') => MoveFlags::BishopPromotion,
+            Some(b'r') => MoveFlags::RookPromotion,
+            Some(b'q') => MoveFlags::QueenPromotion,
+            Some(_) => return Err(()),
+            None => MoveFlags::default(),
+        };
+        Ok(Move::new(from, to, flags))
+    }
+}
+
+#[test]
+fn test_move_repr() {
+    let flags = MoveFlags::Capture | MoveFlags::RookPromotion;
+    let mov = Move::new(Pos::H8, Pos::A7, flags);
+    assert_eq!(mov.from(), Pos::H8);
+    assert_eq!(mov.to(), Pos::A7);
+    assert_eq!(mov.flags(), flags);
+}
+
+#[test]
+fn test_move_parsing() {
+    assert_eq!("e7e5".parse(), Ok(Move::new(Pos::E7, Pos::E5, MoveFlags::Quiet)));
+    assert_eq!("e2e4q".parse(), Ok(Move::new(Pos::E2, Pos::E4, MoveFlags::QueenPromotion)));
 }

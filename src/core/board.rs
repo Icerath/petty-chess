@@ -9,8 +9,8 @@ pub struct Board {
     pub active_colour: Colour,
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Pos>,
-    pub halfmove_clock: Option<u8>,
-    pub fullmove_counter: Option<u16>,
+    pub halfmove_clock: u8,
+    pub fullmove_counter: u16,
     pub cached: Cached,
 }
 
@@ -147,9 +147,9 @@ impl Board {
     #[inline]
     pub fn increment_ply(&mut self) {
         if self.active_colour.is_black() {
-            self.fullmove_counter.as_mut().map(|counter| *counter += 1);
+            self.fullmove_counter += 1;
         }
-        self.halfmove_clock.as_mut().map(|clock| *clock += 1);
+        self.halfmove_clock += 1;
         self.active_colour = !self.active_colour;
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
     }
@@ -157,9 +157,9 @@ impl Board {
     pub fn decrement_ply(&mut self) {
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.active_colour = !self.active_colour;
-        self.halfmove_clock.as_mut().map(|clock| *clock -= 1);
+        self.halfmove_clock -= 1;
         if self.active_colour.is_black() {
-            self.fullmove_counter.as_mut().map(|counter| *counter -= 1);
+            self.fullmove_counter -= 1;
         }
     }
 }
