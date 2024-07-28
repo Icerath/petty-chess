@@ -35,7 +35,7 @@ impl Board {
         let mut inactive_king_pos =
             self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, Black)).unwrap().0;
 
-        if self.active_colour.is_black() {
+        if self.black_to_play() {
             std::mem::swap(&mut active_king_pos, &mut inactive_king_pos);
         };
 
@@ -56,7 +56,7 @@ impl Board {
         self.en_passant_target_square = None;
         if from_piece.kind() == PieceKind::King {
             self.active_king_pos = mov.to();
-            if self.active_colour.is_white() {
+            if self.white_to_play() {
                 self.can_castle.remove(CanCastle::BOTH_WHITE);
             } else {
                 self.can_castle.remove(CanCastle::BOTH_BLACK);
@@ -82,9 +82,9 @@ impl Board {
                 unmake.captured_piece = self[back];
                 self[back] = None;
             }
-            MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
+            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Pos::A1, Pos::D1),
             MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
-            MoveFlags::KingCastle if self.active_colour.is_white() => self.swap(Pos::F1, Pos::H1),
+            MoveFlags::KingCastle if self.white_to_play() => self.swap(Pos::F1, Pos::H1),
             MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
             MoveFlags::DoublePawnPush => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
@@ -120,9 +120,9 @@ impl Board {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
                 self[back] = unmake.captured_piece;
             }
-            MoveFlags::QueenCastle if self.active_colour.is_white() => self.swap(Pos::A1, Pos::D1),
+            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Pos::A1, Pos::D1),
             MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
-            MoveFlags::KingCastle if self.active_colour.is_white() => self.swap(Pos::F1, Pos::H1),
+            MoveFlags::KingCastle if self.white_to_play() => self.swap(Pos::F1, Pos::H1),
             MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
             MoveFlags::KnightPromotion
             | MoveFlags::KnightPromotionCapture
@@ -146,7 +146,7 @@ impl Board {
     }
     #[inline]
     pub fn increment_ply(&mut self) {
-        if self.active_colour.is_black() {
+        if self.black_to_play() {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
@@ -158,9 +158,19 @@ impl Board {
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.active_colour = !self.active_colour;
         self.halfmove_clock -= 1;
-        if self.active_colour.is_black() {
+        if self.black_to_play() {
             self.fullmove_counter -= 1;
         }
+    }
+    #[inline]
+    #[must_use]
+    pub fn white_to_play(&self) -> bool {
+        self.active_colour.is_white()
+    }
+    #[inline]
+    #[must_use]
+    pub fn black_to_play(&self) -> bool {
+        self.active_colour.is_black()
     }
 }
 

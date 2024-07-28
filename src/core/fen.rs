@@ -69,7 +69,7 @@ impl Board {
         }
 
         buf.push(' ');
-        buf.push(if self.active_colour.is_white() { 'w' } else { 'b' });
+        buf.push(if self.white_to_play() { 'w' } else { 'b' });
 
         buf.push(' ');
         if self.can_castle.contains(CanCastle::WHITE_KING_SIDE) {

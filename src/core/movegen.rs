@@ -168,14 +168,14 @@ impl MoveGenerator {
     fn gen_pawn_moves(&mut self, from: Pos) {
         let forward = self.board.active_colour.forward();
 
-        let can_promote = (self.board.active_colour.is_white() && from.rank().0 == 6)
-            || (self.board.active_colour.is_black() && from.rank().0 == 1);
+        let can_promote = (self.board.white_to_play() && from.rank().0 == 6)
+            || (self.board.black_to_play() && from.rank().0 == 1);
 
         if !self.captures_only {
             let to = Pos(from.0 + forward * 8);
             if self.board[to].is_none() {
-                let can_double_push = (self.board.active_colour.is_white() && from.rank().0 == 1)
-                    || (self.board.active_colour.is_black() && from.rank().0 == 6);
+                let can_double_push = (self.board.white_to_play() && from.rank().0 == 1)
+                    || (self.board.black_to_play() && from.rank().0 == 6);
 
                 if !can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::Quiet));
@@ -264,7 +264,7 @@ impl MoveGenerator {
         if self.captures_only {
             return;
         }
-        if self.board.active_colour.is_white() {
+        if self.board.white_to_play() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
                 && self.can_castle_through([Pos::F1, Pos::G1])
                 && self.board[Pos::E2] != Some(Piece::new(Pawn, Black))
