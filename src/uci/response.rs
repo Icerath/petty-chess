@@ -6,7 +6,7 @@ pub enum UciResponse {
     Id { name: String, author: String },
     Uciok,
     Readyok,
-    Bestmove { mov: Move, ponder: Move },
+    Bestmove { mov: Move, ponder: Option<Move> },
     Copyprotection(Requirement),
     Registration(Requirement),
     Info(Vec<Info>),
@@ -69,7 +69,7 @@ impl fmt::Display for UciResponse {
             }
             Self::Uciok => write!(f, "uciok"),
             Self::Readyok => write!(f, "readyok"),
-            Self::Bestmove { mov, ponder } => write!(f, "bestmove {mov} ponder {ponder}"),
+            Self::Bestmove { mov, ponder } => write!(f, "bestmove {mov} {}", Maybe("ponder", ponder)),
             Self::Copyprotection(req) => write!(f, "copyprotection {req}"),
             Self::Registration(req) => write!(f, "registration {req}"),
             Self::Info(info) => {

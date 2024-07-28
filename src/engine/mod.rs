@@ -41,11 +41,25 @@ impl Engine {
         self.force_cancelled
     }
     pub fn endgame(&mut self) -> f32 {
-        let num_start_pieces = 32;
-        let mut num_pieces = 0;
-        for pos in (0..64).map(Pos) {
-            num_pieces += self.board[pos].is_some() as i32;
+        let default_sum = 24;
+        let mut sum = 0;
+        let mut num_queens = [0; 2];
+        for piece in self.board.pieces() {
+            sum += match piece.kind() {
+                PieceKind::Pawn | PieceKind::King => 0,
+                PieceKind::Knight | PieceKind::Bishop => 1,
+                PieceKind::Rook => 2,
+                PieceKind::Queen => 4,
+            };
+            if piece.kind() == Queen {
+                num_queens[piece.colour() as usize] += 1;
+            }
         }
-        num_pieces as f32 / num_start_pieces as f32
+        if num_queens[0] > 1 || num_queens[1] > 1 {
+            return 1.0;
+        }
+        let board = &self.board;
+        debug_assert!(sum <= default_sum, "{board:?}");
+        1.0 - (sum as f32 / default_sum as f32)
     }
 }

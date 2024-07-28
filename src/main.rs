@@ -28,7 +28,7 @@ fn main() -> eyre::Result<()> {
             app.process_message(message);
         } else {
             tracing::warn!("Unknown command: '{line}'");
-            println!("Unknown command: '{line}'. Type help for more information.",);
+            eprintln!("Unknown command: '{line}'. Type help for more information.",);
         }
     }
     Ok(())
@@ -92,6 +92,7 @@ impl Application {
                 .unwrap();
             self.engine.board.make_move(mov);
         }
+        eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {
         self.set_time_available(command.time_control);
@@ -104,12 +105,11 @@ impl Application {
             total_nodes = self.engine.total_nodes,
             time_taken = tracing::field::debug(self.engine.time_started.elapsed()),
         );
-
-        println!("bestmove {best_move}");
+        self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
     }
     fn go_perft(&mut self, depth: u8) {
         let total = perft(&mut self.engine.board, depth, true);
-        println!("\nNodes searched: {total}");
+        eprintln!("\nNodes searched: {total}");
     }
     fn set_time_available(&mut self, time_control: TimeControl) {
         match time_control {
@@ -151,7 +151,7 @@ fn perft(board: &mut Board, depthleft: u8, print: bool) -> u64 {
         board.unmake_move(unmake);
 
         if print {
-            println!("{mov}: {count}");
+            eprintln!("{mov}: {count}");
         }
     }
     total
