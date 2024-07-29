@@ -1,9 +1,32 @@
 use core::fmt;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::{
+    hash::Hash,
+    ops::{Deref, DerefMut, Index, IndexMut},
+};
+
+use rustc_hash::FxHashMap;
 
 use crate::prelude::*;
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone)]
+pub struct Pieces(pub [Option<Piece>; 64]);
+
+impl PartialEq for Pieces {
+    fn eq(&self, other: &Self) -> bool {
+        let lhs = unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(self.0) };
+        let rhs = unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(other.0) };
+        lhs.eq(&rhs)
+    }
+}
+
+impl Eq for Pieces {}
+
+impl Hash for Pieces {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(self.0) }.hash(state);
+    }
+}
+
 pub struct Board {
     pub pieces: [Option<Piece>; 64],
     pub active_colour: Colour,
@@ -12,12 +35,15 @@ pub struct Board {
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
     pub cached: Cached,
+    pub seen_positions: FxHashMap<(Pieces, Colour), u32>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Cached {
     pub active_king_pos: Pos,
     pub inactive_king_pos: Pos,
+
+    pub piece_bitboards: [[Bitboard; 6]; 2],
 }
 
 pub struct Unmake {
@@ -29,20 +55,22 @@ pub struct Unmake {
 }
 
 impl Board {
-    pub fn create_cache(&mut self) {
-        let mut active_king_pos =
-            self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, White)).unwrap().0;
-        let mut inactive_king_pos =
-            self.piece_positions().find(|&(_, piece)| piece == Piece::new(King, Black)).unwrap().0;
-
-        if self.black_to_play() {
-            std::mem::swap(&mut active_king_pos, &mut inactive_king_pos);
-        };
-
-        let cached = Cached { active_king_pos, inactive_king_pos };
-        self.cached = cached;
+    /// Returns whether the current position has been seen before
+    #[inline]
+    #[must_use]
+    pub fn seen_position(&self) -> u32 {
+        self.seen_positions.get(&(Pieces(self.pieces), self.active_colour)).copied().unwrap_or(0)
     }
-
+    pub fn create_cache(&mut self) {
+        for (pos, piece) in self.piece_positions() {
+            let PieceKind::King = piece.kind() else { continue };
+            if piece.colour() == self.active_colour {
+                self.active_king_pos = pos;
+            } else {
+                self.inactive_king_pos = pos;
+            }
+        }
+    }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
 
@@ -150,13 +178,15 @@ impl Board {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
-        self.active_colour = !self.active_colour;
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        self.active_colour = !self.active_colour;
+        *self.seen_positions.entry((Pieces(self.pieces), self.active_colour)).or_default() += 1;
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
-        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        *self.seen_positions.get_mut(&(Pieces(self.pieces), self.active_colour)).unwrap() -= 1;
         self.active_colour = !self.active_colour;
+        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.halfmove_clock -= 1;
         if self.black_to_play() {
             self.fullmove_counter -= 1;
@@ -184,8 +214,9 @@ impl Board {
         (0..64).map(Pos).filter_map(|pos| self[pos])
     }
     #[inline]
-    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> + '_ {
-        (0..64).map(Pos).filter_map(|pos| self[pos].map(|piece| (pos, piece)))
+    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> {
+        let pieces = self.pieces;
+        (0..64).map(Pos).filter_map(move |pos| pieces[pos.0 as usize].map(|piece| (pos, piece)))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{
     io::BufRead as _,
-    time::{Duration, UNIX_EPOCH},
+    time::{Duration, Instant, UNIX_EPOCH},
 };
 
 use petty_chess::{
@@ -12,7 +12,7 @@ use tracing::{debug, info, Level};
 fn main() -> eyre::Result<()> {
     let duration = UNIX_EPOCH.elapsed().unwrap();
     let _ = std::fs::create_dir("./log");
-    let logfile = std::fs::File::create(format!("./log/log-{duration:?}.log"))?;
+    let logfile = std::fs::File::create(format!("./log/log-{:x}.log", duration.as_secs()))?;
     tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(logfile).init();
 
     let mut line = String::new();
@@ -91,6 +91,7 @@ impl Application {
                 })
                 .unwrap();
             self.engine.board.make_move(mov);
+            eprintln!("Seen: {}", self.engine.board.seen_position());
         }
         eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
@@ -108,8 +109,10 @@ impl Application {
         self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
     }
     fn go_perft(&mut self, depth: u8) {
+        let start = Instant::now();
         let total = perft(&mut self.engine.board, depth, true);
-        eprintln!("\nNodes searched: {total}");
+        eprintln!("\nTime taken: {:?}", start.elapsed());
+        eprintln!("Nodes searched: {total}");
     }
     fn set_time_available(&mut self, time_control: TimeControl) {
         match time_control {

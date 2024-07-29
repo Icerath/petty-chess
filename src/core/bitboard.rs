@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::prelude::*;
 
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Bitboard(pub u64);
 
 impl Bitboard {
@@ -22,6 +22,7 @@ impl Bitboard {
 }
 
 impl FromIterator<Pos> for Bitboard {
+    #[inline]
     fn from_iter<T: IntoIterator<Item = Pos>>(iter: T) -> Self {
         let mut ret = Self(0);
         ret.extend(iter);
@@ -30,6 +31,7 @@ impl FromIterator<Pos> for Bitboard {
 }
 
 impl Extend<Pos> for Bitboard {
+    #[inline]
     fn extend<T: IntoIterator<Item = Pos>>(&mut self, iter: T) {
         iter.into_iter().for_each(|pos| self.insert(pos));
     }

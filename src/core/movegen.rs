@@ -3,35 +3,34 @@ use crate::prelude::*;
 const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
 static NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
 
-#[derive(Clone)]
-pub struct MoveGenerator {
+pub struct MoveGenerator<'a> {
     moves: Moves,
     is_pseudolegal: bool,
-    board: Board,
+    board: &'a mut Board,
     pub captures_only: bool,
     pub attacked_squares: Option<Bitboard>,
 }
 
 impl Board {
     #[must_use]
-    pub fn gen_pseudolegal_moves(&self) -> Moves {
-        MoveGenerator::new_pseudo_legal(self.clone()).gen_moves()
+    pub fn gen_pseudolegal_moves(&mut self) -> Moves {
+        MoveGenerator::new_pseudo_legal(self).gen_moves()
     }
     #[must_use]
-    pub fn gen_legal_moves(&self) -> Moves {
-        MoveGenerator::new(self.clone()).gen_moves()
+    pub fn gen_legal_moves(&mut self) -> Moves {
+        MoveGenerator::new(self).gen_moves()
     }
     #[must_use]
-    pub fn gen_capture_moves(&self) -> Moves {
-        let mut movegen = MoveGenerator::new(self.clone());
+    pub fn gen_capture_moves(&mut self) -> Moves {
+        let mut movegen = MoveGenerator::new(self);
         movegen.captures_only = true;
         movegen.gen_moves()
     }
 }
 
-impl MoveGenerator {
+impl<'a> MoveGenerator<'a> {
     #[must_use]
-    pub fn new_pseudo_legal(board: Board) -> Self {
+    pub fn new_pseudo_legal(board: &'a mut Board) -> Self {
         Self {
             moves: Moves::default(),
             board,
@@ -41,7 +40,7 @@ impl MoveGenerator {
         }
     }
     #[must_use]
-    pub fn new(board: Board) -> Self {
+    pub fn new(board: &'a mut Board) -> Self {
         Self {
             moves: Moves::default(),
             board,
@@ -296,7 +295,7 @@ impl MoveGenerator {
     }
 }
 
-impl MoveGenerator {
+impl<'a> MoveGenerator<'a> {
     fn can_castle_through(&mut self, squares: [Pos; 2]) -> bool {
         if self.board[squares[0]].is_some() || self.board[squares[1]].is_some() {
             return false;
@@ -307,12 +306,15 @@ impl MoveGenerator {
         let map = self.attack_map();
         !(map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos))
     }
-    pub(crate) fn is_square_attacked(&self, square: Pos) -> bool {
-        let mut temp = self.clone();
-        temp.moves.clear();
-        temp.captures_only = true;
-        temp.is_pseudolegal = true;
-        let moves = temp.pseudolegal_moves();
+    pub(crate) fn is_square_attacked(&mut self, square: Pos) -> bool {
+        let mut movegen = MoveGenerator {
+            board: self.board,
+            moves: Moves::new(),
+            is_pseudolegal: true,
+            captures_only: true,
+            attacked_squares: None,
+        };
+        let moves = movegen.pseudolegal_moves();
         moves.into_iter().any(|mov| mov.to() == square)
     }
 }

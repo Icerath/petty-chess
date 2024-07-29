@@ -51,12 +51,12 @@ impl Engine {
             final_best_moves = best_moves;
 
             let absolute_eval = alpha * self.board.active_colour.positive();
-
             println!(
                 "{}",
                 UciResponse::Info(vec![
                     Info::Depth(depth as u32),
-                    Info::Score(Score::Centipawns { cp: absolute_eval, bounds: None })
+                    Info::Score(Score::Centipawns { cp: absolute_eval, bounds: None }),
+                    Info::Nodes(self.total_nodes),
                 ])
             );
         }
@@ -64,6 +64,9 @@ impl Engine {
     }
 
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8) -> i32 {
+        if self.board.seen_position() > 1 {
+            return 0;
+        }
         if depth == 0 {
             return self.negamax_search_all_captures(alpha, beta);
         }
