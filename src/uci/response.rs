@@ -9,7 +9,7 @@ pub enum UciResponse {
     Bestmove { mov: Move, ponder: Option<Move> },
     Copyprotection(Requirement),
     Registration(Requirement),
-    Info(Vec<Info>),
+    Info(Box<Info>),
     Option { name: String, option: OptionType },
 }
 
@@ -27,25 +27,24 @@ pub enum Requirement {
     Error,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Info {
-    Depth(u32),
-    SelDepth(u32),
-    Time(Duration),
-    Nodes(u64),
-    Pv(Moves),
-    Score(Score),
-    Currmove(Move),
-    CurrMoveNumber(u32),
-    HashFull(u32),
-    Nps(u32),
-    Thhits(u32),
-    Sbhits(u32),
-    Cpuload(u32),
-    Refutation { mov: Move, line: Moves },
-    Currline { cpunr: Option<u32>, line: Moves },
-    // Must be at the end so that it appears last
-    String(String),
+#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Info {
+    pub depth: Option<u32>,
+    pub seldepth: Option<u32>,
+    pub time: Option<Duration>,
+    pub nodes: Option<u64>,
+    pub pv: Option<Moves>,
+    pub score: Option<Score>,
+    pub currmove: Option<Move>,
+    pub currmovnum: Option<u32>,
+    pub hash_full: Option<u32>,
+    pub nps: Option<u32>,
+    pub thhits: Option<u32>,
+    pub sbhits: Option<u32>,
+    pub cpu_load: Option<u32>,
+    pub string: Option<String>,
+    pub refutation: Option<(Move, Moves)>,
+    pub currline: Option<(Option<u32>, Moves)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -72,11 +71,7 @@ impl fmt::Display for UciResponse {
             Self::Bestmove { mov, ponder } => write!(f, "bestmove {mov} {}", Maybe("ponder", ponder)),
             Self::Copyprotection(req) => write!(f, "copyprotection {req}"),
             Self::Registration(req) => write!(f, "registration {req}"),
-            Self::Info(info) => {
-                let mut info: Vec<&Info> = info.iter().collect();
-                info.sort();
-                write!(f, "info {}", List(" ", &info))
-            }
+            Self::Info(info) => write!(f, "info{info}"),
             Self::Option { name, option } => write!(f, "option name {name} type {option}"),
         }
     }
@@ -110,24 +105,28 @@ impl fmt::Display for OptionType {
 
 impl fmt::Display for Info {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Depth(depth) => write!(f, "depth {depth}"),
-            Self::SelDepth(depth) => write!(f, "seldepth {depth}"),
-            Self::Time(time) => write!(f, "time {}", time.as_millis()),
-            Self::Nodes(nodes) => write!(f, "nodes {nodes}"),
-            Self::Pv(line) => write!(f, "pv {}", List(" ", line)),
-            Self::Score(score) => write!(f, "score {score}"),
-            Self::Currmove(mov) => write!(f, "currmove {mov}"),
-            Self::CurrMoveNumber(num) => write!(f, "currmovenumber {num}"),
-            Self::HashFull(permill) => write!(f, "hash {permill}"),
-            Self::Nps(nps) => write!(f, "nps {nps}"),
-            Self::Thhits(hits) => write!(f, "thhits {hits}"),
-            Self::Sbhits(hits) => write!(f, "sbhits {hits}"),
-            Self::Cpuload(load) => write!(f, "cpuload {load}"),
-            Self::String(str) => write!(f, "str {str}"),
-            Self::Refutation { mov, line } => write!(f, "refutation {mov} {}", List(" ", line)),
-            Self::Currline { cpunr, line } => write!(f, "{} {}", Maybe("", cpunr), List(" ", line)),
+        write!(f, "{}", Maybe(" depth", &self.depth))?;
+        write!(f, "{}", Maybe(" seldepth", &self.seldepth))?;
+        write!(f, "{}", Maybe(" time", &self.time.map(|time| time.as_millis())))?;
+        write!(f, "{}", Maybe(" nodes", &self.nodes))?;
+        write!(f, "{}", Maybe(" pv", &self.pv.as_ref().map(|line| List(" ", line))))?;
+        write!(f, "{}", Maybe(" score", &self.score))?;
+        write!(f, "{}", Maybe(" currmove", &self.currmove))?;
+        write!(f, "{}", Maybe(" currmovenumber", &self.currmovnum))?;
+        write!(f, "{}", Maybe(" hashfull", &self.hash_full))?;
+        write!(f, "{}", Maybe(" nps", &self.nps))?;
+        write!(f, "{}", Maybe(" tbhits", &self.thhits))?;
+        write!(f, "{}", Maybe(" sbhits", &self.sbhits))?;
+        write!(f, "{}", Maybe(" cpuload", &self.cpu_load))?;
+
+        if let Some((mov, line)) = &self.refutation {
+            write!(f, " refutation {mov} {}", List(" ", line))?;
         }
+        if let Some((cpunr, line)) = &self.currline {
+            write!(f, " {} {}", Maybe("", cpunr), List(" ", line))?;
+        }
+
+        write!(f, "{}", Maybe(" str", &self.string))
     }
 }
 

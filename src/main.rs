@@ -1,19 +1,20 @@
 use std::{
     io::BufRead as _,
-    time::{Duration, Instant, UNIX_EPOCH},
+    time::{Duration, Instant},
 };
 
 use petty_chess::{
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
-use tracing::{debug, info, Level};
+use tracing::{debug, Level};
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 fn main() -> eyre::Result<()> {
-    let duration = UNIX_EPOCH.elapsed().unwrap();
-    let _ = std::fs::create_dir("./log");
-    let logfile = std::fs::File::create(format!("./log/log-{:x}.log", duration.as_secs()))?;
-    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(logfile).init();
+    let writer =
+        RollingFileAppender::builder().rotation(Rotation::DAILY).filename_suffix("log").build("./logs")?;
+
+    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(writer).init();
 
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
@@ -57,7 +58,7 @@ impl Application {
             Uci::Setoption { .. } => {}
             Uci::Debug(on) => self.debug = on,
             Uci::Register(_reg) => {}
-            Uci::Ucinewgame => {}
+            Uci::Ucinewgame => *self = Self::default(),
             Uci::Position { fen, moves } => {
                 if let Some(board) = Board::from_fen(&fen) {
                     self.startpos_moves(board, moves);
@@ -91,21 +92,12 @@ impl Application {
                 })
                 .unwrap();
             self.engine.board.make_move(mov);
-            eprintln!("Seen: {}", self.engine.board.seen_position());
         }
-        eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
+        // eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {
         self.set_time_available(command.time_control);
         let best_move = self.engine.search();
-
-        info!(
-            best_move = best_move.to_string(),
-            depth_reached = self.engine.depth_reached,
-            effective_nodes = self.engine.effective_nodes,
-            total_nodes = self.engine.total_nodes,
-            time_taken = tracing::field::debug(self.engine.time_started.elapsed()),
-        );
         self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
     }
     fn go_perft(&mut self, depth: u8) {

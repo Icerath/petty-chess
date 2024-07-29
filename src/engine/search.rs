@@ -51,14 +51,16 @@ impl Engine {
             final_best_moves = best_moves;
 
             let absolute_eval = alpha * self.board.active_colour.positive();
-            println!(
-                "{}",
-                UciResponse::Info(vec![
-                    Info::Depth(depth as u32),
-                    Info::Score(Score::Centipawns { cp: absolute_eval, bounds: None }),
-                    Info::Nodes(self.total_nodes),
-                ])
-            );
+            let info = Info {
+                depth: Some(depth as u32),
+                score: Some(Score::Centipawns { cp: absolute_eval, bounds: None }),
+                nodes: Some(self.total_nodes),
+                time: Some(self.time_started.elapsed()),
+                currmove: Some(final_best_moves[0]),
+                ..Info::default()
+            };
+            tracing::info!("{}", info);
+            println!("{}", UciResponse::Info(Box::new(info)));
         }
         final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])
     }
