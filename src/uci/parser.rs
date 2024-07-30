@@ -49,11 +49,12 @@ impl Uci {
                 }
                 "ucinewgame" => Some(Uci::Ucinewgame),
                 "position" => {
-                    let fen = match tokens.bump()?.as_str() {
-                        "startpos" => fen::STARTING_FEN.to_owned(),
-                        "fen" => tokens.fen()?.to_owned(),
+                    let fen = String::from(match tokens.bump()?.as_str() {
+                        "startpos" => fen::STARTING_FEN,
+                        "kiwipete" => fen::KIWIPETE,
+                        "fen" => tokens.fen()?,
                         _ => continue,
-                    };
+                    });
                     Some(Uci::Position { fen, moves: tokens.moves() })
                 }
                 "go" => Some(Uci::Go(Self::parse_go(&mut tokens))),

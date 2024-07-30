@@ -59,7 +59,7 @@ impl Engine {
                 currmove: Some(final_best_moves[0]),
                 ..Info::default()
             };
-            tracing::info!("{}", info);
+            tracing::info!("{info}");
             println!("{}", UciResponse::Info(Box::new(info)));
         }
         final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])

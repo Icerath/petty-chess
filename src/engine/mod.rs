@@ -55,11 +55,7 @@ impl Engine {
                 num_queens[piece.colour() as usize] += 1;
             }
         }
-        if num_queens[0] > 1 || num_queens[1] > 1 {
-            return 1.0;
-        }
-        let board = &self.board;
-        debug_assert!(sum <= default_sum, "{board:?}");
+        let sum = sum.min(default_sum);
         1.0 - (sum as f32 / default_sum as f32)
     }
 }
