@@ -5,8 +5,8 @@ impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], priority_moves: &[Move]) {
         moves.sort_by_cached_key(|&mov| {
             let endgame = self.endgame();
-
             let mut score = 0;
+
             score += priority_moves.contains(&mov) as i32 * i16::MAX as i32;
 
             let piece = self.board[mov.from()].unwrap_or(Piece::DEFAULT);
@@ -17,12 +17,12 @@ impl Engine {
 
             if let Some(target_piece) = self.board[mov.to()] {
                 if piece.kind() != PieceKind::King {
-                    score += 5 * abs_piece_value(target_piece.kind());
+                    score += 4 * abs_piece_value(target_piece.kind()) - abs_piece_value(piece.kind());
                 }
             };
 
             if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-                score += 10 * abs_piece_value(kind);
+                score += abs_piece_value(kind);
             };
 
             -score

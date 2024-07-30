@@ -58,4 +58,9 @@ impl Engine {
         let sum = sum.min(default_sum);
         1.0 - (sum as f32 / default_sum as f32)
     }
+    #[inline]
+    #[must_use]
+    pub fn infinity(&self) -> i32 {
+        i32::MAX - 256
+    }
 }

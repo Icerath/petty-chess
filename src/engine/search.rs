@@ -16,7 +16,7 @@ impl Engine {
         self.effective_nodes = 0;
         self.force_cancelled = false;
 
-        let beta = i32::MAX;
+        let beta = self.infinity();
 
         let mut moves = self.board.gen_legal_moves();
         let mut final_best_moves = Moves::new();
@@ -30,7 +30,6 @@ impl Engine {
                 let unmake = self.board.make_move(mov);
                 let score = -self.negamax(-beta, beta, depth - 1);
                 self.board.unmake_move(unmake);
-
                 if self.is_cancelled() {
                     if depth == 1 {
                         dbg!("Cancelled during depth 1 search");
@@ -61,6 +60,11 @@ impl Engine {
             };
             tracing::info!("{info}");
             println!("{}", UciResponse::Info(Box::new(info)));
+
+            // Stop searching if we encounter a checkmate.
+            if alpha > beta {
+                break;
+            }
         }
         final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])
     }
@@ -75,6 +79,10 @@ impl Engine {
 
         let mut moves = self.board.gen_legal_moves();
         self.order_moves(&mut moves, &[]);
+
+        if moves.is_empty() {
+            return -(self.infinity() + depth as i32);
+        }
 
         for mov in moves {
             let unmake = self.board.make_move(mov);
