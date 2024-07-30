@@ -50,7 +50,7 @@ impl<'a> MoveGenerator<'a> {
         }
     }
     #[must_use]
-    pub fn gen_moves(mut self) -> Moves {
+    pub fn gen_moves(&mut self) -> Moves {
         let mut moves = self.pseudolegal_moves();
         if !self.is_pseudolegal {
             moves.retain(|&mut mov| {

@@ -49,10 +49,18 @@ impl Engine {
             self.depth_reached = depth;
             final_best_moves = best_moves;
 
+            let is_checkmate = alpha > beta;
+
             let absolute_eval = alpha * self.board.active_colour.positive();
+            let score = if is_checkmate {
+                Score::Mate { mate: alpha - self.infinity() }
+            } else {
+                Score::Centipawns { cp: absolute_eval, bounds: None }
+            };
+
             let info = Info {
                 depth: Some(depth as u32),
-                score: Some(Score::Centipawns { cp: absolute_eval, bounds: None }),
+                score: Some(score),
                 nodes: Some(self.total_nodes),
                 time: Some(self.time_started.elapsed()),
                 currmove: Some(final_best_moves[0]),
@@ -61,8 +69,7 @@ impl Engine {
             tracing::info!("{info}");
             println!("{}", UciResponse::Info(Box::new(info)));
 
-            // Stop searching if we encounter a checkmate.
-            if alpha > beta {
+            if is_checkmate {
                 break;
             }
         }
@@ -77,12 +84,16 @@ impl Engine {
             return self.negamax_search_all_captures(alpha, beta);
         }
 
-        let mut moves = self.board.gen_legal_moves();
-        self.order_moves(&mut moves, &[]);
+        let mut movegen = MoveGenerator::new(&mut self.board);
+        let mut moves = movegen.gen_moves();
 
         if moves.is_empty() {
-            return -(self.infinity() + depth as i32);
+            if movegen.attack_map().contains(self.board.active_king_pos) {
+                return -(self.infinity() + depth as i32);
+            }
+            return 0;
         }
+        self.order_moves(&mut moves, &[]);
 
         for mov in moves {
             let unmake = self.board.make_move(mov);
