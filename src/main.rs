@@ -100,6 +100,7 @@ impl Application {
         let best_move = self.engine.search();
         self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
         tracing::info!("Time taken: {:?}", start.elapsed());
+        tracing::info!("Num transpositions: {}", self.engine.transposition_table.num_hits);
     }
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();

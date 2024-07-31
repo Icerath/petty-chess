@@ -69,7 +69,6 @@ impl Engine {
                 ..Info::default()
             };
             tracing::info!("{info}");
-            tracing::debug!("TTable hits: {}", self.transposition_table.num_hits);
             println!("{}", UciResponse::Info(Box::new(info)));
 
             if is_checkmate {
