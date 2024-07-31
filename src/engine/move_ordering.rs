@@ -19,8 +19,6 @@ impl Engine {
                 if piece.kind() != PieceKind::King {
                     score += 4 * abs_piece_value(target_piece.kind(), endgame)
                         - abs_piece_value(piece.kind(), endgame);
-                    score += 4 * abs_piece_value(target_piece.kind(), endgame)
-                        - abs_piece_value(piece.kind(), endgame);
                 }
             };
 

@@ -6,22 +6,34 @@ impl Engine {
     }
     pub fn raw_evaluation(&mut self) -> i32 {
         self.total_nodes += 1;
-        let mut sum = 0;
         let endgame = self.endgame();
-        for pos in (0..64).map(Pos) {
-            let Some(piece) = self.board[pos] else { continue };
-            sum += piece_value(piece, endgame);
-            sum += piece_square_value(pos, piece, endgame);
-        }
-        sum
+
+        self.board
+            .piece_positions()
+            .map(|(pos, piece)| piece_value_at_square(pos, piece, endgame))
+            .sum()
     }
 }
 
+#[inline]
+#[must_use]
+pub fn piece_value_at_square(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+    piece_value(piece, endgame) + piece_square_value(pos, piece, endgame)
+}
+
+#[inline]
 #[must_use]
 pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
     abs_piece_value(piece.kind(), endgame) * piece.colour().positive()
 }
 
+#[inline]
+#[must_use]
+pub fn abs_piece_value_at_square(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+    abs_piece_value(piece.kind(), endgame) + abs_piece_square_value(pos, piece, endgame)
+}
+
+#[inline]
 #[must_use]
 pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
     let mg = [82, 337, 365, 477, 1025, 0][piece as usize];
@@ -29,11 +41,13 @@ pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
     (mg as f32 * (1.0 - endgame) + eg as f32 * endgame) as i32
 }
 
+#[inline]
 #[must_use]
 pub fn piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
     abs_piece_square_value(pos, piece, endgame) * piece.colour().positive()
 }
 
+#[inline]
 #[must_use]
 pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
     let index = if piece.is_white() {

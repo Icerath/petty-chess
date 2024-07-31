@@ -36,7 +36,8 @@ impl Colour {
 
 #[rustfmt::skip]
 impl From<bool> for Colour {
-    #[inline]fn from(value: bool) -> Self {
+    #[inline]
+    fn from(value: bool) -> Self {
         if value { Colour::White } else { Colour::Black }
     }
 }

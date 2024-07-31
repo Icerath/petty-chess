@@ -9,7 +9,6 @@ bitflags::bitflags! {
         const BOTH_WHITE = Self::WHITE_KING_SIDE.bits() | Self::WHITE_QUEEN_SIDE.bits();
         const BOTH_BLACK = Self::BLACK_KING_SIDE.bits() | Self::BLACK_QUEEN_SIDE.bits();
     }
-
 }
 
 #[test]
