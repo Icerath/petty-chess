@@ -10,7 +10,7 @@ impl Engine {
         let endgame = self.endgame();
         for pos in (0..64).map(Pos) {
             let Some(piece) = self.board[pos] else { continue };
-            sum += piece_value(piece);
+            sum += piece_value(piece, endgame);
             sum += piece_square_value(pos, piece, endgame);
         }
         sum
@@ -18,20 +18,15 @@ impl Engine {
 }
 
 #[must_use]
-pub fn piece_value(piece: Piece) -> i32 {
-    abs_piece_value(piece.kind()) * piece.colour().positive()
+pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
+    abs_piece_value(piece.kind(), endgame) * piece.colour().positive()
 }
 
 #[must_use]
-pub fn abs_piece_value(piece: PieceKind) -> i32 {
-    match piece {
-        PieceKind::Pawn => 100,
-        PieceKind::Knight => 320,
-        PieceKind::Bishop => 330,
-        PieceKind::Rook => 500,
-        PieceKind::Queen => 900,
-        PieceKind::King => 20000,
-    }
+pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
+    let mg = [82, 337, 365, 477, 1025, 0][piece as usize];
+    let eg = [94, 281, 297, 512, 936, 0][piece as usize];
+    (mg as f32 * (1.0 - endgame) + eg as f32 * endgame) as i32
 }
 
 #[must_use]
@@ -54,6 +49,8 @@ pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
 
 #[rustfmt::skip]
 mod square_tables {
+    
+
     pub const MG: [[i32; 64]; 6] = [MG_PAWN, MG_KNIGHT, MG_BISHOP, MG_ROOK, MG_QUEEN, MG_KING];
     pub const EG: [[i32; 64]; 6] = [EG_PAWN, EG_KNIGHT, EG_BISHOP, EG_ROOK, EG_QUEEN, EG_KING];
 
