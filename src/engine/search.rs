@@ -53,7 +53,7 @@ impl Engine {
 
             let absolute_eval = alpha * self.board.active_colour.positive();
             let score = if is_checkmate {
-                Score::Mate { mate: depth as i32 }
+                Score::Mate { mate: depth as i32 / 2 }
             } else {
                 Score::Centipawns { cp: absolute_eval, bounds: None }
             };
