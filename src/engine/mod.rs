@@ -61,6 +61,6 @@ impl Engine {
     #[inline]
     #[must_use]
     pub fn infinity(&self) -> i32 {
-        i32::MAX - 256
+        i32::MAX
     }
 }

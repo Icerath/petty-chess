@@ -49,11 +49,11 @@ impl Engine {
             self.depth_reached = depth;
             final_best_moves = best_moves;
 
-            let is_checkmate = alpha >= beta;
+            let is_checkmate = alpha.abs() == self.infinity();
 
             let absolute_eval = alpha * self.board.active_colour.positive();
             let score = if is_checkmate {
-                Score::Mate { mate: depth as i32 / 2 }
+                Score::Mate { mate: depth as i32 / 2 * alpha.signum() }
             } else {
                 Score::Centipawns { cp: absolute_eval, bounds: None }
             };
