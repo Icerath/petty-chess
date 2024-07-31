@@ -266,28 +266,28 @@ impl<'a> MoveGenerator<'a> {
         if self.board.white_to_play() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
                 && self.can_castle_through([Pos::F1, Pos::G1])
-                && self.board[Pos::E2] != Some(Piece::new(Pawn, Black))
+                && self.board[Pos::E2] != Some(Black + Pawn)
             {
                 self.moves.push(Move::new(from, Pos::G1, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE)
                 && self.can_castle_through([Pos::C1, Pos::D1])
                 && self.board[Pos::B1].is_none()
-                && self.board[Pos::E2] != Some(Piece::new(Pawn, Black))
+                && self.board[Pos::E2] != Some(Black + Pawn)
             {
                 self.moves.push(Move::new(from, Pos::C1, MoveFlags::QueenCastle));
             }
         } else {
             if self.board.can_castle.contains(CanCastle::BLACK_KING_SIDE)
                 && self.can_castle_through([Pos::F8, Pos::G8])
-                && self.board[Pos::E7] != Some(Piece::new(Pawn, White))
+                && self.board[Pos::E7] != Some(White + Pawn)
             {
                 self.moves.push(Move::new(from, Pos::G8, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE)
                 && self.can_castle_through([Pos::C8, Pos::D8])
                 && self.board[Pos::B8].is_none()
-                && self.board[Pos::E7] != Some(Piece::new(Pawn, White))
+                && self.board[Pos::E7] != Some(White + Pawn)
             {
                 self.moves.push(Move::new(from, Pos::C8, MoveFlags::QueenCastle));
             }

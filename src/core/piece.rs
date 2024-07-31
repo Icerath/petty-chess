@@ -1,5 +1,5 @@
 use core::fmt;
-use std::num::NonZero;
+use std::{num::NonZero, ops::Add};
 
 use crate::prelude::*;
 
@@ -86,6 +86,22 @@ impl Piece {
     #[inline]
     pub fn is_black(self) -> bool {
         self.colour().is_black()
+    }
+}
+
+impl Add<Colour> for PieceKind {
+    type Output = Piece;
+    #[inline]
+    fn add(self, colour: Colour) -> Self::Output {
+        Piece::new(self, colour)
+    }
+}
+
+impl Add<PieceKind> for Colour {
+    type Output = Piece;
+    #[inline]
+    fn add(self, kind: PieceKind) -> Self::Output {
+        Piece::new(kind, self)
     }
 }
 

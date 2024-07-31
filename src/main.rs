@@ -96,9 +96,11 @@ impl Application {
         // eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {
+        let start = Instant::now();
         self.set_time_available(command.time_control);
         let best_move = self.engine.search();
         self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
+        tracing::info!("Time taken: {:?}", start.elapsed());
     }
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
@@ -113,7 +115,7 @@ impl Application {
             TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
                 let (total, incr) =
                     if self.engine.board.white_to_play() { (wtime, wincr) } else { (btime, bincr) };
-                let estimated_total_moves = i32::from(30.max(self.engine.board.fullmove_counter + 10));
+                let estimated_total_moves = i32::from(35.max(self.engine.board.fullmove_counter + 10));
                 let moves_to_end = estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
                 let time_per_move = total.div_f32(moves_to_end as f32);
                 self.engine.time_available = (time_per_move + incr.mul_f32(0.9)).min(total);

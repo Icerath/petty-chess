@@ -106,7 +106,7 @@ impl Board {
         match mov.flags() {
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
-                debug_assert_eq!(self[back], Some(Piece::new(Pawn, !self.active_colour)));
+                debug_assert_eq!(self[back], Some(!self.active_colour + Pawn));
                 unmake.captured_piece = self[back];
                 self[back] = None;
             }
@@ -160,7 +160,7 @@ impl Board {
             | MoveFlags::RookPromotionCapture
             | MoveFlags::QueenPromotion
             | MoveFlags::QueenPromotionCapture => {
-                self[mov.to()] = Some(Piece::new(Pawn, self.active_colour));
+                self[mov.to()] = Some(self.active_colour + Pawn);
             }
             _ => {}
         }

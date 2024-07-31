@@ -49,11 +49,11 @@ impl Engine {
             self.depth_reached = depth;
             final_best_moves = best_moves;
 
-            let is_checkmate = alpha > beta;
+            let is_checkmate = alpha >= beta;
 
             let absolute_eval = alpha * self.board.active_colour.positive();
             let score = if is_checkmate {
-                Score::Mate { mate: alpha - self.infinity() }
+                Score::Mate { mate: depth as i32 }
             } else {
                 Score::Centipawns { cp: absolute_eval, bounds: None }
             };
@@ -89,7 +89,7 @@ impl Engine {
 
         if moves.is_empty() {
             if movegen.attack_map().contains(self.board.active_king_pos) {
-                return -(self.infinity() + depth as i32);
+                return -self.infinity();
             }
             return 0;
         }
