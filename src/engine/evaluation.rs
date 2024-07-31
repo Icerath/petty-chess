@@ -8,10 +8,7 @@ impl Engine {
         self.total_nodes += 1;
         let endgame = self.endgame();
 
-        self.board
-            .piece_positions()
-            .map(|(pos, piece)| piece_value_at_square(pos, piece, endgame))
-            .sum()
+        self.board.piece_positions().map(|(pos, piece)| piece_value_at_square(pos, piece, endgame)).sum()
     }
 }
 
@@ -50,11 +47,8 @@ pub fn piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
 #[inline]
 #[must_use]
 pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
-    let index = if piece.is_white() {
-        Pos::new(Rank(7 - pos.rank().0), pos.file()).0 as usize
-    } else {
-        pos.0 as usize
-    };
+    let index =
+        if piece.is_white() { Pos::new(Rank(7 - pos.rank().0), pos.file()).0 as usize } else { pos.0 as usize };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 
@@ -63,8 +57,6 @@ pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
 
 #[rustfmt::skip]
 mod square_tables {
-    
-
     pub const MG: [[i32; 64]; 6] = [MG_PAWN, MG_KNIGHT, MG_BISHOP, MG_ROOK, MG_QUEEN, MG_KING];
     pub const EG: [[i32; 64]; 6] = [EG_PAWN, EG_KNIGHT, EG_BISHOP, EG_ROOK, EG_QUEEN, EG_KING];
 

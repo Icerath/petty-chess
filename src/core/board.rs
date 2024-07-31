@@ -42,7 +42,7 @@ pub struct Board {
 pub struct Cached {
     pub active_king_pos: Pos,
     pub inactive_king_pos: Pos,
-
+    pub zobrist: Zobrist,
     pub piece_bitboards: [[Bitboard; 6]; 2],
 }
 
@@ -62,7 +62,16 @@ impl Board {
         self.seen_positions.get(&(Pieces(self.pieces), self.active_colour)).copied().unwrap_or(0)
     }
     pub fn create_cache(&mut self) {
+        self.zobrist = Zobrist::default();
+        if self.black_to_play() {
+            self.zobrist.xor_side_to_move();
+        }
+        self.cached.zobrist.xor_can_castle(self.can_castle);
+        if let Some(square) = self.en_passant_target_square {
+            self.cached.zobrist.xor_en_passant(square);
+        }
         for (pos, piece) in self.piece_positions() {
+            self.zobrist.xor_piece(pos, piece);
             let PieceKind::King = piece.kind() else { continue };
             if piece.colour() == self.active_colour {
                 self.active_king_pos = pos;
@@ -81,7 +90,11 @@ impl Board {
             can_castle: self.can_castle,
             en_passant_target_square: self.en_passant_target_square,
         };
+        if let Some(square) = self.en_passant_target_square {
+            self.zobrist.xor_en_passant(square);
+        }
         self.en_passant_target_square = None;
+        self.cached.zobrist.xor_can_castle(self.can_castle);
         if from_piece.kind() == PieceKind::King {
             self.active_king_pos = mov.to();
             if self.white_to_play() {
@@ -100,47 +113,62 @@ impl Board {
             }
         }
 
+        self.cached.zobrist.xor_can_castle(self.can_castle);
+        self.zobrist.xor_side_to_move();
+        self.zobrist.xor_piece(mov.from(), from_piece);
+        self.zobrist.xor_piece(mov.to(), from_piece);
+        if let Some(piece) = self[mov.to()] {
+            self.zobrist.xor_piece(mov.to(), piece);
+        }
+
         self[mov.from()] = None;
         self[mov.to()] = Some(from_piece);
 
         match mov.flags() {
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
-                debug_assert_eq!(self[back], Some(!self.active_colour + Pawn));
                 unmake.captured_piece = self[back];
+                self.cached.zobrist.xor_piece(back, self[back].unwrap());
                 self[back] = None;
             }
-            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Pos::A1, Pos::D1),
-            MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
-            MoveFlags::KingCastle if self.white_to_play() => self.swap(Pos::F1, Pos::H1),
-            MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
+            MoveFlags::QueenCastle if self.white_to_play() => {
+                self.swap(Pos::A1, Pos::D1);
+            }
+            MoveFlags::QueenCastle => {
+                self.swap(Pos::A8, Pos::D8);
+            }
+            MoveFlags::KingCastle if self.white_to_play() => {
+                self.swap(Pos::F1, Pos::H1);
+            }
+            MoveFlags::KingCastle => {
+                self.swap(Pos::F8, Pos::H8);
+            }
             MoveFlags::DoublePawnPush => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
                 self.en_passant_target_square = Some(back);
+                self.zobrist.xor_en_passant(back);
             }
-            MoveFlags::KnightPromotion | MoveFlags::KnightPromotionCapture => {
-                self[mov.to()] = Some(from_piece.with_kind(PieceKind::Knight));
+            flags if flags.promotion().is_some() => {
+                let piece = self.active_colour + PieceKind::from(flags.promotion().unwrap());
+                self[mov.to()] = Some(piece);
+                self.cached.zobrist.xor_piece(mov.to(), from_piece);
+                self.cached.zobrist.xor_piece(mov.to(), piece);
             }
-            MoveFlags::BishopPromotion | MoveFlags::BishopPromotionCapture => {
-                self[mov.to()] = Some(from_piece.with_kind(PieceKind::Bishop));
-            }
-            MoveFlags::RookPromotion | MoveFlags::RookPromotionCapture => {
-                self[mov.to()] = Some(from_piece.with_kind(PieceKind::Rook));
-            }
-            MoveFlags::QueenPromotion | MoveFlags::QueenPromotionCapture => {
-                self[mov.to()] = Some(from_piece.with_kind(PieceKind::Queen));
-            }
-            _ => {}
+            MoveFlags::Quiet | MoveFlags::Capture => {}
+            _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
+        let cached = self.cached.clone();
+        self.create_cache();
+        if self.cached != cached {
+            self.unmake_move(unmake);
+            panic!("fen: {self:?} - {mov:?}");
+        }
+
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
         self.decrement_ply();
-        self.cached = unmake.cached;
-        self.en_passant_target_square = unmake.en_passant_target_square;
-        self.can_castle = unmake.can_castle;
-
         let mov = unmake.mov;
 
         match mov.flags() {
@@ -171,6 +199,10 @@ impl Board {
         } else {
             self[mov.to()] = unmake.captured_piece;
         }
+
+        self.cached = unmake.cached;
+        self.en_passant_target_square = unmake.en_passant_target_square;
+        self.can_castle = unmake.can_castle;
     }
     #[inline]
     pub fn increment_ply(&mut self) {
@@ -207,6 +239,14 @@ impl Board {
 impl Board {
     #[inline]
     pub fn swap(&mut self, lhs: Pos, rhs: Pos) {
+        if let Some(piece) = self[lhs] {
+            self.zobrist.xor_piece(lhs, piece);
+            self.zobrist.xor_piece(rhs, piece);
+        }
+        if let Some(piece) = self[rhs] {
+            self.zobrist.xor_piece(lhs, piece);
+            self.zobrist.xor_piece(rhs, piece);
+        }
         self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
     }
     #[inline]

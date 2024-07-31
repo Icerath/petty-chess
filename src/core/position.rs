@@ -4,6 +4,11 @@ use std::{fmt, str::FromStr};
 pub struct Pos(pub i8);
 
 impl Pos {
+    #[inline]
+    #[must_use]
+    pub fn all() -> impl ExactSizeIterator<Item = Self> {
+        (0..64).map(Self)
+    }
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
@@ -85,11 +90,7 @@ impl std::error::Error for InvalidPos {}
 impl FromStr for Pos {
     type Err = InvalidPos;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES
-            .iter()
-            .position(|&square| square == input)
-            .map(|index| Pos(index as i8))
-            .ok_or(InvalidPos)
+        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as i8)).ok_or(InvalidPos)
     }
 }
 

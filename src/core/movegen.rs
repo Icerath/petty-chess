@@ -89,8 +89,7 @@ impl<'a> MoveGenerator<'a> {
                     }
                 }
                 PieceKind::Knight => {
-                    for (file, rank) in
-                        [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+                    for (file, rank) in [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
                     {
                         if let Some(to) = from.add_file(file).and_then(|from| from.add_rank(rank)) {
                             attacked_squares.insert(to);
@@ -354,62 +353,51 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
     squares
 }
 
-#[test]
-fn perft_start() {
-    let results = [1, 20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
-    for (depth, &result) in results.iter().enumerate() {
-        let count = perft(&mut Board::start_pos(), depth as u8);
-        assert_eq!(count, result, "depth: {depth}");
-    }
-}
-
-#[test]
-fn perft_kiwi() {
-    let results = [1, 48, 2_039, 97_862, 4_085_603, 193_690_690];
-    for (depth, &result) in results.iter().enumerate() {
-        let count = perft(&mut Board::kiwipete(), depth as u8);
-        assert_eq!(count, result, "depth: {depth}");
-    }
-}
-#[test]
-fn perft_position_3() {
-    let results = [1, 14, 191, 2_812, 43_238, 674_624, 11_030_083];
-    for (depth, &result) in results.iter().enumerate() {
-        let count = perft(&mut Board::perft_position_3(), depth as u8);
-        assert_eq!(count, result, "depth: {depth}");
-    }
-}
-
-#[test]
-fn perft_position_4() {
-    let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*706_045_033*/];
-    for (depth, &result) in results.iter().enumerate() {
-        let count = perft(&mut Board::perft_position_4(), depth as u8);
-        assert_eq!(count, result, "depth: {depth}");
-    }
-}
-
-#[test]
-fn perft_talk() {
-    let results = [1, 44, 1_486, 62_379, 2_103_487, 89_941_194];
-    for (depth, &result) in results.iter().enumerate() {
-        let count = perft(&mut Board::perft_position_5(), depth as u8);
-        assert_eq!(count, result, "depth: {depth}");
-    }
-}
-
 #[cfg(test)]
-fn perft(board: &mut Board, depthleft: u8) -> u64 {
-    if depthleft == 0 {
-        return 1;
-    } else if depthleft == 1 {
-        return board.gen_legal_moves().len() as u64;
+mod tests {
+    use super::*;
+
+    #[test]
+    fn perft_start() {
+        let results = [1, 20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
+        for (depth, &result) in results.iter().enumerate() {
+            let count = Board::start_pos().run_perft(depth as u8);
+            assert_eq!(count, result, "depth: {depth}");
+        }
     }
-    let mut count = 0;
-    for mov in board.gen_legal_moves() {
-        let unmake = board.make_move(mov);
-        count += perft(board, depthleft - 1);
-        board.unmake_move(unmake);
+
+    #[test]
+    fn perft_kiwi() {
+        let results = [1, 48, 2_039, 97_862, 4_085_603, 193_690_690];
+        for (depth, &result) in results.iter().enumerate() {
+            let count = Board::kiwipete().run_perft(depth as u8);
+            assert_eq!(count, result, "depth: {depth}");
+        }
     }
-    count
+    #[test]
+    fn perft_position_3() {
+        let results = [1, 14, 191, 2_812, 43_238, 674_624, 11_030_083];
+        for (depth, &result) in results.iter().enumerate() {
+            let count = Board::perft_position_3().run_perft(depth as u8);
+            assert_eq!(count, result, "depth: {depth}");
+        }
+    }
+
+    #[test]
+    fn perft_position_4() {
+        let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*706_045_033*/];
+        for (depth, &result) in results.iter().enumerate() {
+            let count = Board::perft_position_4().run_perft(depth as u8);
+            assert_eq!(count, result, "depth: {depth}");
+        }
+    }
+
+    #[test]
+    fn perft_talk() {
+        let results = [1, 44, 1_486, 62_379, 2_103_487];
+        for (depth, &result) in results.iter().enumerate() {
+            let count = Board::perft_position_5().run_perft(depth as u8);
+            assert_eq!(count, result, "depth: {depth}");
+        }
+    }
 }

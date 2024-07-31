@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use rand::prelude::*;
 
-use super::Engine;
+use super::{transposition::Nodetype, Engine};
 use crate::{
     prelude::*,
     uci::{Info, Score, UciResponse},
@@ -11,12 +11,14 @@ use crate::{
 impl Engine {
     #[allow(clippy::unnecessary_wraps)]
     pub fn search(&mut self) -> Move {
+        self.transposition_table.clear();
         self.time_started = Instant::now();
         self.total_nodes = 0;
         self.effective_nodes = 0;
         self.force_cancelled = false;
+        self.transposition_table.num_hits = 0;
 
-        let beta = self.infinity();
+        let beta = Self::infinity();
 
         let mut moves = self.board.gen_legal_moves();
         let mut final_best_moves = Moves::new();
@@ -49,7 +51,7 @@ impl Engine {
             self.depth_reached = depth;
             final_best_moves = best_moves;
 
-            let is_checkmate = alpha.abs() == self.infinity();
+            let is_checkmate = alpha.abs() == Self::mate_score();
 
             let absolute_eval = alpha * self.board.active_colour.positive();
             let score = if is_checkmate {
@@ -67,6 +69,7 @@ impl Engine {
                 ..Info::default()
             };
             tracing::info!("{info}");
+            tracing::debug!("TTable hits: {}", self.transposition_table.num_hits);
             println!("{}", UciResponse::Info(Box::new(info)));
 
             if is_checkmate {
@@ -80,6 +83,9 @@ impl Engine {
         if self.board.seen_position() > 1 {
             return 0;
         }
+        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
+            return eval;
+        }
         if depth == 0 {
             return self.negamax_search_all_captures(alpha, beta);
         }
@@ -89,30 +95,50 @@ impl Engine {
 
         if moves.is_empty() {
             if movegen.attack_map().contains(self.board.active_king_pos) {
-                return -self.infinity();
+                return -Self::mate_score();
             }
             return 0;
         }
         self.order_moves(&mut moves, &[]);
+        let mut nodetype = Nodetype::Alpha;
 
+        let curr_nodes = self.total_nodes;
         for mov in moves {
             let unmake = self.board.make_move(mov);
             let score = -self.negamax(-beta, -alpha, depth - 1);
-            self.board.unmake_move(unmake);
 
+            self.board.unmake_move(unmake);
             if self.is_cancelled() {
                 return alpha;
             }
 
             if score >= beta {
+                self.transposition_table.insert(
+                    &self.board,
+                    depth,
+                    beta,
+                    Nodetype::Beta,
+                    self.total_nodes - curr_nodes,
+                );
                 return beta;
+            }
+            if score > alpha {
+                alpha = score;
+                nodetype = Nodetype::Exact;
             }
             alpha = alpha.max(score);
         }
+        self.transposition_table.insert(&self.board, depth, alpha, nodetype, self.total_nodes - curr_nodes);
         alpha
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
+        if self.board.seen_position() > 1 {
+            return 0;
+        }
+        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, 0) {
+            return eval;
+        }
         let mut moves = self.board.gen_capture_moves();
         self.order_moves(&mut moves, &[]);
 

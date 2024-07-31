@@ -87,8 +87,7 @@ impl Application {
             let mov = *legal_moves
                 .iter()
                 .find(|m| {
-                    (m.from(), m.to(), m.flags().promotion())
-                        == (mov.from(), mov.to(), mov.flags().promotion())
+                    (m.from(), m.to(), m.flags().promotion()) == (mov.from(), mov.to(), mov.flags().promotion())
                 })
                 .unwrap();
             self.engine.board.make_move(mov);
@@ -104,7 +103,7 @@ impl Application {
     }
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
-        let total = perft(&mut self.engine.board, depth, true);
+        let total = perft(&mut self.engine.board, depth);
         eprintln!("\nTime taken: {:?}", start.elapsed());
         eprintln!("Nodes searched: {total}");
     }
@@ -126,27 +125,17 @@ impl Application {
     }
 }
 
-fn perft(board: &mut Board, depthleft: u8, print: bool) -> u64 {
-    if depthleft == 0 {
-        return 1;
-    } else if depthleft == 1 && !print {
-        return board.gen_legal_moves().len() as u64;
-    }
+fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.gen_legal_moves();
-    if print {
-        moves.sort_by_key(|mov| mov.from().0 + mov.to().0);
-    }
+    moves.sort_by_key(|mov| mov.from().0 + mov.to().0);
 
     for mov in moves {
         let unmake = board.make_move(mov);
-        let count = perft(board, depthleft - 1, false);
+        let count = board.run_perft(depth - 1);
         total += count;
         board.unmake_move(unmake);
-
-        if print {
-            eprintln!("{mov}: {count}");
-        }
+        eprintln!("{mov}: {count}");
     }
     total
 }

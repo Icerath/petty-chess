@@ -1,8 +1,12 @@
 pub mod evaluation;
 mod move_ordering;
+mod score;
 mod search;
+pub mod transposition;
 
 use std::time::{Duration, Instant};
+
+use transposition::TranspositionTable;
 
 use crate::prelude::*;
 
@@ -14,6 +18,7 @@ pub struct Engine {
     pub total_nodes: u64,
     pub effective_nodes: u64,
     pub force_cancelled: bool,
+    pub transposition_table: TranspositionTable,
 }
 
 impl Engine {
@@ -27,6 +32,7 @@ impl Engine {
             total_nodes: 0,
             effective_nodes: 0,
             force_cancelled: false,
+            transposition_table: TranspositionTable::default(),
         }
     }
 
@@ -60,7 +66,12 @@ impl Engine {
     }
     #[inline]
     #[must_use]
-    pub fn infinity(&self) -> i32 {
+    pub const fn infinity() -> i32 {
+        i32::MAX - 1
+    }
+    #[inline]
+    #[must_use]
+    pub const fn mate_score() -> i32 {
         i32::MAX
     }
 }

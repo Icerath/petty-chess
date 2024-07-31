@@ -19,6 +19,7 @@ pub mod prelude {
             piece::{Piece, PieceKind},
             position::{File, Pos, Rank},
             r#move::Move,
+            zobrist::Zobrist,
         },
         engine::Engine,
     };
