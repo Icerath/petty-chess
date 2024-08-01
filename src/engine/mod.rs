@@ -6,6 +6,7 @@ pub mod transposition;
 
 use std::time::{Duration, Instant};
 
+use score::Eval;
 use transposition::TranspositionTable;
 
 use crate::prelude::*;
@@ -67,11 +68,11 @@ impl Engine {
     #[inline]
     #[must_use]
     pub const fn infinity() -> i32 {
-        i32::MAX - 1
+        Eval::INFINITY.0
     }
     #[inline]
     #[must_use]
     pub const fn mate_score() -> i32 {
-        i32::MAX
+        Eval::MATE_EVAL.0
     }
 }

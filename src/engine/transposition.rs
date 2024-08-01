@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::score::Eval;
 use crate::prelude::*;
 
 #[derive(Default)]
@@ -42,13 +43,16 @@ impl TranspositionTable {
             || (entry.nodetype == Nodetype::Alpha && entry.eval <= alpha)
             || (entry.nodetype == Nodetype::Beta && entry.eval >= beta)
         {
-            self.num_hits += entry.treesize;
+            self.num_hits += 1;
             return Some(entry);
         }
         None
     }
     #[inline]
     pub fn insert(&mut self, board: &Board, depth: u8, eval: i32, nodetype: Nodetype, treesize: u64) {
+        if eval.abs() == Eval::MATE_EVAL.0 {
+            return;
+        }
         let entry = Entry { board: CoreBoard::from(board), eval, nodetype, depth, treesize };
         self.inner.insert(board.zobrist, entry);
     }

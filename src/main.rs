@@ -115,10 +115,10 @@ impl Application {
             TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
                 let (total, incr) =
                     if self.engine.board.white_to_play() { (wtime, wincr) } else { (btime, bincr) };
-                let estimated_total_moves = i32::from(35.max(self.engine.board.fullmove_counter + 10));
+                let estimated_total_moves = i32::from(50.max(self.engine.board.fullmove_counter + 10));
                 let moves_to_end = estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
                 let time_per_move = total.div_f32(moves_to_end as f32);
-                self.engine.time_available = (time_per_move + incr.mul_f32(0.9)).min(total);
+                self.engine.time_available = (time_per_move + incr).min(total);
             }
             TimeControl::MoveTime(time) => self.engine.time_available = time,
             TimeControl::Infinite => self.engine.time_available = Duration::MAX,

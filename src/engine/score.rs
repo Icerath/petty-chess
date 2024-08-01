@@ -8,8 +8,8 @@ use std::{
 pub struct Eval(pub i32);
 
 impl Eval {
-    pub const INFINITY: Self = Self(i32::MAX - 1);
-    pub const MATE_EVAL: Self = Self(i32::MAX);
+    pub const INFINITY: Self = Self(i32::MAX);
+    pub const MATE_EVAL: Self = Self(i32::MAX - 1);
 
     const NEG_INF: Self = Self(-Self::INFINITY.0);
     const NEG_MATE: Self = Self(-Self::MATE_EVAL.0);

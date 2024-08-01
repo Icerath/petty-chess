@@ -15,7 +15,7 @@ impl Engine {
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
 
-        let beta = Self::infinity();
+        let beta = Self::mate_score();
 
         let mut moves = self.board.gen_legal_moves();
         let mut final_best_moves = Moves::new();
@@ -24,7 +24,9 @@ impl Engine {
             self.order_moves(&mut moves, &final_best_moves);
             let mut best_moves = Moves::new();
             let mut alpha = -beta;
+            let mut node_type = Nodetype::Alpha;
 
+            let curr_nodes = self.total_nodes;
             for &mov in &moves {
                 let unmake = self.board.make_move(mov);
                 let score = -self.negamax(-beta, beta, depth - 1);
@@ -39,8 +41,25 @@ impl Engine {
                 if score >= alpha {
                     best_moves.push(mov);
                     alpha = score;
+                    node_type = Nodetype::Exact;
+                }
+                if score >= beta {
+                    self.transposition_table.insert(
+                        &self.board,
+                        depth,
+                        beta,
+                        Nodetype::Beta,
+                        self.total_nodes - curr_nodes,
+                    );
                 }
             }
+            self.transposition_table.insert(
+                &self.board,
+                depth,
+                alpha,
+                node_type,
+                self.total_nodes - curr_nodes,
+            );
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
             final_best_moves = best_moves;
