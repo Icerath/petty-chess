@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use rustc_hash::FxHashMap;
 
-use super::board::{self, Cached};
+use super::board::Cached;
 use crate::prelude::*;
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -127,7 +127,7 @@ impl Board {
             halfmove_clock,
             fullmove_counter,
             cached: Cached::default(),
-            seen_positions: FxHashMap::from_iter([((board::Pieces(pieces), active_colour), 1)]),
+            seen_positions: FxHashMap::default(),
         };
         board.create_cache();
         Some(board)

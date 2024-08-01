@@ -1,7 +1,5 @@
 use std::time::Instant;
 
-use rand::prelude::*;
-
 use super::{transposition::Nodetype, Engine};
 use crate::{
     prelude::*,
@@ -11,7 +9,6 @@ use crate::{
 impl Engine {
     #[allow(clippy::unnecessary_wraps)]
     pub fn search(&mut self) -> Move {
-        self.transposition_table.clear();
         self.time_started = Instant::now();
         self.total_nodes = 0;
         self.effective_nodes = 0;
@@ -33,9 +30,6 @@ impl Engine {
                 let score = -self.negamax(-beta, beta, depth - 1);
                 self.board.unmake_move(unmake);
                 if self.is_cancelled() {
-                    if depth == 1 {
-                        dbg!("Cancelled during depth 1 search");
-                    }
                     break 'outer;
                 }
 
@@ -75,7 +69,7 @@ impl Engine {
                 break;
             }
         }
-        final_best_moves.choose(&mut rand::thread_rng()).copied().unwrap_or(moves[0])
+        final_best_moves[0]
     }
 
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8) -> i32 {

@@ -31,6 +31,7 @@ fn main() -> eyre::Result<()> {
             tracing::warn!("Unknown command: '{line}'");
             eprintln!("Unknown command: '{line}'. Type help for more information.",);
         }
+        println!("{}", app.engine.transposition_table.capacity());
     }
     Ok(())
 }

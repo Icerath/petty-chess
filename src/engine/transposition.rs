@@ -1,14 +1,14 @@
-use rustc_hash::FxHashMap;
+use std::collections::HashMap;
 
 use crate::prelude::*;
 
 #[derive(Default)]
 pub struct TranspositionTable {
-    inner: FxHashMap<Zobrist, Entry>,
+    inner: HashMap<Zobrist, Entry>,
     pub num_hits: u64,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Nodetype {
     Exact,
     Alpha,
@@ -16,6 +16,10 @@ pub enum Nodetype {
 }
 
 impl TranspositionTable {
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
     pub fn clear(&mut self) {
         self.inner.clear();
     }
@@ -28,7 +32,7 @@ impl TranspositionTable {
     #[inline]
     pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
         let entry = self.inner.get(&board.zobrist)?;
-        if entry.depth != depth {
+        if entry.depth < depth {
             return None;
         }
         if entry.board != CoreBoard::from(board) {
@@ -45,16 +49,16 @@ impl TranspositionTable {
     }
     #[inline]
     pub fn insert(&mut self, board: &Board, depth: u8, eval: i32, nodetype: Nodetype, treesize: u64) {
-        self.inner
-            .insert(board.zobrist, Entry { board: CoreBoard::from(board), eval, nodetype, depth, treesize });
+        let entry = Entry { board: CoreBoard::from(board), eval, nodetype, depth, treesize };
+        self.inner.insert(board.zobrist, entry);
     }
 }
 
 pub struct Entry {
     board: CoreBoard,
     pub eval: i32,
-    nodetype: Nodetype,
-    depth: u8,
+    pub nodetype: Nodetype,
+    pub depth: u8,
     pub treesize: u64,
 }
 

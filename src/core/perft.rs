@@ -12,8 +12,11 @@ impl Board {
         if depth == 0 {
             return 1;
         } else if let Some(entry) = table.get_entry(self, 0, 0, depth) {
-            return entry.treesize;
-        } else if depth == 1 {
+            if depth == entry.depth {
+                return entry.treesize;
+            }
+        }
+        if depth == 1 {
             return self.gen_legal_moves().len() as u64;
         }
         let mut count = 0;
