@@ -65,7 +65,28 @@ impl<'a> MoveGenerator<'a> {
         moves
     }
     #[must_use]
+    #[inline]
     pub fn is_legal(&mut self, mov: Move) -> bool {
+        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+            let enemy_pawn = (!self.board.active_colour) + Pawn;
+            if (self.board.active_colour.is_white() && self.board[Pos::E2] == Some(enemy_pawn))
+                || (self.board.active_colour.is_black() && self.board[Pos::E7] == Some(enemy_pawn))
+            {
+                return false;
+            }
+            let map = self.attack_map();
+            let squares = match (self.board.active_colour, mov.flags() == MoveFlags::KingCastle) {
+                (Colour::White, true) => [Pos::F1, Pos::G1],
+                (Colour::White, false) => [Pos::C1, Pos::D1],
+                (Colour::Black, true) => [Pos::F8, Pos::G8],
+                (Colour::Black, false) => [Pos::C8, Pos::D8],
+            };
+            if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos)
+            {
+                return false;
+            }
+        }
+
         let unmake = self.board.make_move(mov);
         let is_attacked = self.is_square_attacked(self.board.inactive_king_pos);
         self.board.unmake_move(unmake);
@@ -272,29 +293,29 @@ impl<'a> MoveGenerator<'a> {
         }
         if self.board.white_to_play() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
-                && self.can_castle_through([Pos::F1, Pos::G1])
-                && self.board[Pos::E2] != Some(Black + Pawn)
+                && self.board[Pos::F1].is_none()
+                && self.board[Pos::G1].is_none()
             {
                 self.moves.push(Move::new(from, Pos::G1, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE)
-                && self.can_castle_through([Pos::C1, Pos::D1])
+                && self.board[Pos::C1].is_none()
+                && self.board[Pos::D1].is_none()
                 && self.board[Pos::B1].is_none()
-                && self.board[Pos::E2] != Some(Black + Pawn)
             {
                 self.moves.push(Move::new(from, Pos::C1, MoveFlags::QueenCastle));
             }
         } else {
             if self.board.can_castle.contains(CanCastle::BLACK_KING_SIDE)
-                && self.can_castle_through([Pos::F8, Pos::G8])
-                && self.board[Pos::E7] != Some(White + Pawn)
+                && self.board[Pos::F8].is_none()
+                && self.board[Pos::G8].is_none()
             {
                 self.moves.push(Move::new(from, Pos::G8, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE)
-                && self.can_castle_through([Pos::C8, Pos::D8])
                 && self.board[Pos::B8].is_none()
-                && self.board[Pos::E7] != Some(White + Pawn)
+                && self.board[Pos::C8].is_none()
+                && self.board[Pos::D8].is_none()
             {
                 self.moves.push(Move::new(from, Pos::C8, MoveFlags::QueenCastle));
             }
@@ -303,16 +324,6 @@ impl<'a> MoveGenerator<'a> {
 }
 
 impl<'a> MoveGenerator<'a> {
-    fn can_castle_through(&mut self, squares: [Pos; 2]) -> bool {
-        if self.board[squares[0]].is_some() || self.board[squares[1]].is_some() {
-            return false;
-        }
-        if self.is_pseudolegal {
-            return true;
-        }
-        let map = self.attack_map();
-        !(map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos))
-    }
     pub(crate) fn is_square_attacked(&mut self, square: Pos) -> bool {
         let mut movegen = MoveGenerator {
             board: self.board,
