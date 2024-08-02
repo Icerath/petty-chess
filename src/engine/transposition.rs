@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::score::Eval;
 use crate::prelude::*;
@@ -32,7 +32,6 @@ impl TranspositionTable {
     #[must_use]
     #[inline]
     pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
-        assert_eq!(board.seen_position(), 1);
         let entry = self.inner.get(&board.zobrist)?;
         if entry.depth < depth {
             return None;
@@ -50,11 +49,19 @@ impl TranspositionTable {
         None
     }
     #[inline]
-    pub fn insert(&mut self, board: &Board, depth: u8, eval: i32, nodetype: Nodetype, treesize: u64) {
-        if board.seen_position() > 1 {
+    pub fn insert(
+        &mut self,
+        board: &Board,
+        seen_positions: &HashSet<Zobrist>,
+        depth: u8,
+        eval: i32,
+        nodetype: Nodetype,
+        treesize: u64,
+    ) {
+        if eval.abs() == Eval::MATE_EVAL.0 {
             return;
         }
-        if eval.abs() == Eval::MATE_EVAL.0 {
+        if seen_positions.contains(&board.zobrist) {
             return;
         }
         let entry = Entry { board: CoreBoard::from(board), eval, nodetype, depth, treesize };

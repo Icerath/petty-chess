@@ -1,7 +1,5 @@
 use std::fmt::Write;
 
-use rustc_hash::FxHashMap;
-
 use super::board::Cached;
 use crate::prelude::*;
 
@@ -127,7 +125,6 @@ impl Board {
             halfmove_clock,
             fullmove_counter,
             cached: Cached::default(),
-            seen_positions: FxHashMap::default(),
         };
         board.create_cache();
         Some(board)

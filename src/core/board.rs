@@ -1,31 +1,7 @@
 use core::fmt;
-use std::{
-    hash::Hash,
-    ops::{Deref, DerefMut, Index, IndexMut},
-};
-
-use rustc_hash::FxHashMap;
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::prelude::*;
-
-#[derive(Debug, Clone)]
-pub struct Pieces(pub [Option<Piece>; 64]);
-
-impl PartialEq for Pieces {
-    fn eq(&self, other: &Self) -> bool {
-        let lhs = unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(self.0) };
-        let rhs = unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(other.0) };
-        lhs.eq(&rhs)
-    }
-}
-
-impl Eq for Pieces {}
-
-impl Hash for Pieces {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        unsafe { std::mem::transmute::<[Option<Piece>; 64], [u8; 64]>(self.0) }.hash(state);
-    }
-}
 
 pub struct Board {
     pub pieces: [Option<Piece>; 64],
@@ -35,7 +11,6 @@ pub struct Board {
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
     pub cached: Cached,
-    pub seen_positions: FxHashMap<(Pieces, Colour), i32>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -55,12 +30,6 @@ pub struct Unmake {
 }
 
 impl Board {
-    /// Returns whether the current position has been seen before
-    #[inline]
-    #[must_use]
-    pub fn seen_position(&self) -> i32 {
-        self.seen_positions.get(&(Pieces(self.pieces), self.active_colour)).copied().unwrap_or(0)
-    }
     pub fn create_cache(&mut self) {
         self.zobrist = Zobrist::default();
         if self.black_to_play() {
@@ -79,7 +48,6 @@ impl Board {
                 self.inactive_king_pos = pos;
             }
         }
-        *self.seen_positions.entry((Pieces(self.pieces), self.active_colour)).or_default() = 1;
     }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
@@ -213,11 +181,9 @@ impl Board {
         self.halfmove_clock += 1;
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.active_colour = !self.active_colour;
-        *self.seen_positions.entry((Pieces(self.pieces), self.active_colour)).or_default() += 1;
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
-        *self.seen_positions.get_mut(&(Pieces(self.pieces), self.active_colour)).unwrap() -= 1;
         self.active_colour = !self.active_colour;
         std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
         self.halfmove_clock -= 1;

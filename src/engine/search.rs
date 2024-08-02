@@ -46,6 +46,7 @@ impl Engine {
                 if score >= beta {
                     self.transposition_table.insert(
                         &self.board,
+                        &self.seen_positions,
                         depth,
                         beta,
                         Nodetype::Beta,
@@ -55,6 +56,7 @@ impl Engine {
             }
             self.transposition_table.insert(
                 &self.board,
+                &self.seen_positions,
                 depth,
                 alpha,
                 node_type,
@@ -90,9 +92,11 @@ impl Engine {
         }
         final_best_moves[0]
     }
-
+    fn seen_position(&self) -> bool {
+        self.seen_positions.contains(&self.board.zobrist)
+    }
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8) -> i32 {
-        if self.board.seen_position() > 1 {
+        if self.seen_position() {
             return 0;
         }
         if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
@@ -128,6 +132,7 @@ impl Engine {
             if score >= beta {
                 self.transposition_table.insert(
                     &self.board,
+                    &self.seen_positions,
                     depth,
                     beta,
                     Nodetype::Beta,
@@ -149,12 +154,19 @@ impl Engine {
             return 0;
         }
 
-        self.transposition_table.insert(&self.board, depth, alpha, nodetype, self.total_nodes - curr_nodes);
+        self.transposition_table.insert(
+            &self.board,
+            &self.seen_positions,
+            depth,
+            alpha,
+            nodetype,
+            self.total_nodes - curr_nodes,
+        );
         alpha
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        if self.board.seen_position() > 1 {
+        if self.seen_position() {
             return 0;
         }
         if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, 0) {
