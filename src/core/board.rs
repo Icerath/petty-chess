@@ -216,20 +216,20 @@ impl Board {
     #[inline]
     pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> {
         let pieces = self.pieces;
-        (0..64).map(Pos).filter_map(move |pos| pieces[pos.0 as usize].map(|piece| (pos, piece)))
+        (0..64).map(Pos).filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
     }
 }
 
 impl Index<Pos> for Board {
     type Output = Option<Piece>;
     fn index(&self, index: Pos) -> &Self::Output {
-        &self.pieces[index.0 as usize]
+        &self.pieces[index]
     }
 }
 
 impl IndexMut<Pos> for Board {
     fn index_mut(&mut self, index: Pos) -> &mut Self::Output {
-        &mut self.pieces[index.0 as usize]
+        &mut self.pieces[index]
     }
 }
 

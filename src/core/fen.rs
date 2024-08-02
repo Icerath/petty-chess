@@ -157,7 +157,7 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
         };
         let colour = if c.is_ascii_uppercase() { White } else { Black };
         let pos = Pos::new(Rank(rank), File(file));
-        pieces[pos.0 as usize] = Some(kind + colour);
+        pieces[pos] = Some(kind + colour);
         file += 1;
     }
     Some(pieces)

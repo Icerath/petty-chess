@@ -1,4 +1,8 @@
-use std::{fmt, str::FromStr};
+use std::{
+    fmt,
+    ops::{Index, IndexMut},
+    str::FromStr,
+};
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Pos(pub i8);
@@ -54,6 +58,21 @@ impl Rank {
     }
 }
 
+impl<T> Index<Pos> for [T] {
+    type Output = T;
+    #[inline]
+    fn index(&self, pos: Pos) -> &Self::Output {
+        &self[pos.0 as usize]
+    }
+}
+
+impl<T> IndexMut<Pos> for [T] {
+    #[inline]
+    fn index_mut(&mut self, pos: Pos) -> &mut Self::Output {
+        &mut self[pos.0 as usize]
+    }
+}
+
 impl File {
     #[must_use]
     #[allow(clippy::cast_possible_wrap)]
@@ -66,7 +85,7 @@ impl File {
 
 impl fmt::Debug for Pos {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Self::SQUARES[self.0 as usize])
+        write!(f, "{}", Self::SQUARES[*self])
     }
 }
 
@@ -97,7 +116,7 @@ impl FromStr for Pos {
 impl Pos {
     #[must_use]
     pub fn algebraic(self) -> &'static str {
-        Self::SQUARES[self.0 as usize]
+        Self::SQUARES[self]
     }
     #[rustfmt::skip]
     pub const SQUARES: [&'static str; 64] = [

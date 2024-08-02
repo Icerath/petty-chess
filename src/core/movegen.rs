@@ -127,7 +127,7 @@ impl<'a> MoveGenerator<'a> {
                     let end_index = if piece.kind() == Rook { 4 } else { 8 };
 
                     for direction_index in start_index..end_index {
-                        for n in 0..NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] {
+                        for n in 0..NUM_SQUARES_TO_EDGE[from][direction_index] {
                             let target_square = Pos(from.0 + DIRECTION_OFFSETS[direction_index] * (n + 1));
                             attacked_squares.insert(target_square);
                             if self.board[target_square].map(Piece::colour).is_some() {
@@ -138,7 +138,7 @@ impl<'a> MoveGenerator<'a> {
                 }
                 PieceKind::King => {
                     for direction_index in 0..8 {
-                        if NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] > 0 {
+                        if NUM_SQUARES_TO_EDGE[from][direction_index] > 0 {
                             let target_square = Pos((from.0) + DIRECTION_OFFSETS[direction_index]);
                             attacked_squares.insert(target_square);
                         }
@@ -155,7 +155,7 @@ impl<'a> MoveGenerator<'a> {
         let end_index = if piece.kind() == Rook { 4 } else { 8 };
 
         for direction_index in start_index..end_index {
-            for n in 0..NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] {
+            for n in 0..NUM_SQUARES_TO_EDGE[from][direction_index] {
                 let target_square = Pos(from.0 + DIRECTION_OFFSETS[direction_index] * (n + 1));
                 let target_piece = self.board[target_square];
 
@@ -251,7 +251,7 @@ impl<'a> MoveGenerator<'a> {
     #[allow(clippy::needless_range_loop)]
     fn gen_king_moves(&mut self, from: Pos) {
         for direction_index in 0..8 {
-            if NUM_SQUARES_TO_EDGE[from.0 as usize][direction_index] == 0 {
+            if NUM_SQUARES_TO_EDGE[from][direction_index] == 0 {
                 continue;
             }
             let target_square = Pos((from.0) + DIRECTION_OFFSETS[direction_index]);

@@ -10,14 +10,13 @@ impl Zobrist {
         self.0 ^= SIDE_KEY;
     }
     pub fn xor_piece(&mut self, pos: Pos, piece: Piece) {
-        let i = piece.kind() as usize + piece.colour() as usize * 6;
-        self.0 ^= PIECE_KEYS[i][pos.0 as usize];
+        self.0 ^= PIECE_KEYS[piece][pos];
     }
     pub fn xor_can_castle(&mut self, can_castle: CanCastle) {
         self.0 ^= CASTLE_KEYS[can_castle.bits() as usize];
     }
     pub fn xor_en_passant(&mut self, square: Pos) {
-        self.0 ^= EN_PASSANT_KEYS[square.0 as usize];
+        self.0 ^= EN_PASSANT_KEYS[square];
     }
 }
 

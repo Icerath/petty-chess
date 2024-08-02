@@ -46,8 +46,7 @@ pub fn piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
 #[inline]
 #[must_use]
 pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
-    let index =
-        if piece.is_white() { Pos::new(Rank(7 - pos.rank().0), pos.file()).0 as usize } else { pos.0 as usize };
+    let index = if piece.is_white() { Pos::new(Rank(7 - pos.rank().0), pos.file()) } else { pos };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 
