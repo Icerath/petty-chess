@@ -127,13 +127,6 @@ impl Board {
             _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
-        let cached = self.cached.clone();
-        self.create_cache();
-        if self.cached != cached {
-            self.unmake_move(unmake);
-            panic!("fen: {self:?} - {mov:?}");
-        }
-
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
