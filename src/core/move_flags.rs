@@ -92,7 +92,7 @@ impl From<Promotion> for PieceKind {
 impl BitOr<Self> for MoveFlags {
     type Output = Self;
     fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { Self::try_from(self as u8 | rhs as u8).unwrap_unchecked() }
+        Self::try_from(self as u8 | rhs as u8).unwrap()
     }
 }
 
