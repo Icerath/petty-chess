@@ -7,7 +7,6 @@ impl Engine {
     pub fn raw_evaluation(&mut self) -> i32 {
         self.total_nodes += 1;
         let endgame = self.endgame();
-
         self.board.piece_positions().map(|(pos, piece)| piece_value_at_square(pos, piece, endgame)).sum()
     }
 }

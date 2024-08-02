@@ -8,8 +8,7 @@ impl Engine {
             let mut score = 0;
 
             score += priority_moves.contains(&mov) as i32 * i16::MAX as i32;
-
-            let piece = self.board[mov.from()].unwrap_or(Piece::DEFAULT);
+            let piece = self.board[mov.from()].unwrap();
 
             score += ((abs_piece_square_value(mov.to(), piece, endgame)
                 - abs_piece_square_value(mov.from(), piece, endgame)) as f32

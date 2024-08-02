@@ -35,7 +35,7 @@ pub struct Board {
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
     pub cached: Cached,
-    pub seen_positions: FxHashMap<(Pieces, Colour), u32>,
+    pub seen_positions: FxHashMap<(Pieces, Colour), i32>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -58,7 +58,7 @@ impl Board {
     /// Returns whether the current position has been seen before
     #[inline]
     #[must_use]
-    pub fn seen_position(&self) -> u32 {
+    pub fn seen_position(&self) -> i32 {
         self.seen_positions.get(&(Pieces(self.pieces), self.active_colour)).copied().unwrap_or(0)
     }
     pub fn create_cache(&mut self) {

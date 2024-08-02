@@ -1,61 +1,60 @@
 use core::fmt;
-use std::{num::NonZero, ops::Add};
+use std::ops::Add;
+
+use derive_try_from_primitive::TryFromPrimitive;
 
 use crate::prelude::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Piece(NonZero<u8>);
+#[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
+pub enum Piece {
+    WhitePawn = 0,
+    WhiteKnight = 1,
+    WhiteBishop = 2,
+    WhiteRook = 3,
+    WhiteQueen = 4,
+    WhiteKing = 5,
+    BlackPawn = 6,
+    BlackKnight = 7,
+    BlackBishop = 8,
+    BlackRook = 9,
+    BlackQueen = 10,
+    BlackKing = 11,
+}
+
+#[derive(TryFromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum PieceKind {
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
+}
 
 impl Default for Piece {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self::WhitePawn
     }
 }
 
 impl Piece {
-    pub const DEFAULT: Self = Self(NonZero::<u8>::MIN);
-
     #[must_use]
     #[inline]
     pub fn new(kind: PieceKind, colour: Colour) -> Self {
-        Self::default().or_kind(kind).or_colour(colour)
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn or_kind(self, kind: PieceKind) -> Self {
-        Self(self.0 | (kind as u8) << 1)
+        Self::try_from(kind as u8 + colour as u8 * 6).unwrap()
     }
     #[must_use]
-    #[inline]
-    pub fn or_colour(self, colour: Colour) -> Self {
-        Self(self.0 | (colour as u8) << 4)
-    }
-    #[must_use]
-    #[inline]
-    pub fn with_kind(self, kind: PieceKind) -> Self {
-        Self::new(kind, self.colour())
-    }
-    #[must_use]
-    #[inline]
-    pub fn with_colour(self, colour: Colour) -> Self {
-        Self::new(self.kind(), colour)
-    }
-    #[must_use]
-    #[allow(clippy::missing_panics_doc)]
     #[inline]
     pub fn kind(self) -> PieceKind {
-        PieceKind::try_from(self.u8() >> 1 & 0b111).unwrap()
+        PieceKind::try_from(self as u8 % 6).unwrap()
     }
     #[must_use]
     #[inline]
     pub fn colour(self) -> Colour {
-        (self.u8() >> 4 & 1 == 1).into()
-    }
-    #[inline]
-    fn u8(self) -> u8 {
-        self.0.into()
+        Colour::from(self as u8 / 6 == 1)
     }
 }
 
@@ -105,32 +104,6 @@ impl Add<PieceKind> for Colour {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PieceKind {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
-}
-
-impl TryFrom<u8> for PieceKind {
-    type Error = ();
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        Ok(match value {
-            0 => Pawn,
-            1 => Knight,
-            2 => Bishop,
-            3 => Rook,
-            4 => Queen,
-            5 => King,
-            _ => return Err(()),
-        })
-    }
-}
-
 impl fmt::Debug for Piece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Piece").field("colour", &self.colour()).field("kind", &self.kind()).finish()
@@ -140,6 +113,7 @@ impl fmt::Debug for Piece {
 #[test]
 fn test_piece_repr() {
     use PieceKind as P;
+    assert_eq!(size_of::<Option<Piece>>(), 1);
 
     for kind in [P::Pawn, P::Knight, P::Bishop, P::Rook, P::Queen, P::King] {
         for colour in [Colour::White, Colour::Black] {
