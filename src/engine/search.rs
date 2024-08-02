@@ -107,7 +107,7 @@ impl Engine {
         }
 
         let mut movegen = MoveGenerator::new(&mut self.board);
-        let mut moves = movegen.pseudolegal_moves();
+        let mut moves = movegen.gen_pseudolegal_moves();
         let attack_map = movegen.attack_map();
         let mut encountered_legal_move = false;
 

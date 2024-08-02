@@ -5,7 +5,6 @@ static NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
 
 pub struct MoveGenerator<'a> {
     moves: Moves,
-    is_pseudolegal: bool,
     board: &'a mut Board,
     pub captures_only: bool,
     pub attacked_squares: Option<Bitboard>,
@@ -14,55 +13,53 @@ pub struct MoveGenerator<'a> {
 impl Board {
     #[must_use]
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
-        MoveGenerator::new_pseudo_legal(self).gen_moves()
+        MoveGenerator::new(self).gen_pseudolegal_moves()
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
-        MoveGenerator::new(self).gen_moves()
+        MoveGenerator::new(self).gen_legal_moves()
     }
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
         let mut movegen = MoveGenerator::new(self);
         movegen.captures_only = true;
-        movegen.gen_moves()
+        movegen.gen_legal_moves()
     }
     #[must_use]
     pub fn gen_pseudolegal_capture_moves(&mut self) -> Moves {
         let mut movegen = MoveGenerator::new(self);
         movegen.captures_only = true;
-        movegen.pseudolegal_moves()
+        movegen.gen_pseudolegal_moves()
     }
 }
 
 impl<'a> MoveGenerator<'a> {
     #[must_use]
-    pub fn new_pseudo_legal(board: &'a mut Board) -> Self {
-        Self {
-            moves: Moves::default(),
-            board,
-            is_pseudolegal: true,
-            captures_only: false,
-            attacked_squares: None,
-        }
-    }
-    #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
-        Self {
-            moves: Moves::default(),
-            board,
-            is_pseudolegal: false,
-            captures_only: false,
-            attacked_squares: None,
-        }
+        Self { moves: Moves::default(), board, captures_only: false, attacked_squares: None }
     }
     #[must_use]
-    pub fn gen_moves(&mut self) -> Moves {
-        let mut moves = self.pseudolegal_moves();
-        if self.is_pseudolegal {
-            return moves;
-        }
+    pub fn gen_legal_moves(&mut self) -> Moves {
+        let mut moves = self.gen_pseudolegal_moves();
         moves.retain(|&mut mov| self.is_legal(mov));
         moves
+    }
+    pub fn gen_pseudolegal_moves(&mut self) -> Moves {
+        for from in (0..64).map(Pos) {
+            let Some(piece) = self.board[from] else { continue };
+            if piece.colour() != self.board.active_colour {
+                continue;
+            }
+            match piece.kind() {
+                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
+                    self.gen_sliding_moves(from, piece);
+                }
+                PieceKind::Pawn => self.gen_pawn_moves(from),
+                PieceKind::Knight => self.gen_knight_moves(from),
+                PieceKind::King => self.gen_king_moves(from),
+            }
+        }
+        std::mem::take(&mut self.moves)
     }
     #[must_use]
     #[inline]
@@ -151,23 +148,7 @@ impl<'a> MoveGenerator<'a> {
         }
         attacked_squares
     }
-    pub fn pseudolegal_moves(&mut self) -> Moves {
-        for from in (0..64).map(Pos) {
-            let Some(piece) = self.board[from] else { continue };
-            if piece.colour() != self.board.active_colour {
-                continue;
-            }
-            match piece.kind() {
-                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
-                    self.gen_sliding_moves(from, piece);
-                }
-                PieceKind::Pawn => self.gen_pawn_moves(from),
-                PieceKind::Knight => self.gen_knight_moves(from),
-                PieceKind::King => self.gen_king_moves(from),
-            }
-        }
-        std::mem::take(&mut self.moves)
-    }
+
     #[allow(clippy::needless_range_loop)]
     fn gen_sliding_moves(&mut self, from: Pos, piece: Piece) {
         let start_index = if piece.kind() == Bishop { 4 } else { 0 };
@@ -328,11 +309,10 @@ impl<'a> MoveGenerator<'a> {
         let mut movegen = MoveGenerator {
             board: self.board,
             moves: Moves::new(),
-            is_pseudolegal: true,
             captures_only: true,
             attacked_squares: None,
         };
-        movegen.pseudolegal_moves().into_iter().any(|mov| mov.to() == square)
+        movegen.gen_pseudolegal_moves().into_iter().any(|mov| mov.to() == square)
     }
 }
 
