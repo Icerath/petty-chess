@@ -79,6 +79,7 @@ impl Board {
                 self.inactive_king_pos = pos;
             }
         }
+        *self.seen_positions.entry((Pieces(self.pieces), self.active_colour)).or_default() = 1;
     }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();

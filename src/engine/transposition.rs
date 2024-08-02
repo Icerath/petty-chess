@@ -32,6 +32,7 @@ impl TranspositionTable {
     #[must_use]
     #[inline]
     pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
+        assert_eq!(board.seen_position(), 1);
         let entry = self.inner.get(&board.zobrist)?;
         if entry.depth < depth {
             return None;
@@ -50,6 +51,9 @@ impl TranspositionTable {
     }
     #[inline]
     pub fn insert(&mut self, board: &Board, depth: u8, eval: i32, nodetype: Nodetype, treesize: u64) {
+        if board.seen_position() > 1 {
+            return;
+        }
         if eval.abs() == Eval::MATE_EVAL.0 {
             return;
         }
