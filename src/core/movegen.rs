@@ -20,12 +20,17 @@ impl Board {
     pub fn gen_legal_moves(&mut self) -> Moves {
         MoveGenerator::new(self).gen_moves()
     }
-
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
         let mut movegen = MoveGenerator::new(self);
         movegen.captures_only = true;
         movegen.gen_moves()
+    }
+    #[must_use]
+    pub fn gen_pseudolegal_capture_moves(&mut self) -> Moves {
+        let mut movegen = MoveGenerator::new(self);
+        movegen.captures_only = true;
+        movegen.pseudolegal_moves()
     }
 }
 

@@ -160,7 +160,7 @@ impl Engine {
         if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, 0) {
             return eval;
         }
-        let mut moves = self.board.gen_capture_moves();
+        let mut moves = self.board.gen_pseudolegal_capture_moves();
         self.order_moves(&mut moves, &[]);
 
         let eval = self.evaluate();
@@ -170,6 +170,9 @@ impl Engine {
         alpha = alpha.max(eval);
 
         for mov in moves {
+            if !MoveGenerator::new(&mut self.board).is_legal(mov) {
+                continue;
+            }
             let unmake = self.board.make_move(mov);
             let score = -self.negamax_search_all_captures(-beta, -alpha);
             self.board.unmake_move(unmake);
