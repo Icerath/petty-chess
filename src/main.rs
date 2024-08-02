@@ -10,9 +10,12 @@ use petty_chess::{
 use tracing::{debug, Level};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
-fn main() -> eyre::Result<()> {
-    let writer =
-        RollingFileAppender::builder().rotation(Rotation::DAILY).filename_suffix("log").build("./logs")?;
+fn main() {
+    let writer = RollingFileAppender::builder()
+        .rotation(Rotation::DAILY)
+        .filename_suffix("log")
+        .build("./logs")
+        .unwrap();
 
     tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(writer).init();
 
@@ -21,7 +24,7 @@ fn main() -> eyre::Result<()> {
     let mut app = Application::default();
     while app.running {
         line.clear();
-        stdin.read_line(&mut line)?;
+        stdin.read_line(&mut line).unwrap();
         let line = line.trim();
         debug!("{line}");
 
@@ -32,7 +35,6 @@ fn main() -> eyre::Result<()> {
             eprintln!("Unknown command: '{line}'. Type help for more information.",);
         }
     }
-    Ok(())
 }
 
 pub struct Application {
