@@ -20,6 +20,7 @@ impl Board {
     pub fn gen_legal_moves(&mut self) -> Moves {
         MoveGenerator::new(self).gen_moves()
     }
+
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
         let mut movegen = MoveGenerator::new(self);
@@ -55,13 +56,15 @@ impl<'a> MoveGenerator<'a> {
         if self.is_pseudolegal {
             return moves;
         }
-        moves.retain(|&mut mov| {
-            let unmake = self.board.make_move(mov);
-            let is_attacked = self.is_square_attacked(self.board.inactive_king_pos);
-            self.board.unmake_move(unmake);
-            !is_attacked
-        });
+        moves.retain(|&mut mov| self.is_legal(mov));
         moves
+    }
+    #[must_use]
+    pub fn is_legal(&mut self, mov: Move) -> bool {
+        let unmake = self.board.make_move(mov);
+        let is_attacked = self.is_square_attacked(self.board.inactive_king_pos);
+        self.board.unmake_move(unmake);
+        !is_attacked
     }
     pub fn attack_map(&mut self) -> Bitboard {
         let attack_map = self.gen_attack_map();
@@ -122,7 +125,7 @@ impl<'a> MoveGenerator<'a> {
         }
         attacked_squares
     }
-    fn pseudolegal_moves(&mut self) -> Moves {
+    pub fn pseudolegal_moves(&mut self) -> Moves {
         for from in (0..64).map(Pos) {
             let Some(piece) = self.board[from] else { continue };
             if piece.colour() != self.board.active_colour {

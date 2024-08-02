@@ -103,19 +103,20 @@ impl Engine {
         }
 
         let mut movegen = MoveGenerator::new(&mut self.board);
-        let mut moves = movegen.gen_moves();
+        let mut moves = movegen.pseudolegal_moves();
+        let attack_map = movegen.attack_map();
+        let mut encountered_legal_move = false;
 
-        if moves.is_empty() {
-            if movegen.attack_map().contains(self.board.active_king_pos) {
-                return -Self::mate_score();
-            }
-            return 0;
-        }
         self.order_moves(&mut moves, &[]);
         let mut nodetype = Nodetype::Alpha;
 
         let curr_nodes = self.total_nodes;
         for mov in moves {
+            if !MoveGenerator::new(&mut self.board).is_legal(mov) {
+                continue;
+            }
+            encountered_legal_move = true;
+
             let unmake = self.board.make_move(mov);
             let score = -self.negamax(-beta, -alpha, depth - 1);
 
@@ -140,6 +141,14 @@ impl Engine {
             }
             alpha = alpha.max(score);
         }
+
+        if !encountered_legal_move {
+            if attack_map.contains(self.board.active_king_pos) {
+                return -Self::mate_score();
+            }
+            return 0;
+        }
+
         self.transposition_table.insert(&self.board, depth, alpha, nodetype, self.total_nodes - curr_nodes);
         alpha
     }
