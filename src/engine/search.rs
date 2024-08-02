@@ -14,9 +14,9 @@ impl Engine {
         self.effective_nodes = 0;
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
+        self.seen_positions = vec![self.board.zobrist];
 
         let beta = Self::mate_score();
-
         let mut moves = self.board.gen_legal_moves();
         let mut final_best_moves = Moves::new();
 
@@ -29,7 +29,9 @@ impl Engine {
             let curr_nodes = self.total_nodes;
             for &mov in &moves {
                 let unmake = self.board.make_move(mov);
+                self.seen_positions.push(self.board.zobrist);
                 let score = -self.negamax(-beta, beta, depth - 1);
+                self.seen_positions.pop();
                 self.board.unmake_move(unmake);
                 if self.is_cancelled() {
                     break 'outer;
@@ -93,7 +95,7 @@ impl Engine {
         final_best_moves[0]
     }
     fn seen_position(&self) -> bool {
-        self.seen_positions.contains(&self.board.zobrist)
+        self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
     }
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8) -> i32 {
         if self.seen_position() {
@@ -120,10 +122,10 @@ impl Engine {
                 continue;
             }
             encountered_legal_move = true;
-
             let unmake = self.board.make_move(mov);
+            self.seen_positions.push(self.board.zobrist);
             let score = -self.negamax(-beta, -alpha, depth - 1);
-
+            self.seen_positions.pop();
             self.board.unmake_move(unmake);
             if self.is_cancelled() {
                 return alpha;

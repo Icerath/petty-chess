@@ -4,10 +4,7 @@ mod score;
 mod search;
 pub mod transposition;
 
-use std::{
-    collections::HashSet,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use score::Eval;
 use transposition::TranspositionTable;
@@ -16,7 +13,7 @@ use crate::prelude::*;
 
 pub struct Engine {
     pub board: Board,
-    pub seen_positions: HashSet<Zobrist>,
+    pub seen_positions: Vec<Zobrist>,
     pub time_started: Instant,
     pub time_available: Duration,
     pub depth_reached: u8,
@@ -31,7 +28,7 @@ impl Engine {
     pub fn new(board: Board) -> Self {
         Self {
             board,
-            seen_positions: HashSet::new(),
+            seen_positions: vec![],
             time_started: Instant::now(),
             time_available: Duration::from_secs(4),
             depth_reached: 0,

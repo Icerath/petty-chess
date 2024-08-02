@@ -86,12 +86,11 @@ impl Application {
         self.engine.board = position;
         for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
-            let mov = *legal_moves
-                .iter()
-                .find(|m| {
-                    (m.from(), m.to(), m.flags().promotion()) == (mov.from(), mov.to(), mov.flags().promotion())
-                })
-                .unwrap();
+            let Some(&mov) = legal_moves.iter().find(|m| {
+                (m.from(), m.to(), m.flags().promotion()) == (mov.from(), mov.to(), mov.flags().promotion())
+            }) else {
+                break;
+            };
             self.engine.board.make_move(mov);
         }
         // eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());

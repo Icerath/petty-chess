@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::{
     engine::transposition::{Nodetype, TranspositionTable},
     prelude::*,
@@ -27,7 +25,7 @@ impl Board {
             count += self.perft(table, depth - 1);
             self.unmake_move(unmake);
         }
-        table.insert(self, &HashSet::new(), depth, 0, Nodetype::Exact, count);
+        table.insert(self, &[], depth, 0, Nodetype::Exact, count);
         count
     }
 }
