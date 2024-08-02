@@ -21,6 +21,7 @@ impl Engine {
         let mut final_best_moves = Moves::new();
 
         'outer: for depth in 1..=255 {
+            self.pv.clear();
             self.order_moves(&mut moves, &final_best_moves);
             let mut best_moves = Moves::new();
             let mut alpha = -beta;
@@ -28,9 +29,10 @@ impl Engine {
 
             let curr_nodes = self.total_nodes;
             for &mov in &moves {
+                let mut line = Moves::new();
                 let unmake = self.board.make_move(mov);
                 self.seen_positions.push(self.board.zobrist);
-                let score = -self.negamax(-beta, beta, depth - 1);
+                let score = -self.negamax(-beta, beta, depth - 1, &mut line);
                 self.seen_positions.pop();
                 self.board.unmake_move(unmake);
                 if self.is_cancelled() {
@@ -38,6 +40,8 @@ impl Engine {
                 }
 
                 if score > alpha {
+                    self.pv.insert(0, mov);
+                    self.pv.extend(line);
                     best_moves.clear();
                 }
                 if score >= alpha {
@@ -82,6 +86,7 @@ impl Engine {
                 score: Some(score),
                 nodes: Some(self.total_nodes),
                 time: Some(self.time_started.elapsed()),
+                pv: Some(self.pv.clone()),
                 currmove: Some(final_best_moves[0]),
                 ..Info::default()
             };
@@ -97,14 +102,17 @@ impl Engine {
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
     }
-    pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8) -> i32 {
+    pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8, pline: &mut Moves) -> i32 {
         if self.seen_position() {
+            pline.clear();
             return 0;
         }
-        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
-            return eval;
-        }
+        // if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
+        //     pline.clear();
+        //     return eval;
+        // }
         if depth == 0 {
+            pline.clear();
             return self.negamax_search_all_captures(alpha, beta);
         }
 
@@ -121,10 +129,11 @@ impl Engine {
             if !MoveGenerator::new(&mut self.board).is_legal(mov) {
                 continue;
             }
+            let mut line = Moves::new();
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
             self.seen_positions.push(self.board.zobrist);
-            let score = -self.negamax(-beta, -alpha, depth - 1);
+            let score = -self.negamax(-beta, -alpha, depth - 1, &mut line);
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
             if self.is_cancelled() {
@@ -143,10 +152,11 @@ impl Engine {
                 return beta;
             }
             if score > alpha {
+                line.insert(0, mov);
+                *pline = line;
                 alpha = score;
                 nodetype = Nodetype::Exact;
             }
-            alpha = alpha.max(score);
         }
 
         if !encountered_legal_move {

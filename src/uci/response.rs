@@ -109,7 +109,6 @@ impl fmt::Display for Info {
         write!(f, "{}", Maybe(" seldepth", &self.seldepth))?;
         write!(f, "{}", Maybe(" time", &self.time.map(|time| time.as_millis())))?;
         write!(f, "{}", Maybe(" nodes", &self.nodes))?;
-        write!(f, "{}", Maybe(" pv", &self.pv.as_ref().map(|line| List(" ", line))))?;
         write!(f, "{}", Maybe(" score", &self.score))?;
         write!(f, "{}", Maybe(" currmove", &self.currmove))?;
         write!(f, "{}", Maybe(" currmovenumber", &self.currmovnum))?;
@@ -118,6 +117,7 @@ impl fmt::Display for Info {
         write!(f, "{}", Maybe(" tbhits", &self.thhits))?;
         write!(f, "{}", Maybe(" sbhits", &self.sbhits))?;
         write!(f, "{}", Maybe(" cpuload", &self.cpu_load))?;
+        write!(f, "{}", Maybe(" pv", &self.pv.as_ref().map(|line| List(" ", line))))?;
 
         if let Some((mov, line)) = &self.refutation {
             write!(f, " refutation {mov} {}", List(" ", line))?;
