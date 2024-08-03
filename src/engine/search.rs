@@ -104,7 +104,6 @@ impl Engine {
         final_best_moves[0]
     }
     fn seen_position(&self) -> bool {
-        assert_eq!(self.seen_positions.last(), Some(&self.board.zobrist));
         self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
     }
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8, pline: &mut Moves) -> i32 {

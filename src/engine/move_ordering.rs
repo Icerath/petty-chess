@@ -28,6 +28,5 @@ impl Engine {
 
             -score
         });
-        // debug_assert_eq!(&moves[..priority_moves.len()], priority_moves);
     }
 }
