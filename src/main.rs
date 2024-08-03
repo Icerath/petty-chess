@@ -83,6 +83,7 @@ impl Application {
         println!("{response}");
     }
     fn startpos_moves(&mut self, position: Board, moves: Moves) {
+        self.engine.seen_positions.clear();
         self.engine.board = position;
         for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
@@ -91,8 +92,10 @@ impl Application {
             }) else {
                 break;
             };
+            self.engine.seen_positions.push(self.engine.board.zobrist);
             self.engine.board.make_move(mov);
         }
+        self.engine.seen_positions.push(self.engine.board.zobrist);
         // eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {

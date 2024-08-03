@@ -36,9 +36,6 @@ impl TranspositionTable {
         if entry.depth < depth {
             return None;
         }
-        if entry.board != CoreBoard::from(board) {
-            return None;
-        }
         if (entry.nodetype == Nodetype::Exact)
             || (entry.nodetype == Nodetype::Alpha && entry.eval <= alpha)
             || (entry.nodetype == Nodetype::Beta && entry.eval >= beta)
@@ -64,34 +61,14 @@ impl TranspositionTable {
         if seen_positions.iter().filter(|&&pos| pos == board.zobrist).count() > 1 {
             return;
         }
-        let entry = Entry { board: CoreBoard::from(board), eval, nodetype, depth, treesize };
+        let entry = Entry { eval, nodetype, depth, treesize };
         self.inner.insert(board.zobrist, entry);
     }
 }
 
 pub struct Entry {
-    board: CoreBoard,
     pub eval: i32,
     pub nodetype: Nodetype,
     pub depth: u8,
     pub treesize: u64,
-}
-
-#[derive(PartialEq)]
-struct CoreBoard {
-    pieces: [Option<Piece>; 64],
-    en_passant: Option<Pos>,
-    can_castle: CanCastle,
-    active_colour: Colour,
-}
-
-impl From<&Board> for CoreBoard {
-    fn from(board: &Board) -> Self {
-        Self {
-            pieces: board.pieces,
-            en_passant: board.en_passant_target_square,
-            can_castle: board.can_castle,
-            active_colour: board.active_colour,
-        }
-    }
 }

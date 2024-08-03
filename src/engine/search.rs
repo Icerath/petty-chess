@@ -14,7 +14,6 @@ impl Engine {
         self.effective_nodes = 0;
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
-        self.seen_positions = vec![self.board.zobrist];
 
         let beta = Self::mate_score();
         let mut moves = self.board.gen_legal_moves();
@@ -81,7 +80,7 @@ impl Engine {
                 Score::Centipawns { cp: absolute_eval, bounds: None }
             };
 
-            let info = Info {
+            let mut info = Info {
                 depth: Some(depth as u32),
                 score: Some(score),
                 nodes: Some(self.total_nodes),
@@ -91,6 +90,7 @@ impl Engine {
                 ..Info::default()
             };
             tracing::info!("{info}");
+            info.pv = None;
             println!("{}", UciResponse::Info(Box::new(info)));
 
             if is_checkmate {

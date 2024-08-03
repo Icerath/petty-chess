@@ -5,9 +5,27 @@ impl Engine {
         self.raw_evaluation() * self.board.active_colour.positive()
     }
     pub fn raw_evaluation(&mut self) -> i32 {
+        let mut total = 0;
+        for file in 0..8 {
+            let mut wp = 0;
+            let mut bp = 0;
+            for rank in 0..8 {
+                let Some(piece) = self.board[Pos::new(Rank(rank), File(file))] else { continue };
+                wp += (piece == Piece::WhitePawn) as i32;
+                bp += (piece == Piece::BlackPawn) as i32;
+            }
+            total -= (wp - 1).max(0) * 35;
+            total += (bp - 1).max(0) * 35;
+        }
         self.total_nodes += 1;
         let endgame = self.endgame();
-        self.board.piece_positions().map(|(pos, piece)| piece_value_at_square(pos, piece, endgame)).sum()
+        total += self
+            .board
+            .piece_positions()
+            .map(|(pos, piece)| piece_value_at_square(pos, piece, endgame))
+            .sum::<i32>();
+
+        total
     }
 }
 
