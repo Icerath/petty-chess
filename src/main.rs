@@ -96,7 +96,7 @@ impl Application {
             self.engine.board.make_move(mov);
         }
         self.engine.seen_positions.push(self.engine.board.zobrist);
-        // eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
+        eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {
         let start = Instant::now();

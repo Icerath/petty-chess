@@ -14,8 +14,8 @@ impl Engine {
                 wp += (piece == Piece::WhitePawn) as i32;
                 bp += (piece == Piece::BlackPawn) as i32;
             }
-            total -= (wp - 1).max(0) * 35;
-            total += (bp - 1).max(0) * 35;
+            total -= (wp - 1).max(0) * 40;
+            total += (bp - 1).max(0) * 40;
         }
         self.total_nodes += 1;
         let endgame = self.endgame();

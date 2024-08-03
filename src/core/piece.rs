@@ -8,18 +8,18 @@ use crate::prelude::*;
 #[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum Piece {
-    WhitePawn = 0,
-    WhiteKnight = 1,
-    WhiteBishop = 2,
-    WhiteRook = 3,
-    WhiteQueen = 4,
-    WhiteKing = 5,
-    BlackPawn = 6,
-    BlackKnight = 7,
-    BlackBishop = 8,
-    BlackRook = 9,
-    BlackQueen = 10,
-    BlackKing = 11,
+    BlackPawn = 0,
+    BlackKnight = 1,
+    BlackBishop = 2,
+    BlackRook = 3,
+    BlackQueen = 4,
+    BlackKing = 5,
+    WhitePawn = 6,
+    WhiteKnight = 7,
+    WhiteBishop = 8,
+    WhiteRook = 9,
+    WhiteQueen = 10,
+    WhiteKing = 11,
 }
 
 #[derive(TryFromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
