@@ -1,11 +1,14 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    hash::{BuildHasherDefault, Hasher},
+};
 
 use super::score::Eval;
 use crate::prelude::*;
 
 #[derive(Default)]
 pub struct TranspositionTable {
-    inner: HashMap<Zobrist, Entry>,
+    inner: HashMap<Zobrist, Entry, BuildHasherDefault<NoHasher>>,
     pub num_hits: u64,
 }
 
@@ -71,4 +74,21 @@ pub struct Entry {
     pub nodetype: Nodetype,
     pub depth: u8,
     pub treesize: u64,
+}
+
+#[derive(Default)]
+struct NoHasher(u64);
+
+impl Hasher for NoHasher {
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.0
+    }
+    fn write(&mut self, _bytes: &[u8]) {
+        unreachable!();
+    }
+    #[inline]
+    fn write_u64(&mut self, i: u64) {
+        self.0 = i;
+    }
 }
