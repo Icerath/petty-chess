@@ -90,6 +90,9 @@ impl<'a> MoveGenerator<'a> {
         !is_attacked
     }
     pub fn attack_map(&mut self) -> Bitboard {
+        if let Some(attack_map) = self.attacked_squares {
+            return attack_map;
+        }
         let attack_map = self.gen_attack_map();
         self.attacked_squares = Some(attack_map);
         attack_map
@@ -97,7 +100,7 @@ impl<'a> MoveGenerator<'a> {
     // Generate attack map for enemy pieces
     #[allow(clippy::needless_range_loop)]
     #[must_use]
-    fn gen_attack_map(&mut self) -> Bitboard {
+    fn gen_attack_map(&self) -> Bitboard {
         let forward = -self.board.active_colour.forward();
         let mut attacked_squares = Bitboard(0);
 
@@ -305,7 +308,7 @@ impl<'a> MoveGenerator<'a> {
 }
 
 impl<'a> MoveGenerator<'a> {
-    pub(crate) fn is_square_attacked(&mut self, square: Pos) -> bool {
+    pub fn is_square_attacked(&mut self, square: Pos) -> bool {
         let mut movegen = MoveGenerator {
             board: self.board,
             moves: Moves::new(),

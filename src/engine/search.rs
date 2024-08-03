@@ -104,19 +104,17 @@ impl Engine {
         final_best_moves[0]
     }
     fn seen_position(&self) -> bool {
+        assert_eq!(self.seen_positions.last(), Some(&self.board.zobrist));
         self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
     }
     pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8, pline: &mut Moves) -> i32 {
         if self.seen_position() {
-            pline.clear();
             return 0;
         }
-        // if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
-        //     pline.clear();
-        //     return eval;
-        // }
+        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
+            return eval;
+        }
         if depth == 0 {
-            pline.clear();
             return self.negamax_search_all_captures(alpha, beta);
         }
 
@@ -136,6 +134,9 @@ impl Engine {
             let mut line = Moves::new();
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
+            if mov.flags().is_capture() {
+                self.seen_positions.clear();
+            }
             self.seen_positions.push(self.board.zobrist);
             let score = -self.negamax(-beta, -alpha, depth - 1, &mut line);
             self.seen_positions.pop();
@@ -182,9 +183,6 @@ impl Engine {
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        if self.seen_position() {
-            return 0;
-        }
         if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, 0) {
             return eval;
         }
