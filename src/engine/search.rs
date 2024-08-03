@@ -20,6 +20,10 @@ impl Engine {
         let mut final_best_moves = Moves::new();
 
         'outer: for depth in 1..=255 {
+            if self.time_started.elapsed() > self.time_available / 2 {
+                break;
+            }
+
             self.pv.clear();
             self.order_moves(&mut moves, &final_best_moves);
             let mut best_moves = Moves::new();
