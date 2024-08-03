@@ -1,4 +1,7 @@
-use std::fmt;
+use std::{
+    fmt,
+    ops::{BitOr, BitOrAssign},
+};
 
 use crate::prelude::*;
 
@@ -18,6 +21,26 @@ impl Bitboard {
     #[must_use]
     pub fn contains(&self, pos: Pos) -> bool {
         self.0 & (1 << pos.0) > 0
+    }
+
+    pub fn iter(self) -> impl Iterator<Item = Pos> {
+        (0..64).map(Pos).filter(move |&pos| self.contains(pos))
+    }
+}
+
+impl BitOr for Bitboard {
+    type Output = Self;
+    #[inline]
+    #[must_use]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for Bitboard {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs;
     }
 }
 

@@ -3,6 +3,7 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::prelude::*;
 
+#[derive(Clone)]
 pub struct Board {
     pub pieces: [Option<Piece>; 64],
     pub active_colour: Colour,
@@ -18,7 +19,7 @@ pub struct Cached {
     pub active_king_pos: Pos,
     pub inactive_king_pos: Pos,
     pub zobrist: Zobrist,
-    pub piece_bitboards: [[Bitboard; 6]; 2],
+    pub piece_bitboards: [Bitboard; 12],
 }
 
 pub struct Unmake {
@@ -40,6 +41,7 @@ impl Board {
             self.cached.zobrist.xor_en_passant(square);
         }
         for (pos, piece) in self.piece_positions() {
+            self.piece_bitboards[piece].insert(pos);
             self.zobrist.xor_piece(pos, piece);
             let PieceKind::King = piece.kind() else { continue };
             if piece.colour() == self.active_colour {
@@ -88,7 +90,10 @@ impl Board {
         self.zobrist.xor_piece(mov.to(), from_piece);
         if let Some(piece) = self[mov.to()] {
             self.zobrist.xor_piece(mov.to(), piece);
+            self.piece_bitboards[piece].remove(mov.to());
         }
+        self.piece_bitboards[from_piece].remove(mov.from());
+        self.piece_bitboards[from_piece].insert(mov.to());
 
         self[mov.from()] = None;
         self[mov.to()] = Some(from_piece);
@@ -96,8 +101,10 @@ impl Board {
         match mov.flags() {
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
-                unmake.captured_piece = self[back];
-                self.cached.zobrist.xor_piece(back, self[back].unwrap());
+                let pawn = self[back].unwrap();
+                unmake.captured_piece = Some(pawn);
+                self.cached.zobrist.xor_piece(back, pawn);
+                self.piece_bitboards[pawn].remove(back);
                 self[back] = None;
             }
             MoveFlags::QueenCastle if self.white_to_play() => {
@@ -120,8 +127,10 @@ impl Board {
             flags if flags.promotion().is_some() => {
                 let piece = self.active_colour + PieceKind::from(flags.promotion().unwrap());
                 self[mov.to()] = Some(piece);
-                self.cached.zobrist.xor_piece(mov.to(), from_piece);
-                self.cached.zobrist.xor_piece(mov.to(), piece);
+                self.zobrist.xor_piece(mov.to(), from_piece);
+                self.zobrist.xor_piece(mov.to(), piece);
+                self.piece_bitboards[from_piece].remove(mov.to());
+                self.piece_bitboards[piece].insert(mov.to());
             }
             MoveFlags::Quiet | MoveFlags::Capture => {}
             _ => unreachable!("{:?}", mov.flags()),
@@ -194,6 +203,18 @@ impl Board {
     pub fn black_to_play(&self) -> bool {
         self.active_colour.is_black()
     }
+    #[must_use]
+    #[inline]
+    pub fn friendly_pieces(&self) -> Bitboard {
+        let offset = if self.active_colour.is_black() { 0 } else { 6 };
+        self.cached.piece_bitboards[offset..offset + 6].iter().fold(Bitboard(0), |acc, &x| acc | x)
+    }
+    #[must_use]
+    #[inline]
+    pub fn enemy_pieces(&self) -> Bitboard {
+        let offset = if self.active_colour.is_white() { 0 } else { 6 };
+        self.cached.piece_bitboards[offset..offset + 6].iter().fold(Bitboard(0), |acc, &x| acc | x)
+    }
 }
 
 impl Board {
@@ -202,10 +223,14 @@ impl Board {
         if let Some(piece) = self[lhs] {
             self.zobrist.xor_piece(lhs, piece);
             self.zobrist.xor_piece(rhs, piece);
+            self.piece_bitboards[piece].remove(lhs);
+            self.piece_bitboards[piece].insert(rhs);
         }
         if let Some(piece) = self[rhs] {
             self.zobrist.xor_piece(lhs, piece);
             self.zobrist.xor_piece(rhs, piece);
+            self.piece_bitboards[piece].remove(rhs);
+            self.piece_bitboards[piece].insert(lhs);
         }
         self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
     }

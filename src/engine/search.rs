@@ -120,7 +120,6 @@ impl Engine {
 
         let mut movegen = MoveGenerator::new(&mut self.board);
         let mut moves = movegen.gen_pseudolegal_moves();
-        let attack_map = movegen.attack_map();
         let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves, &[]);
@@ -165,7 +164,7 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            if attack_map.contains(self.board.active_king_pos) {
+            if MoveGenerator::new(&mut self.board).attack_map().contains(self.board.active_king_pos) {
                 return -Self::mate_score();
             }
             return 0;
@@ -183,17 +182,14 @@ impl Engine {
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, 0) {
-            return eval;
-        }
-        let mut moves = self.board.gen_pseudolegal_capture_moves();
-        self.order_moves(&mut moves, &[]);
-
         let eval = self.evaluate();
         if eval >= beta {
             return beta;
         }
         alpha = alpha.max(eval);
+
+        let mut moves = self.board.gen_pseudolegal_capture_moves();
+        self.order_moves(&mut moves, &[]);
 
         for mov in moves {
             if !MoveGenerator::new(&mut self.board).is_legal(mov) {

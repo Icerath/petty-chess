@@ -25,7 +25,7 @@ impl Move {
     #[must_use]
     #[inline]
     pub fn flags(self) -> MoveFlags {
-        MoveFlags::try_from((self.0 >> 12) as u8).unwrap_or(MoveFlags::Quiet)
+        MoveFlags::try_from((self.0 >> 12) as u8).unwrap()
     }
 }
 

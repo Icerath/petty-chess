@@ -43,13 +43,7 @@ impl Engine {
 
     #[must_use]
     pub(crate) fn is_cancelled(&mut self) -> bool {
-        if self.force_cancelled {
-            return true;
-        }
-        if self.time_started.elapsed() >= self.time_available {
-            self.force_cancelled = true;
-        }
-        self.force_cancelled
+        self.time_started.elapsed() >= self.time_available || self.force_cancelled
     }
     pub fn endgame(&mut self) -> f32 {
         let default_sum = 24;

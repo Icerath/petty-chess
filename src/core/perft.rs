@@ -53,7 +53,7 @@ mod tests {
     }
     #[test]
     fn perft_position_3() {
-        let results = [1, 14, 191, 2_812, 43_238, 674_624, 11_030_083];
+        let results = [1, 14, 191, 2_812, 43_238, 674_624, 11_030_083, 178_633_661];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::perft_position_3().run_perft(depth as u8);
             assert_eq!(count, result, "depth: {depth}");
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn perft_position_4() {
-        let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*706_045_033*/];
+        let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*, 706_045_033*/];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::perft_position_4().run_perft(depth as u8);
             assert_eq!(count, result, "depth: {depth}");
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn perft_talk() {
-        let results = [1, 44, 1_486, 62_379, 2_103_487];
+        let results = [1, 44, 1_486, 62_379, 2_103_487, 89_941_194];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::perft_position_5().run_perft(depth as u8);
             assert_eq!(count, result, "depth: {depth}");

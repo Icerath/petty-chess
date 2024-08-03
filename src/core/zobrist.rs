@@ -6,15 +6,19 @@ use crate::prelude::*;
 pub struct Zobrist(u64);
 
 impl Zobrist {
+    #[inline]
     pub fn xor_side_to_move(&mut self) {
         self.0 ^= SIDE_KEY;
     }
+    #[inline]
     pub fn xor_piece(&mut self, pos: Pos, piece: Piece) {
         self.0 ^= PIECE_KEYS[piece][pos];
     }
+    #[inline]
     pub fn xor_can_castle(&mut self, can_castle: CanCastle) {
         self.0 ^= CASTLE_KEYS[can_castle.bits() as usize];
     }
+    #[inline]
     pub fn xor_en_passant(&mut self, square: Pos) {
         self.0 ^= EN_PASSANT_KEYS[square];
     }
