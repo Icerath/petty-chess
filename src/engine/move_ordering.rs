@@ -3,8 +3,8 @@ use crate::prelude::*;
 
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move]) {
+        let endgame = self.endgame();
         moves.sort_by_cached_key(|&mov| {
-            let endgame = self.endgame();
             let mut score = 0;
 
             let piece = self.board[mov.from()].unwrap();
