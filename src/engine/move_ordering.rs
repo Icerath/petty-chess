@@ -7,7 +7,7 @@ const MVV_LVA: [[u8; 6]; 6] = [
     [35, 34, 33, 32, 31, 30], // victim B, attacker P, N, B, R, Q, K
     [45, 44, 43, 42, 41, 40], // victim R, attacker P, N, B, R, Q, K
     [55, 54, 53, 52, 51, 50], // victim Q, attacker P, N, B, R, Q, K
-    [0,  0,  0,  0,  0,  0],       // victim K, attacker P, N, B, R, Q, K
+    [0, 0, 0, 0, 0, 0],       // victim K, attacker P, N, B, R, Q, K
 ];
 
 impl Engine {
