@@ -117,8 +117,7 @@ impl Engine {
             return self.negamax_search_all_captures(alpha, beta);
         }
 
-        let mut movegen = MoveGenerator::new(&mut self.board);
-        let mut moves = movegen.gen_pseudolegal_moves();
+        let mut moves = MoveGenerator::new(&mut self.board).gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves);
