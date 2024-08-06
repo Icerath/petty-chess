@@ -30,7 +30,7 @@ impl Engine {
                     .map(|rank| Pos::new(Rank(rank), File(file.0 - 1)))
                     .any(|pos| pawns.contains(pos)) as i32;
             }
-            total -= open_files * 40 * colour.positive();
+            total -= ((open_files * 40 * colour.positive()) as f32 * (1.0 - self.endgame())) as i32;
         }
 
         for file in 0..8 {
