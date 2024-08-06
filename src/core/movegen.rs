@@ -125,10 +125,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
-        enemy_pieces[Queen].for_each(|from| {
-            attacked_squares |= self.magic.bishop_attacks(from, all_pieces);
-            attacked_squares |= self.magic.rook_attacks(from, all_pieces);
-        });
+        enemy_pieces[Queen].for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
         attacked_squares |= KING_MOVES[self.board.inactive_king_pos];
         attacked_squares
     }
@@ -138,10 +135,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let mut squares = match piece.kind() {
             PieceKind::Bishop => self.magic.bishop_attacks(from, self.board.all_pieces()),
             PieceKind::Rook => self.magic.rook_attacks(from, self.board.all_pieces()),
-            PieceKind::Queen => {
-                self.magic.bishop_attacks(from, self.board.all_pieces())
-                    | self.magic.rook_attacks(from, self.board.all_pieces())
-            }
+            PieceKind::Queen => self.magic.queen_attacks(from, self.board.all_pieces()),
             _ => unreachable!(),
         };
         squares.0 &= !self.board.friendly_pieces().0;

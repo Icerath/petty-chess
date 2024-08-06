@@ -29,6 +29,11 @@ impl Magic {
     pub fn bishop_attacks(&self, square: Pos, occupancy: Bitboard) -> Bitboard {
         self.bishop_tables[square].get_attacks(occupancy)
     }
+    #[must_use]
+    #[inline]
+    pub fn queen_attacks(&self, square: Pos, occupancy: Bitboard) -> Bitboard {
+        self.bishop_tables[square].get_attacks(occupancy) | self.rook_tables[square].get_attacks(occupancy)
+    }
     #[allow(unused)]
     fn init() -> Magic {
         Self {
