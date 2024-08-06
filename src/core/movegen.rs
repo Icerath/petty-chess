@@ -75,11 +75,13 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     }
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
         let pieces = self.board.friendly_bitboards();
+        let all_pieces = self.board.all_pieces();
+
         pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
-        pieces[Knight].for_each(|from| self.gen_knight_moves(from));
-        pieces[Bishop].for_each(|from| self.gen_sliding_moves(from, Bishop + self.board.active_colour));
-        pieces[Rook].for_each(|from| self.gen_sliding_moves(from, Rook + self.board.active_colour));
-        pieces[Queen].for_each(|from| self.gen_sliding_moves(from, Queen + self.board.active_colour));
+        pieces[Knight].for_each(|from| self.push_squares(from, KNIGHT_MOVES[from]));
+        pieces[Bishop].for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
+        pieces[Rook].for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
+        pieces[Queen].for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
         self.gen_king_moves(self.board.active_king_pos);
         std::mem::take(&mut self.moves)
     }
@@ -129,17 +131,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         attacked_squares |= KING_MOVES[self.board.inactive_king_pos];
         attacked_squares
     }
-
-    #[allow(clippy::needless_range_loop)]
-    fn gen_sliding_moves(&mut self, from: Pos, piece: Piece) {
-        let mut squares = match piece.kind() {
-            PieceKind::Bishop => self.magic.bishop_attacks(from, self.board.all_pieces()),
-            PieceKind::Rook => self.magic.rook_attacks(from, self.board.all_pieces()),
-            PieceKind::Queen => self.magic.queen_attacks(from, self.board.all_pieces()),
-            _ => unreachable!(),
-        };
-        squares.0 &= !self.board.friendly_pieces().0;
-
+    #[inline]
+    fn push_squares(&mut self, from: Pos, mut squares: Bitboard) {
+        squares &= !self.board.friendly_pieces();
         squares.for_each(|square| {
             if self.board[square].is_some() {
                 self.moves.push(Move::new(from, square, MoveFlags::Capture));
@@ -215,26 +209,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
     }
-    fn gen_knight_moves(&mut self, from: Pos) {
-        let bitboard = KNIGHT_MOVES[from] & !self.board.friendly_pieces();
-        bitboard.for_each(|to| {
-            if self.board[to].is_some() {
-                self.moves.push(Move::new(from, to, MoveFlags::Capture));
-            } else if !G::CAPTURES_ONLY {
-                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
-            }
-        });
-    }
-    #[allow(clippy::needless_range_loop)]
     fn gen_king_moves(&mut self, from: Pos) {
-        let bitboard = KING_MOVES[from] & !self.board.friendly_pieces();
-        bitboard.for_each(|to| {
-            if self.board[to].is_some() {
-                self.moves.push(Move::new(from, to, MoveFlags::Capture));
-            } else if !G::CAPTURES_ONLY {
-                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
-            }
-        });
+        self.push_squares(from, KING_MOVES[from]);
         if G::CAPTURES_ONLY {
             return;
         }

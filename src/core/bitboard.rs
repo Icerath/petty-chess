@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    ops::{BitAnd, BitOr, BitOrAssign, Not},
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
 };
 
 use crate::prelude::*;
@@ -51,6 +51,13 @@ impl BitAnd for Bitboard {
     #[inline]
     fn bitand(self, rhs: Self) -> Self::Output {
         Self(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for Bitboard {
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs;
     }
 }
 
