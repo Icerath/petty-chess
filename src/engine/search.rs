@@ -30,9 +30,10 @@ impl Engine {
             }
             self.order_moves(&mut moves);
             if let Some(&mov) = self.pv.get(self.depth_from_root as usize) {
-                let mov_index = moves.iter().position(|&m| m == mov).unwrap();
-                moves.remove(mov_index);
-                moves.insert(0, mov);
+                if let Some(mov_index) = moves.iter().position(|&m| m == mov) {
+                    moves.remove(mov_index);
+                    moves.insert(0, mov);
+                }
             }
 
             let mut new_pv = Moves::new();
