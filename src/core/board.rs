@@ -205,20 +205,29 @@ impl Board {
     }
     #[must_use]
     #[inline]
-    pub fn friendly_pieces(&self) -> Bitboard {
+    pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
         let offset = if self.active_colour.is_black() { 0 } else { 6 };
-        self.cached.piece_bitboards[offset..offset + 6].iter().fold(Bitboard(0), |acc, &x| acc | x)
+        self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
+    }
+    #[must_use]
+    #[inline]
+    pub fn friendly_pieces(&self) -> Bitboard {
+        self.friendly_bitboards().into_iter().fold(Bitboard(0), |acc, x| acc | x)
+    }
+    #[must_use]
+    #[inline]
+    pub fn enemy_bitboards(&self) -> [Bitboard; 6] {
+        let offset = if self.active_colour.is_white() { 0 } else { 6 };
+        self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
     }
     #[must_use]
     #[inline]
     pub fn enemy_pieces(&self) -> Bitboard {
-        let offset = if self.active_colour.is_white() { 0 } else { 6 };
-        self.cached.piece_bitboards[offset..offset + 6].iter().fold(Bitboard(0), |acc, &x| acc | x)
+        self.enemy_bitboards().into_iter().fold(Bitboard(0), |acc, x| acc | x)
     }
     #[must_use]
-    #[inline]
     pub fn all_pieces(&self) -> Bitboard {
-        self.cached.piece_bitboards.iter().fold(Bitboard(0), |acc, &x| acc | x)
+        self.cached.piece_bitboards.into_iter().fold(Bitboard(0), |acc, x| acc | x)
     }
 }
 

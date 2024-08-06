@@ -46,6 +46,19 @@ impl<T> IndexMut<Piece> for [T] {
     }
 }
 
+impl<T> Index<PieceKind> for [T] {
+    type Output = T;
+    fn index(&self, kind: PieceKind) -> &Self::Output {
+        &self[kind as usize]
+    }
+}
+
+impl<T> IndexMut<PieceKind> for [T] {
+    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
+        &mut self[kind as usize]
+    }
+}
+
 impl Default for Piece {
     #[inline]
     fn default() -> Self {

@@ -55,15 +55,13 @@ impl<'a> MoveGenerator<'a> {
         moves
     }
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
-        self.board.friendly_pieces().for_each(|from| {
-            let piece = self.board[from].unwrap();
-            match piece.kind() {
-                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => self.gen_sliding_moves(from, piece),
-                PieceKind::Pawn => self.gen_pawn_moves(from),
-                PieceKind::Knight => self.gen_knight_moves(from),
-                PieceKind::King => self.gen_king_moves(from),
-            }
-        });
+        let pieces = self.board.friendly_bitboards();
+        pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
+        pieces[Knight].for_each(|from| self.gen_knight_moves(from));
+        pieces[Bishop].for_each(|from| self.gen_sliding_moves(from, Bishop + self.board.active_colour));
+        pieces[Rook].for_each(|from| self.gen_sliding_moves(from, Rook + self.board.active_colour));
+        pieces[Queen].for_each(|from| self.gen_sliding_moves(from, Queen + self.board.active_colour));
+        pieces[King].for_each(|from| self.gen_king_moves(from));
         std::mem::take(&mut self.moves)
     }
     #[must_use]
@@ -101,24 +99,20 @@ impl<'a> MoveGenerator<'a> {
     #[must_use]
     fn gen_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        self.board.enemy_pieces().for_each(|from| {
-            let piece = self.board[from].unwrap();
-            match piece.kind() {
-                PieceKind::Pawn => attacked_squares |= ATTACK_PAWN_MOVES[piece.colour() as usize][from],
-                PieceKind::Knight => attacked_squares |= KNIGHT_MOVES[from],
-                PieceKind::Bishop => {
-                    attacked_squares |= self.magic.bishop_attacks(from, self.board.all_pieces());
-                }
-                PieceKind::Rook => {
-                    attacked_squares |= self.magic.rook_attacks(from, self.board.all_pieces());
-                }
-                PieceKind::Queen => {
-                    attacked_squares |= self.magic.bishop_attacks(from, self.board.all_pieces());
-                    attacked_squares |= self.magic.rook_attacks(from, self.board.all_pieces());
-                }
-                PieceKind::King => attacked_squares |= KING_MOVES[from],
-            }
+        let colour = !self.board.active_colour;
+        let enemy_pieces = self.board.enemy_bitboards();
+        let all_pieces = self.board.all_pieces();
+
+        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
+        enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
+        enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
+        enemy_pieces[Queen].for_each(|from| {
+            attacked_squares |= self.magic.bishop_attacks(from, all_pieces);
+            attacked_squares |= self.magic.rook_attacks(from, all_pieces);
         });
+        enemy_pieces[King].for_each(|from| attacked_squares |= KING_MOVES[from]);
+
         attacked_squares
     }
 
