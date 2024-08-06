@@ -14,6 +14,7 @@ pub struct Magic {
 }
 
 impl Magic {
+    #[inline]
     pub fn get() -> &'static Magic {
         static MAGIC: OnceLock<Magic> = OnceLock::new();
         MAGIC.get_or_init(Self::preinit)
@@ -86,6 +87,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         }
         Err(())
     }
+    #[inline]
     fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
         occupancy.0 &= self.mask;
         let index = (occupancy.0.wrapping_mul(self.magic) >> self.shift) as usize;

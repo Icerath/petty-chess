@@ -22,9 +22,14 @@ impl Bitboard {
     pub fn contains(&self, pos: Pos) -> bool {
         self.0 & (1 << pos.0) > 0
     }
-
-    pub fn iter(self) -> impl Iterator<Item = Pos> {
-        (0..64).map(Pos).filter(move |&pos| self.contains(pos))
+    #[inline]
+    pub fn for_each<F: FnMut(Pos)>(mut self, mut f: F) {
+        let mut start = self.0.trailing_zeros() as i8;
+        while self.0 > 0 {
+            self.remove(Pos(start));
+            f(Pos(start));
+            start = self.0.trailing_zeros() as i8;
+        }
     }
 }
 

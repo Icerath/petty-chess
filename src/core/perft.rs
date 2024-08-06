@@ -59,7 +59,6 @@ mod tests {
             assert_eq!(count, result, "depth: {depth}");
         }
     }
-
     #[test]
     fn perft_position_4() {
         let results = [1, 6, 264, 9_467, 422_333, 15_833_292 /*, 706_045_033*/];
@@ -68,7 +67,6 @@ mod tests {
             assert_eq!(count, result, "depth: {depth}");
         }
     }
-
     #[test]
     fn perft_talk() {
         let results = [1, 44, 1_486, 62_379, 2_103_487, 89_941_194];

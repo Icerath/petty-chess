@@ -55,17 +55,15 @@ impl<'a> MoveGenerator<'a> {
         moves
     }
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
-        for from in self.board.friendly_pieces().iter() {
+        self.board.friendly_pieces().for_each(|from| {
             let piece = self.board[from].unwrap();
             match piece.kind() {
-                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
-                    self.gen_sliding_moves(from, piece);
-                }
+                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => self.gen_sliding_moves(from, piece),
                 PieceKind::Pawn => self.gen_pawn_moves(from),
                 PieceKind::Knight => self.gen_knight_moves(from),
                 PieceKind::King => self.gen_king_moves(from),
             }
-        }
+        });
         std::mem::take(&mut self.moves)
     }
     #[must_use]
@@ -103,8 +101,7 @@ impl<'a> MoveGenerator<'a> {
     #[must_use]
     fn gen_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-
-        for from in self.board.enemy_pieces().iter() {
+        self.board.enemy_pieces().for_each(|from| {
             let piece = self.board[from].unwrap();
             match piece.kind() {
                 PieceKind::Pawn => attacked_squares |= ATTACK_PAWN_MOVES[piece.colour() as usize][from],
@@ -121,7 +118,7 @@ impl<'a> MoveGenerator<'a> {
                 }
                 PieceKind::King => attacked_squares |= KING_MOVES[from],
             }
-        }
+        });
         attacked_squares
     }
 
@@ -138,13 +135,13 @@ impl<'a> MoveGenerator<'a> {
         };
         squares.0 &= !self.board.friendly_pieces().0;
 
-        for square in squares.iter() {
+        squares.for_each(|square| {
             if self.board[square].is_some() {
                 self.moves.push(Move::new(from, square, MoveFlags::Capture));
             } else if !self.captures_only {
                 self.moves.push(Move::new(from, square, MoveFlags::Quiet));
             }
-        }
+        });
     }
     fn gen_pawn_moves(&mut self, from: Pos) {
         let forward = self.board.active_colour.forward();

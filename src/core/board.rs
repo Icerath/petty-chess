@@ -241,12 +241,12 @@ impl Board {
     }
     #[inline]
     pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
-        (0..64).map(Pos).filter_map(|pos| self[pos])
+        Pos::all().filter_map(|pos| self[pos])
     }
     #[inline]
     pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> {
         let pieces = self.pieces;
-        (0..64).map(Pos).filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
+        Pos::all().filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
     }
 }
 
