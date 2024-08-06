@@ -5,6 +5,8 @@ impl Engine {
         self.raw_evaluation() * self.board.active_colour.positive()
     }
     pub fn raw_evaluation(&mut self) -> i32 {
+        self.total_nodes += 1;
+
         let mut total = 0;
         for file in 0..8 {
             let mut wp = 0;
@@ -17,13 +19,32 @@ impl Engine {
             total -= (wp - 1).max(0) * 40;
             total += (bp - 1).max(0) * 40;
         }
-        self.total_nodes += 1;
         let endgame = self.endgame();
-        total += self
-            .board
-            .piece_positions()
-            .map(|(pos, piece)| piece_value_at_square(pos, piece, endgame))
-            .sum::<i32>();
+
+        self.board[Piece::WhitePawn]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhitePawn, endgame));
+        self.board[Piece::BlackPawn]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackPawn, endgame));
+        self.board[Piece::WhiteKnight]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteKnight, endgame));
+        self.board[Piece::BlackKnight]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackKnight, endgame));
+        self.board[Piece::WhiteBishop]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteBishop, endgame));
+        self.board[Piece::BlackBishop]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackBishop, endgame));
+        self.board[Piece::WhiteRook]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteRook, endgame));
+        self.board[Piece::BlackRook]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackRook, endgame));
+        self.board[Piece::WhiteQueen]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteQueen, endgame));
+        self.board[Piece::BlackQueen]
+            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackQueen, endgame));
+        self.board[Piece::WhiteKing]
+            .for_each(|pos| total += piece_square_value(pos, Piece::WhiteKing, endgame));
+        self.board[Piece::BlackKing]
+            .for_each(|pos| total += piece_square_value(pos, Piece::BlackKing, endgame));
 
         total
     }
