@@ -11,6 +11,7 @@ pub struct MoveGenerator<'a> {
     board: &'a mut Board,
     captures_only: bool,
     attacked_squares: Option<Bitboard>,
+    pub queen_promote_only: bool,
     magic: &'static Magic,
 }
 
@@ -21,7 +22,9 @@ impl Board {
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
-        MoveGenerator::new(self).gen_legal_moves()
+        let mut movegen = MoveGenerator::new(self);
+        movegen.queen_promote_only = false;
+        movegen.gen_legal_moves()
     }
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
@@ -45,6 +48,7 @@ impl<'a> MoveGenerator<'a> {
             board,
             captures_only: false,
             attacked_squares: None,
+            queen_promote_only: true,
             magic: Magic::get(),
         }
     }
@@ -159,20 +163,24 @@ impl<'a> MoveGenerator<'a> {
                         self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
                     }
                 } else if can_promote {
-                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
-                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
-                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
+                    if !self.queen_promote_only {
+                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
+                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
+                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
+                    }
                 }
             }
         }
         if let Some(to) = Pos(from.0 + forward * 8).add_file(1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
-                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
+                    if !self.queen_promote_only {
+                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
+                    }
                 } else {
                     self.moves.push(Move::new(from, to, MoveFlags::Capture));
                 }
@@ -181,9 +189,11 @@ impl<'a> MoveGenerator<'a> {
         if let Some(to) = Pos(from.0 + forward * 8).add_file(-1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
-                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
+                    if !self.queen_promote_only {
+                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
+                    }
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
                 } else {
                     self.moves.push(Move::new(from, to, MoveFlags::Capture));
