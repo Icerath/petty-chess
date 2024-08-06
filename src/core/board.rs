@@ -215,6 +215,11 @@ impl Board {
         let offset = if self.active_colour.is_white() { 0 } else { 6 };
         self.cached.piece_bitboards[offset..offset + 6].iter().fold(Bitboard(0), |acc, &x| acc | x)
     }
+    #[must_use]
+    #[inline]
+    pub fn all_pieces(&self) -> Bitboard {
+        self.cached.piece_bitboards.iter().fold(Bitboard(0), |acc, &x| acc | x)
+    }
 }
 
 impl Board {

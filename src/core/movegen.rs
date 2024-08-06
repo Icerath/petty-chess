@@ -1,7 +1,7 @@
+use super::magic::Magic;
 use crate::prelude::*;
-
-const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
-const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
+pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
+pub const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
 const KING_MOVES: [Bitboard; 64] = compute_king_moves();
 const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
 const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
@@ -11,6 +11,7 @@ pub struct MoveGenerator<'a> {
     board: &'a mut Board,
     captures_only: bool,
     attacked_squares: Option<Bitboard>,
+    magic: &'static Magic,
 }
 
 impl Board {
@@ -39,7 +40,13 @@ impl Board {
 impl<'a> MoveGenerator<'a> {
     #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
-        Self { moves: Moves::default(), board, captures_only: false, attacked_squares: None }
+        Self {
+            moves: Moves::default(),
+            board,
+            captures_only: false,
+            attacked_squares: None,
+            magic: Magic::get(),
+        }
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
@@ -102,19 +109,15 @@ impl<'a> MoveGenerator<'a> {
             match piece.kind() {
                 PieceKind::Pawn => attacked_squares |= ATTACK_PAWN_MOVES[piece.colour() as usize][from],
                 PieceKind::Knight => attacked_squares |= KNIGHT_MOVES[from],
-                PieceKind::Bishop | PieceKind::Rook | PieceKind::Queen => {
-                    let start_index = if piece.kind() == Bishop { 4 } else { 0 };
-                    let end_index = if piece.kind() == Rook { 4 } else { 8 };
-
-                    for direction_index in start_index..end_index {
-                        for n in 0..NUM_SQUARES_TO_EDGE[from][direction_index] {
-                            let target_square = Pos(from.0 + DIRECTION_OFFSETS[direction_index] * (n + 1));
-                            attacked_squares.insert(target_square);
-                            if self.board[target_square].map(Piece::colour).is_some() {
-                                break;
-                            }
-                        }
-                    }
+                PieceKind::Bishop => {
+                    attacked_squares |= self.magic.bishop_attacks(from, self.board.all_pieces());
+                }
+                PieceKind::Rook => {
+                    attacked_squares |= self.magic.rook_attacks(from, self.board.all_pieces());
+                }
+                PieceKind::Queen => {
+                    attacked_squares |= self.magic.bishop_attacks(from, self.board.all_pieces());
+                    attacked_squares |= self.magic.rook_attacks(from, self.board.all_pieces());
                 }
                 PieceKind::King => attacked_squares |= KING_MOVES[from],
             }
@@ -124,24 +127,22 @@ impl<'a> MoveGenerator<'a> {
 
     #[allow(clippy::needless_range_loop)]
     fn gen_sliding_moves(&mut self, from: Pos, piece: Piece) {
-        let start_index = if piece.kind() == Bishop { 4 } else { 0 };
-        let end_index = if piece.kind() == Rook { 4 } else { 8 };
+        let mut squares = match piece.kind() {
+            PieceKind::Bishop => self.magic.bishop_attacks(from, self.board.all_pieces()),
+            PieceKind::Rook => self.magic.rook_attacks(from, self.board.all_pieces()),
+            PieceKind::Queen => {
+                self.magic.bishop_attacks(from, self.board.all_pieces())
+                    | self.magic.rook_attacks(from, self.board.all_pieces())
+            }
+            _ => unreachable!(),
+        };
+        squares.0 &= !self.board.friendly_pieces().0;
 
-        for direction_index in start_index..end_index {
-            for n in 0..NUM_SQUARES_TO_EDGE[from][direction_index] {
-                let target_square = Pos(from.0 + DIRECTION_OFFSETS[direction_index] * (n + 1));
-                let target_piece_colour = self.board[target_square].map(Piece::colour);
-
-                if target_piece_colour == Some(self.board.active_colour) {
-                    break;
-                }
-                if target_piece_colour == Some(!self.board.active_colour) {
-                    self.moves.push(Move::new(from, target_square, MoveFlags::Capture));
-                    break;
-                }
-                if !self.captures_only {
-                    self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
-                }
+        for square in squares.iter() {
+            if self.board[square].is_some() {
+                self.moves.push(Move::new(from, square, MoveFlags::Capture));
+            } else if !self.captures_only {
+                self.moves.push(Move::new(from, square, MoveFlags::Quiet));
             }
         }
     }

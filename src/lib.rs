@@ -15,7 +15,7 @@ pub mod prelude {
             colour::Colour,
             fen,
             move_flags::{Castle, MoveFlags, Promotion},
-            movegen::MoveGenerator,
+            movegen::{self, MoveGenerator},
             piece::{Piece, PieceKind},
             position::{File, Pos, Rank},
             r#move::Move,

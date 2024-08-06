@@ -17,7 +17,7 @@ fn main() {
         .build("./logs")
         .unwrap();
 
-    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_ansi(false).with_writer(writer).init();
+    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
 
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
