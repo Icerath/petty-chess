@@ -7,6 +7,7 @@ use crate::prelude::*;
 pub struct Move(u16);
 
 impl Move {
+    pub const NULL: Move = Self(0);
     #[must_use]
     #[inline]
     pub fn new(from: Pos, to: Pos, flags: MoveFlags) -> Self {

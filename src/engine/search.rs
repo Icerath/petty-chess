@@ -17,13 +17,15 @@ impl Engine {
 
         let beta = Self::mate_score();
         let mut moves = self.board.gen_legal_moves();
+        if moves.is_empty() {
+            return Move::NULL;
+        }
         let mut final_move = moves[0];
 
         'outer: for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
-
             self.order_moves(&mut moves);
             if let Some(&mov) = self.pv.get(self.depth_from_root as usize) {
                 let mov_index = moves.iter().position(|&m| m == mov).unwrap();
@@ -47,20 +49,11 @@ impl Engine {
                 self.depth_from_root -= 1;
                 self.seen_positions.pop();
                 self.board.unmake_move(unmake);
+
                 if self.is_cancelled() {
                     break 'outer;
                 }
 
-                if score >= beta {
-                    self.transposition_table.insert(
-                        &self.board,
-                        &self.seen_positions,
-                        depth,
-                        beta,
-                        Nodetype::Beta,
-                        self.total_nodes - curr_nodes,
-                    );
-                }
                 if score > alpha {
                     new_pv.insert(0, mov);
                     new_pv.extend(line);
