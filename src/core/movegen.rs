@@ -65,7 +65,7 @@ impl<'a> MoveGenerator<'a> {
         pieces[Bishop].for_each(|from| self.gen_sliding_moves(from, Bishop + self.board.active_colour));
         pieces[Rook].for_each(|from| self.gen_sliding_moves(from, Rook + self.board.active_colour));
         pieces[Queen].for_each(|from| self.gen_sliding_moves(from, Queen + self.board.active_colour));
-        pieces[King].for_each(|from| self.gen_king_moves(from));
+        self.gen_king_moves(self.board.active_king_pos);
         std::mem::take(&mut self.moves)
     }
     #[must_use]
@@ -115,8 +115,7 @@ impl<'a> MoveGenerator<'a> {
             attacked_squares |= self.magic.bishop_attacks(from, all_pieces);
             attacked_squares |= self.magic.rook_attacks(from, all_pieces);
         });
-        enemy_pieces[King].for_each(|from| attacked_squares |= KING_MOVES[from]);
-
+        attacked_squares |= KING_MOVES[self.board.inactive_king_pos];
         attacked_squares
     }
 
@@ -209,39 +208,25 @@ impl<'a> MoveGenerator<'a> {
         }
     }
     fn gen_knight_moves(&mut self, from: Pos) {
-        for (file, rank) in [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)] {
-            let Some(to) = from.add_file(file).and_then(|from| from.add_rank(rank)) else { continue };
-            let target_colour = self.board[to].map(Piece::colour);
-
-            if target_colour.is_none() {
-                if !self.captures_only {
-                    self.moves.push(Move::new(from, to, MoveFlags::Quiet));
-                }
-            } else if target_colour == Some(!self.board.active_colour) {
+        let bitboard = KNIGHT_MOVES[from] & !self.board.friendly_pieces();
+        bitboard.for_each(|to| {
+            if self.board[to].is_some() {
                 self.moves.push(Move::new(from, to, MoveFlags::Capture));
+            } else if !self.captures_only {
+                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
             }
-        }
+        });
     }
     #[allow(clippy::needless_range_loop)]
     fn gen_king_moves(&mut self, from: Pos) {
-        for direction_index in 0..8 {
-            if NUM_SQUARES_TO_EDGE[from][direction_index] == 0 {
-                continue;
+        let bitboard = KING_MOVES[from] & !self.board.friendly_pieces();
+        bitboard.for_each(|to| {
+            if self.board[to].is_some() {
+                self.moves.push(Move::new(from, to, MoveFlags::Capture));
+            } else if !self.captures_only {
+                self.moves.push(Move::new(from, to, MoveFlags::Quiet));
             }
-            let target_square = Pos((from.0) + DIRECTION_OFFSETS[direction_index]);
-            let target_piece_colour = self.board[target_square].map(Piece::colour);
-
-            if target_piece_colour == Some(self.board.active_colour) {
-                continue;
-            }
-            if target_piece_colour == Some(!self.board.active_colour) {
-                self.moves.push(Move::new(from, target_square, MoveFlags::Capture));
-                continue;
-            }
-            if !self.captures_only {
-                self.moves.push(Move::new(from, target_square, MoveFlags::Quiet));
-            }
-        }
+        });
         if self.captures_only {
             return;
         }
@@ -281,7 +266,9 @@ impl<'a> MoveGenerator<'a> {
     #[inline]
     pub fn is_square_attacked(&mut self, square: Pos) -> bool {
         self.board.active_colour = !self.board.active_colour;
+        std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
         let atk_map = self.gen_attack_map();
+        std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
         self.board.active_colour = !self.board.active_colour;
         atk_map.contains(square)
     }

@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    ops::{BitOr, BitOrAssign},
+    ops::{BitAnd, BitOr, BitOrAssign, Not},
 };
 
 use crate::prelude::*;
@@ -35,6 +35,22 @@ impl Bitboard {
     #[must_use]
     pub fn count(self) -> u32 {
         self.0.count_ones()
+    }
+}
+
+impl Not for Bitboard {
+    type Output = Self;
+    #[inline]
+    fn not(self) -> Self::Output {
+        Self(!self.0)
+    }
+}
+
+impl BitAnd for Bitboard {
+    type Output = Self;
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
     }
 }
 
