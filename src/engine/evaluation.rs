@@ -7,6 +7,10 @@ impl Engine {
     pub fn raw_evaluation(&mut self) -> i32 {
         self.total_nodes += 1;
 
+        if !self.sufficient_material_to_force_checkmate() {
+            return 0;
+        }
+
         let mut total = 0;
         for file in 0..8 {
             let mut wp = 0;
@@ -20,6 +24,8 @@ impl Engine {
             total += (bp - 1).max(0) * 40;
         }
         let endgame = self.endgame();
+        total += self.has_bishop_pair(White) as i32 * 50;
+        total -= self.has_bishop_pair(Black) as i32 * 50;
 
         self.board[Piece::WhitePawn]
             .for_each(|pos| total += piece_value_at_square(pos, Piece::WhitePawn, endgame));
@@ -48,8 +54,32 @@ impl Engine {
 
         total
     }
-}
+    #[inline]
+    #[must_use]
+    pub fn has_bishop_pair(&self, side: Colour) -> bool {
+        // Ignoring underpromotion for now
+        self.board[side + Bishop].count() >= 2
+    }
+    #[inline]
+    #[must_use]
+    pub fn sufficient_material_to_force_checkmate(&self) -> bool {
+        let w = self.board.side_bitboards(White);
+        let b = self.board.side_bitboards(Black);
 
+        w[Queen].count() > 0
+            || b[Queen].count() > 0
+            || w[Rook].count() > 0
+            || b[Rook].count() > 0
+            || w[Pawn].count() > 0
+            || b[Pawn].count() > 0
+            || self.has_bishop_pair(Colour::White)
+            || self.has_bishop_pair(Colour::Black)
+            || (w[Bishop].count() > 0 && w[Knight].count() > 0)
+            || (b[Bishop].count() > 0 && b[Knight].count() > 0)
+            || w[Knight].count() >= 3
+            || b[Knight].count() >= 3
+    }
+}
 #[inline]
 #[must_use]
 pub fn piece_value_at_square(pos: Pos, piece: Piece, endgame: f32) -> i32 {

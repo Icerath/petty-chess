@@ -205,9 +205,14 @@ impl Board {
     }
     #[must_use]
     #[inline]
-    pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
-        let offset = if self.active_colour.is_black() { 0 } else { 6 };
+    pub fn side_bitboards(&self, side: Colour) -> [Bitboard; 6] {
+        let offset = if side.is_black() { 0 } else { 6 };
         self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
+    }
+    #[must_use]
+    #[inline]
+    pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
+        self.side_bitboards(self.active_colour)
     }
     #[must_use]
     #[inline]
@@ -217,8 +222,7 @@ impl Board {
     #[must_use]
     #[inline]
     pub fn enemy_bitboards(&self) -> [Bitboard; 6] {
-        let offset = if self.active_colour.is_white() { 0 } else { 6 };
-        self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
+        self.side_bitboards(!self.active_colour)
     }
     #[must_use]
     #[inline]
