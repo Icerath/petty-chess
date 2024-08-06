@@ -10,8 +10,29 @@ impl Engine {
         if !self.sufficient_material_to_force_checkmate() {
             return 0;
         }
-
         let mut total = 0;
+
+        for colour in [White, Black] {
+            let file = Pos(self.board.piece_bitboards[colour + King].0.trailing_zeros() as i8).file();
+            let pawns = self.board.piece_bitboards[colour + Pawn];
+
+            let mut open_files = 0;
+
+            if file.0 != 7 {
+                open_files += !(0..8)
+                    .map(|rank| Pos::new(Rank(rank), File(file.0 + 1)))
+                    .any(|pos| pawns.contains(pos)) as i32;
+            }
+            open_files +=
+                !(0..8).map(|rank| Pos::new(Rank(rank), File(file.0))).any(|pos| pawns.contains(pos)) as i32;
+            if file.0 != 0 {
+                open_files += !(0..8)
+                    .map(|rank| Pos::new(Rank(rank), File(file.0 - 1)))
+                    .any(|pos| pawns.contains(pos)) as i32;
+            }
+            total -= open_files * 40 * colour.positive();
+        }
+
         for file in 0..8 {
             let mut wp = 0;
             let mut bp = 0;
