@@ -197,10 +197,12 @@ impl Engine {
         let mut moves = self.board.gen_pseudolegal_capture_moves();
         self.order_moves(&mut moves);
 
+        let mut encountered_legal_move = false;
         for mov in moves {
-            if !MoveGenerator::<CapturesOnly>::new(&mut self.board).is_legal(mov) {
+            if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
                 continue;
             }
+            encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
             self.depth_from_root += 1;
             let score = -self.negamax_search_all_captures(-beta, -alpha);
@@ -216,6 +218,22 @@ impl Engine {
             }
             alpha = alpha.max(score);
         }
+
+        if !encountered_legal_move {
+            let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
+            let legal_moves = movegen
+                .gen_pseudolegal_moves()
+                .iter()
+                .filter(|mov| !mov.flags().is_capture())
+                .any(|&mov| movegen.is_legal(mov));
+
+            let is_check = movegen.attack_map().contains(self.board.active_king_pos);
+            if !legal_moves && is_check {
+                // TODO - doesn't product a correct `mate in` score
+                return -Self::mate_score();
+            }
+        }
+
         alpha
     }
 }
