@@ -59,6 +59,21 @@ impl<T> IndexMut<PieceKind> for [T] {
     }
 }
 
+impl Index<Piece> for Board {
+    type Output = Bitboard;
+    fn index(&self, index: Piece) -> &Self::Output {
+        &self.piece_bitboards[index]
+    }
+}
+
+impl Board {
+    #[must_use]
+    #[inline]
+    pub fn get(&self, kind: PieceKind) -> Bitboard {
+        self.piece_bitboards[kind] | self.piece_bitboards[kind as usize + 6]
+    }
+}
+
 impl Default for Piece {
     #[inline]
     fn default() -> Self {

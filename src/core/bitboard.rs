@@ -31,6 +31,11 @@ impl Bitboard {
             start = self.0.trailing_zeros() as i8;
         }
     }
+    #[inline]
+    #[must_use]
+    pub fn count(self) -> u32 {
+        self.0.count_ones()
+    }
 }
 
 impl BitOr for Bitboard {

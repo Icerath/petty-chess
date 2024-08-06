@@ -47,23 +47,10 @@ impl Engine {
     pub(crate) fn is_cancelled(&mut self) -> bool {
         self.time_started.elapsed() >= self.time_available || self.force_cancelled
     }
-    pub fn endgame(&mut self) -> f32 {
-        let default_sum = 24;
-        let mut sum = 0;
-        let mut num_queens = [0; 2];
-        for piece in self.board.pieces() {
-            sum += match piece.kind() {
-                PieceKind::Pawn | PieceKind::King => 0,
-                PieceKind::Knight | PieceKind::Bishop => 1,
-                PieceKind::Rook => 2,
-                PieceKind::Queen => 4,
-            };
-            if piece.kind() == Queen {
-                num_queens[piece.colour() as usize] += 1;
-            }
-        }
-        let sum = sum.min(default_sum);
-        1.0 - (sum as f32 / default_sum as f32)
+    #[must_use]
+    #[inline]
+    pub fn endgame(&self) -> f32 {
+        endgame(&self.board)
     }
     #[inline]
     #[must_use]
@@ -75,4 +62,19 @@ impl Engine {
     pub const fn mate_score() -> i32 {
         Eval::MATE_EVAL.0
     }
+}
+
+fn endgame(board: &Board) -> f32 {
+    let mut sum = 0;
+    sum += (board.get(Bishop) | board.get(Knight)).count();
+    sum += 2 * board.get(Rook).count();
+    sum += 4 * board.get(Queen).count();
+    (1.0 - (sum as f32 / 24.0)).min(1.0)
+}
+
+#[test]
+#[allow(clippy::float_cmp)]
+fn test_endgame() {
+    assert_eq!(endgame(&Board::start_pos()), 0.0);
+    assert_eq!(endgame(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - - 0 1").unwrap()), 1.0);
 }
