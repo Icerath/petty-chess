@@ -14,10 +14,8 @@ impl Engine {
                 * (1.0 - endgame)) as i32;
 
             if let Some(target_piece) = self.board[mov.to()] {
-                if piece.kind() != PieceKind::King {
-                    score += 4 * abs_piece_value(target_piece.kind(), endgame)
-                        - abs_piece_value(piece.kind(), endgame);
-                }
+                score +=
+                    4 * abs_piece_value(target_piece.kind(), endgame) - abs_piece_value(piece.kind(), endgame);
             };
 
             if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
