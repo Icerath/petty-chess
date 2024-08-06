@@ -1,3 +1,5 @@
+use movegen::FullGen;
+
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
 use crate::prelude::*;
 
@@ -38,8 +40,9 @@ impl Engine {
 
             if self.depth_from_root <= 4 {
                 let unmake = self.board.make_move(mov);
-                let is_check =
-                    MoveGenerator::new(&mut self.board).attack_map().contains(self.board.active_king_pos);
+                let is_check = MoveGenerator::<FullGen>::new(&mut self.board)
+                    .attack_map()
+                    .contains(self.board.active_king_pos);
                 self.board.unmake_move(unmake);
                 if is_check {
                     score += 35;

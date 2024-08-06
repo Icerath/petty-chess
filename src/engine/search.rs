@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use movegen::{CapturesOnly, FullGen};
+
 use super::{transposition::Nodetype, Engine};
 use crate::{
     prelude::*,
@@ -117,7 +119,7 @@ impl Engine {
             return self.negamax_search_all_captures(alpha, beta);
         }
 
-        let mut moves = MoveGenerator::new(&mut self.board).gen_pseudolegal_moves();
+        let mut moves = MoveGenerator::<FullGen>::new(&mut self.board).gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves);
@@ -125,7 +127,7 @@ impl Engine {
 
         let curr_nodes = self.total_nodes;
         for mov in moves {
-            if !MoveGenerator::new(&mut self.board).is_legal(mov) {
+            if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
                 continue;
             }
             let mut line = Moves::new();
@@ -164,7 +166,10 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            if MoveGenerator::new(&mut self.board).attack_map().contains(self.board.active_king_pos) {
+            if MoveGenerator::<CapturesOnly>::new(&mut self.board)
+                .attack_map()
+                .contains(self.board.active_king_pos)
+            {
                 return -Self::mate_score();
             }
             return 0;
@@ -192,7 +197,7 @@ impl Engine {
         self.order_moves(&mut moves);
 
         for mov in moves {
-            if !MoveGenerator::new(&mut self.board).is_legal(mov) {
+            if !MoveGenerator::<CapturesOnly>::new(&mut self.board).is_legal(mov) {
                 continue;
             }
             let unmake = self.board.make_move(mov);

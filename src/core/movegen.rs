@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use super::magic::Magic;
 use crate::prelude::*;
 pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
@@ -6,50 +8,63 @@ const KING_MOVES: [Bitboard; 64] = compute_king_moves();
 const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
 const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
-pub struct MoveGenerator<'a> {
+pub struct CapturesOnly;
+pub struct FullGen;
+
+trait GenType {
+    const CAPTURES_ONLY: bool;
+}
+
+impl GenType for CapturesOnly {
+    const CAPTURES_ONLY: bool = true;
+}
+
+impl GenType for FullGen {
+    const CAPTURES_ONLY: bool = false;
+}
+
+#[allow(private_bounds)]
+pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
-    captures_only: bool,
     attacked_squares: Option<Bitboard>,
     pub queen_promote_only: bool,
     magic: &'static Magic,
+    ty: PhantomData<G>,
 }
 
 impl Board {
     #[must_use]
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
-        MoveGenerator::new(self).gen_pseudolegal_moves()
+        MoveGenerator::<FullGen>::new(self).gen_pseudolegal_moves()
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
-        let mut movegen = MoveGenerator::new(self);
+        let mut movegen = MoveGenerator::<FullGen>::new(self);
         movegen.queen_promote_only = false;
         movegen.gen_legal_moves()
     }
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
-        let mut movegen = MoveGenerator::new(self);
-        movegen.captures_only = true;
-        movegen.gen_legal_moves()
+        MoveGenerator::<CapturesOnly>::new(self).gen_legal_moves()
     }
     #[must_use]
     pub fn gen_pseudolegal_capture_moves(&mut self) -> Moves {
-        let mut movegen = MoveGenerator::new(self);
-        movegen.captures_only = true;
-        movegen.gen_pseudolegal_moves()
+        MoveGenerator::<CapturesOnly>::new(self).gen_pseudolegal_moves()
     }
 }
 
-impl<'a> MoveGenerator<'a> {
+#[allow(private_bounds)]
+impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
         Self {
             moves: Moves::default(),
             board,
-            captures_only: false,
             attacked_squares: None,
             queen_promote_only: true,
             magic: Magic::get(),
+            ty: PhantomData,
         }
     }
     #[must_use]
@@ -84,7 +99,6 @@ impl<'a> MoveGenerator<'a> {
                 return false;
             }
         }
-
         let unmake = self.board.make_move(mov);
         let is_attacked = self.is_square_attacked(self.board.inactive_king_pos);
         self.board.unmake_move(unmake);
@@ -135,7 +149,7 @@ impl<'a> MoveGenerator<'a> {
         squares.for_each(|square| {
             if self.board[square].is_some() {
                 self.moves.push(Move::new(from, square, MoveFlags::Capture));
-            } else if !self.captures_only {
+            } else if !G::CAPTURES_ONLY {
                 self.moves.push(Move::new(from, square, MoveFlags::Quiet));
             }
         });
@@ -146,7 +160,7 @@ impl<'a> MoveGenerator<'a> {
         let can_promote = (self.board.white_to_play() && from.rank().0 == 6)
             || (self.board.black_to_play() && from.rank().0 == 1);
 
-        if !self.captures_only {
+        if !G::CAPTURES_ONLY {
             let to = Pos(from.0 + forward * 8);
             if self.board[to].is_none() {
                 let can_double_push = (self.board.white_to_play() && from.rank().0 == 1)
@@ -212,7 +226,7 @@ impl<'a> MoveGenerator<'a> {
         bitboard.for_each(|to| {
             if self.board[to].is_some() {
                 self.moves.push(Move::new(from, to, MoveFlags::Capture));
-            } else if !self.captures_only {
+            } else if !G::CAPTURES_ONLY {
                 self.moves.push(Move::new(from, to, MoveFlags::Quiet));
             }
         });
@@ -223,11 +237,11 @@ impl<'a> MoveGenerator<'a> {
         bitboard.for_each(|to| {
             if self.board[to].is_some() {
                 self.moves.push(Move::new(from, to, MoveFlags::Capture));
-            } else if !self.captures_only {
+            } else if !G::CAPTURES_ONLY {
                 self.moves.push(Move::new(from, to, MoveFlags::Quiet));
             }
         });
-        if self.captures_only {
+        if G::CAPTURES_ONLY {
             return;
         }
         if self.board.white_to_play() {
@@ -260,9 +274,6 @@ impl<'a> MoveGenerator<'a> {
             }
         }
     }
-}
-
-impl<'a> MoveGenerator<'a> {
     #[inline]
     pub fn is_square_attacked(&mut self, square: Pos) -> bool {
         self.board.active_colour = !self.board.active_colour;
