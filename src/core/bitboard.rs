@@ -19,16 +19,20 @@ impl Bitboard {
     }
     #[inline]
     #[must_use]
-    pub fn contains(&self, pos: Pos) -> bool {
+    pub fn contains(self, pos: Pos) -> bool {
         self.0 & (1 << pos.0) > 0
     }
     #[inline]
+    #[must_use]
+    pub fn bitscan(self) -> Pos {
+        Pos(self.0.trailing_zeros() as i8)
+    }
+    #[inline]
     pub fn for_each<F: FnMut(Pos)>(mut self, mut f: F) {
-        let mut start = self.0.trailing_zeros() as i8;
         while self.0 > 0 {
-            self.remove(Pos(start));
-            f(Pos(start));
-            start = self.0.trailing_zeros() as i8;
+            let next = self.bitscan();
+            f(next);
+            self.remove(next);
         }
     }
     #[inline]
