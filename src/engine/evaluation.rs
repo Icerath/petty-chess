@@ -5,6 +5,7 @@ impl Engine {
         self.raw_evaluation() * self.board.active_colour.positive()
     }
     pub fn raw_evaluation(&mut self) -> i32 {
+        let endgame = self.endgame();
         self.total_nodes += 1;
 
         if !self.sufficient_material_to_force_checkmate() {
@@ -12,27 +13,20 @@ impl Engine {
         }
         let mut total = 0;
 
+        // punish kings next adjacent to open file
         for colour in [White, Black] {
             let file = Pos(self.board.piece_bitboards[colour + King].0.trailing_zeros() as i8).file();
             let pawns = self.board.piece_bitboards[colour + Pawn];
 
-            let mut open_files = 0;
+            let left_open = file.0 != 0 && pawns.contains_in_file(File(file.0 - 1));
+            let middle_open = pawns.contains_in_file(file);
+            let right_open = file.0 != 7 && pawns.contains_in_file(File(file.0 + 1));
 
-            if file.0 != 7 {
-                open_files += !(0..8)
-                    .map(|rank| Pos::new(Rank(rank), File(file.0 + 1)))
-                    .any(|pos| pawns.contains(pos)) as i32;
-            }
-            open_files +=
-                !(0..8).map(|rank| Pos::new(Rank(rank), File(file.0))).any(|pos| pawns.contains(pos)) as i32;
-            if file.0 != 0 {
-                open_files += !(0..8)
-                    .map(|rank| Pos::new(Rank(rank), File(file.0 - 1)))
-                    .any(|pos| pawns.contains(pos)) as i32;
-            }
-            total -= ((open_files * 40 * colour.positive()) as f32 * (1.0 - self.endgame())) as i32;
+            let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
+            total -= ((num_open_files * 50 * colour.positive()) as f32 * (1.0 - self.endgame())) as i32;
         }
 
+        // punish double pawns
         for file in 0..8 {
             let mut wp = 0;
             let mut bp = 0;
@@ -41,13 +35,29 @@ impl Engine {
                 wp += (piece == Piece::WhitePawn) as i32;
                 bp += (piece == Piece::BlackPawn) as i32;
             }
-            total -= (wp - 1).max(0) * 40;
-            total += (bp - 1).max(0) * 40;
+            total -= (wp - 1).max(0) * 35 * White.positive();
+            total -= (bp - 1).max(0) * 35 * Black.positive();
         }
-        let endgame = self.endgame();
-        total += self.has_bishop_pair(White) as i32 * 50;
-        total -= self.has_bishop_pair(Black) as i32 * 50;
+        // punish isolated pawns
+        for colour in [White, Black] {
+            let pawns = self.board[colour + Pawn];
+            pawns.for_each(|pos| {
+                let file = pos.file().0;
 
+                let left_open = file == 0 || pawns.contains_in_file(File(file - 1));
+                let right_open = file == 7 || pawns.contains_in_file(File(file + 1));
+
+                if left_open && right_open {
+                    total -= 40 * colour.positive();
+                }
+            });
+        }
+
+        // reward bishop pair
+        total -= self.has_bishop_pair(White) as i32 * 20 * White.positive();
+        total -= self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
+
+        // square tables and piece values
         self.board[Piece::WhitePawn]
             .for_each(|pos| total += piece_value_at_square(pos, Piece::WhitePawn, endgame));
         self.board[Piece::BlackPawn]

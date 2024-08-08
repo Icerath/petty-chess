@@ -36,6 +36,13 @@ impl Bitboard {
     pub fn count(self) -> u32 {
         self.0.count_ones()
     }
+
+    #[inline]
+    #[must_use]
+    pub fn contains_in_file(&self, file: File) -> bool {
+        // TODO - optimize
+        !(0..8).map(|rank| Pos::new(Rank(rank), File(file.0))).any(|pos| self.contains(pos))
+    }
 }
 
 impl Not for Bitboard {
