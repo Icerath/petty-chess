@@ -28,13 +28,9 @@ impl Engine {
 
         // punish double pawns
         for file in 0..8 {
-            let mut wp = 0;
-            let mut bp = 0;
-            for rank in 0..8 {
-                let Some(piece) = self.board[Pos::new(Rank(rank), File(file))] else { continue };
-                wp += (piece == Piece::WhitePawn) as i32;
-                bp += (piece == Piece::BlackPawn) as i32;
-            }
+            let wp = self.board[Piece::WhitePawn].filter_file(File(file)).count() as i32;
+            let bp = self.board[Piece::BlackPawn].filter_file(File(file)).count() as i32;
+
             total -= (wp - 1).max(0) * 35 * White.positive();
             total -= (bp - 1).max(0) * 35 * Black.positive();
         }
@@ -44,8 +40,8 @@ impl Engine {
             pawns.for_each(|pos| {
                 let file = pos.file().0;
 
-                let left_open = file == 0 || pawns.contains_in_file(File(file - 1));
-                let right_open = file == 7 || pawns.contains_in_file(File(file + 1));
+                let left_open = file == 0 || pawns.filter_file(File(file - 1)).count() == 0;
+                let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
                 if left_open && right_open {
                     total -= 40 * colour.positive();
