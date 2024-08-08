@@ -28,8 +28,8 @@ impl Engine {
 
         // punish double pawns
         for file in 0..8 {
-            let wp = self.board[Piece::WhitePawn].filter_file(File(file)).count() as i32;
-            let bp = self.board[Piece::BlackPawn].filter_file(File(file)).count() as i32;
+            let wp = self.board[WhitePawn].filter_file(File(file)).count() as i32;
+            let bp = self.board[BlackPawn].filter_file(File(file)).count() as i32;
 
             total -= (wp - 1).max(0) * 35 * White.positive();
             total -= (bp - 1).max(0) * 35 * Black.positive();
@@ -54,30 +54,18 @@ impl Engine {
         total += self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
 
         // square tables and piece values
-        self.board[Piece::WhitePawn]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhitePawn, endgame));
-        self.board[Piece::BlackPawn]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackPawn, endgame));
-        self.board[Piece::WhiteKnight]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteKnight, endgame));
-        self.board[Piece::BlackKnight]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackKnight, endgame));
-        self.board[Piece::WhiteBishop]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteBishop, endgame));
-        self.board[Piece::BlackBishop]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackBishop, endgame));
-        self.board[Piece::WhiteRook]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteRook, endgame));
-        self.board[Piece::BlackRook]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackRook, endgame));
-        self.board[Piece::WhiteQueen]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::WhiteQueen, endgame));
-        self.board[Piece::BlackQueen]
-            .for_each(|pos| total += piece_value_at_square(pos, Piece::BlackQueen, endgame));
-        self.board[Piece::WhiteKing]
-            .for_each(|pos| total += piece_square_value(pos, Piece::WhiteKing, endgame));
-        self.board[Piece::BlackKing]
-            .for_each(|pos| total += piece_square_value(pos, Piece::BlackKing, endgame));
+        self.board[WhitePawn].for_each(|pos| total += piece_value_at_square(pos, WhitePawn, endgame));
+        self.board[BlackPawn].for_each(|pos| total += piece_value_at_square(pos, BlackPawn, endgame));
+        self.board[WhiteKnight].for_each(|pos| total += piece_value_at_square(pos, WhiteKnight, endgame));
+        self.board[BlackKnight].for_each(|pos| total += piece_value_at_square(pos, BlackKnight, endgame));
+        self.board[WhiteBishop].for_each(|pos| total += piece_value_at_square(pos, WhiteBishop, endgame));
+        self.board[BlackBishop].for_each(|pos| total += piece_value_at_square(pos, BlackBishop, endgame));
+        self.board[WhiteRook].for_each(|pos| total += piece_value_at_square(pos, WhiteRook, endgame));
+        self.board[BlackRook].for_each(|pos| total += piece_value_at_square(pos, BlackRook, endgame));
+        self.board[WhiteQueen].for_each(|pos| total += piece_value_at_square(pos, WhiteQueen, endgame));
+        self.board[BlackQueen].for_each(|pos| total += piece_value_at_square(pos, BlackQueen, endgame));
+        self.board[WhiteKing].for_each(|pos| total += piece_square_value(pos, WhiteKing, endgame));
+        self.board[BlackKing].for_each(|pos| total += piece_square_value(pos, BlackKing, endgame));
 
         total
     }

@@ -3,8 +3,8 @@ pub mod engine;
 pub mod uci;
 
 pub mod prelude {
-    use smallvec::SmallVec;
     pub use Colour::*;
+    pub use Piece::*;
     pub use PieceKind::*;
 
     pub use super::{
@@ -24,5 +24,5 @@ pub mod prelude {
         engine::Engine,
     };
 
-    pub type Moves = SmallVec<[Move; 64]>;
+    pub type Moves = smallvec::SmallVec<[Move; 64]>;
 }

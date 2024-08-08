@@ -191,7 +191,7 @@ fn parse_en_passant(fen: &str) -> Option<Option<Pos>> {
 #[test]
 fn test_fen_parsing() {
     let board = Board::from_fen(STARTING_FEN).expect("Failed to parse starting fen");
-    assert_eq!(board[Pos::E1], Some(White + King));
+    assert_eq!(board[Pos::E1], Some(WhiteKing));
     assert_eq!(board.to_fen(), STARTING_FEN);
 
     for fen in [KIWIPETE, PERFT_POSITION_3, PERFT_POSITION_4, PERFT_POSITION_5] {
