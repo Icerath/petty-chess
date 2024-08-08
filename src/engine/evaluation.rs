@@ -50,8 +50,8 @@ impl Engine {
         }
 
         // reward bishop pair
-        total -= self.has_bishop_pair(White) as i32 * 20 * White.positive();
-        total -= self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
+        total += self.has_bishop_pair(White) as i32 * 20 * White.positive();
+        total += self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
 
         // square tables and piece values
         self.board[Piece::WhitePawn]
