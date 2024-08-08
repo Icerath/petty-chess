@@ -92,6 +92,9 @@ impl Application {
             }) else {
                 break;
             };
+            if mov.flags().is_capture() {
+                self.engine.seen_positions.clear();
+            }
             self.engine.seen_positions.push(self.engine.board.zobrist);
             self.engine.board.make_move(mov);
         }

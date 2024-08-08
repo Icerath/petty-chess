@@ -66,6 +66,10 @@ impl Engine {
                 }
             }
             self.pv = new_pv;
+
+            if let Some(&mov) = self.pv.first() {
+                assert_eq!(mov, best_move);
+            }
             self.transposition_table.insert(
                 &self.board,
                 &self.seen_positions,
@@ -134,9 +138,6 @@ impl Engine {
             let mut line = Moves::new();
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
-            if mov.flags().is_capture() {
-                self.seen_positions.clear();
-            }
             self.seen_positions.push(self.board.zobrist);
             self.depth_from_root += 1;
             let score = -self.negamax(-beta, -alpha, depth - 1, &mut line);
