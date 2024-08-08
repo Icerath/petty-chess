@@ -28,7 +28,7 @@ pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
     attacked_squares: Option<Bitboard>,
-    pub queen_promote_only: bool,
+    pub queen_knight_promote_only: bool,
     magic: &'static Magic,
     ty: PhantomData<G>,
 }
@@ -41,7 +41,7 @@ impl Board {
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
         let mut movegen = MoveGenerator::<FullGen>::new(self);
-        movegen.queen_promote_only = false;
+        movegen.queen_knight_promote_only = false;
         movegen.gen_legal_moves()
     }
     #[must_use]
@@ -62,7 +62,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             moves: Moves::default(),
             board,
             attacked_squares: None,
-            queen_promote_only: true,
+            queen_knight_promote_only: true,
             magic: Magic::get(),
             ty: PhantomData,
         }
@@ -165,8 +165,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                     }
                 } else if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
-                    if !self.queen_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
+                    if !self.queen_knight_promote_only {
                         self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
                         self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
                     }
@@ -177,8 +177,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-                    if !self.queen_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                    if !self.queen_knight_promote_only {
                         self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
                         self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
                     }
@@ -190,12 +190,12 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         if let Some(to) = Pos(from.0 + forward * 8).add_file(-1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
-                    if !self.queen_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+                    self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
+                    if !self.queen_knight_promote_only {
                         self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
                         self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
                     }
-                    self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
                 } else {
                     self.moves.push(Move::new(from, to, MoveFlags::Capture));
                 }
