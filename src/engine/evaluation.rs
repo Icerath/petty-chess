@@ -51,6 +51,18 @@ impl Engine {
                 }
             });
         }
+        // reward rooks on an open file
+        for colour in [White, Black] {
+            let friendly_pawns = self.board[colour + Pawn];
+            let all_pawns = self.board.get(Pawn);
+            self.board[colour + Rook].for_each(|pos| {
+                if all_pawns.filter_file(pos.file()).count() == 0 {
+                    total += 40 * colour.positive();
+                } else if friendly_pawns.filter_file(pos.file()).count() == 0 {
+                    total += 20 * colour.positive();
+                }
+            });
+        }
 
         // reward bishop pair
         total += self.has_bishop_pair(White) as i32 * 20 * White.positive();
