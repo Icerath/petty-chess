@@ -13,11 +13,15 @@ const MVV_LVA: [[u8; 6]; 6] = [
 ];
 
 impl Engine {
-    pub fn order_moves(&mut self, moves: &mut [Move]) {
+    pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let endgame = self.endgame();
         moves.sort_by_cached_key(|&mov| {
             let mut score = 0;
-
+            if let Some(killer) = killer {
+                if killer == mov {
+                    return -i16::MAX as i32;
+                }
+            }
             let piece = self.board[mov.from()].unwrap();
 
             score += ((abs_piece_square_value(mov.to(), piece, endgame)

@@ -28,7 +28,7 @@ impl Engine {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
-            self.order_moves(&mut moves);
+            self.order_moves(&mut moves, None);
             if let Some(&mov) = self.pv.get(self.depth_from_root as usize) {
                 if let Some(mov_index) = moves.iter().position(|&m| m == mov) {
                     moves.remove(mov_index);
@@ -48,7 +48,7 @@ impl Engine {
                 let unmake = self.board.make_move(mov);
                 self.seen_positions.push(self.board.zobrist);
                 self.depth_from_root += 1;
-                let score = -self.negamax(alpha, beta, depth - 1, &mut line);
+                let score = -self.negamax(alpha, beta, depth - 1, &mut line, None).0;
                 self.depth_from_root -= 1;
                 self.seen_positions.pop();
                 self.board.unmake_move(unmake);
@@ -113,24 +113,32 @@ impl Engine {
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
     }
-    pub(crate) fn negamax(&mut self, mut alpha: i32, beta: i32, depth: u8, pline: &mut Moves) -> i32 {
+    pub(crate) fn negamax(
+        &mut self,
+        mut alpha: i32,
+        beta: i32,
+        depth: u8,
+        pline: &mut Moves,
+        killer_move: Option<Move>,
+    ) -> (i32, Option<Move>) {
         if self.seen_position() {
-            return 0;
+            return (0, None);
         }
         if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
-            return eval;
+            return (eval, None);
         }
         if depth == 0 {
-            return self.negamax_search_all_captures(alpha, beta);
+            return (self.negamax_search_all_captures(alpha, beta), None);
         }
 
         let mut moves = MoveGenerator::<FullGen>::new(&mut self.board).gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
 
-        self.order_moves(&mut moves);
+        self.order_moves(&mut moves, killer_move);
         let mut nodetype = Nodetype::Alpha;
 
         let curr_nodes = self.total_nodes;
+        let mut killer_move = None;
         for mov in moves {
             if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
                 continue;
@@ -140,12 +148,15 @@ impl Engine {
             let unmake = self.board.make_move(mov);
             self.seen_positions.push(self.board.zobrist);
             self.depth_from_root += 1;
-            let score = -self.negamax(-beta, -alpha, depth - 1, &mut line);
+            let (score, chosen_move) = self.negamax(-beta, -alpha, depth - 1, &mut line, killer_move);
+            let score = -score;
+            killer_move = chosen_move;
+
             self.depth_from_root -= 1;
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
             if self.is_cancelled() {
-                return alpha;
+                return (alpha, None);
             }
 
             if score >= beta {
@@ -157,7 +168,7 @@ impl Engine {
                     Nodetype::Beta,
                     self.total_nodes - curr_nodes,
                 );
-                return beta;
+                return (beta, Some(mov));
             }
             if score > alpha {
                 line.insert(0, mov);
@@ -172,9 +183,9 @@ impl Engine {
                 .attack_map()
                 .contains(self.board.active_king_pos)
             {
-                return -Self::mate_score();
+                return (-Self::mate_score(), None);
             }
-            return 0;
+            return (0, None);
         }
 
         self.transposition_table.insert(
@@ -185,7 +196,7 @@ impl Engine {
             nodetype,
             self.total_nodes - curr_nodes,
         );
-        alpha
+        (alpha, None)
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
@@ -196,7 +207,7 @@ impl Engine {
         alpha = alpha.max(eval);
 
         let mut moves = self.board.gen_pseudolegal_capture_moves();
-        self.order_moves(&mut moves);
+        self.order_moves(&mut moves, None);
 
         let mut encountered_legal_move = false;
         for mov in moves {
