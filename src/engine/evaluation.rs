@@ -51,7 +51,7 @@ impl Engine {
                 }
             });
         }
-        // reward pawns close to king
+        // punish pawns far from king
         for colour in [White, Black] {
             let king = self.board[colour + King].bitscan();
             let pawns = self.board[colour + Pawn];
