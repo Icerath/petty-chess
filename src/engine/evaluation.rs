@@ -16,14 +16,17 @@ impl Engine {
         // punish kings next adjacent to open file
         for colour in [White, Black] {
             let file = Pos(self.board.piece_bitboards[colour + King].0.trailing_zeros() as i8).file();
-            let pawns = self.board.piece_bitboards[colour + Pawn];
+            let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
+            let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
 
-            let left_open = file.0 != 0 && pawns.contains_in_file(File(file.0 - 1));
-            let middle_open = pawns.contains_in_file(file);
-            let right_open = file.0 != 7 && pawns.contains_in_file(File(file.0 + 1));
+            for pawns in [friendly_pawns, enemy_pawns] {
+                let left_open = file.0 != 0 && pawns.filter_file(File(file.0 - 1)).count() == 0;
+                let middle_open = pawns.filter_file(file).count() == 0;
+                let right_open = file.0 != 7 && pawns.filter_file(File(file.0 + 1)).count() == 0;
 
-            let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-            total -= ((num_open_files * 50 * colour.positive()) as f32 * (1.0 - self.endgame())) as i32;
+                let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
+                total -= ((num_open_files * 35 * colour.positive()) as f32 * (1.0 - endgame)) as i32;
+            }
         }
 
         // punish double pawns
