@@ -15,7 +15,7 @@ impl Engine {
 
         // punish kings next adjacent to open file
         for colour in [White, Black] {
-            let file = Pos(self.board.piece_bitboards[colour + King].0.trailing_zeros() as i8).file();
+            let file = self.board.piece_bitboards[colour + King].bitscan().file();
             let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
             let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
 
@@ -49,6 +49,20 @@ impl Engine {
                 if left_open && right_open {
                     total -= 40 * colour.positive();
                 }
+            });
+        }
+        // reward pawns close to king
+        for colour in [White, Black] {
+            let king = self.board[colour + King].bitscan();
+            let pawns = self.board[colour + Pawn];
+            pawns.for_each(|pos| {
+                // if not adjacent { return }
+                let is_adjacent = pos.file().0.abs_diff(king.file().0) <= 1;
+                if !is_adjacent {
+                    return;
+                }
+                let dif_rank = pos.rank().0.abs_diff(king.rank().0).saturating_sub(1);
+                total -= dif_rank as i32 * 7 * colour.positive();
             });
         }
         // reward rooks on an open file
