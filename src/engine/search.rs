@@ -48,7 +48,7 @@ impl Engine {
                 let unmake = self.board.make_move(mov);
                 self.seen_positions.push(self.board.zobrist);
                 self.depth_from_root += 1;
-                let score = -self.negamax(-beta, beta, depth - 1, &mut line);
+                let score = -self.negamax(alpha, beta, depth - 1, &mut line);
                 self.depth_from_root -= 1;
                 self.seen_positions.pop();
                 self.board.unmake_move(unmake);
