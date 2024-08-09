@@ -139,7 +139,7 @@ impl Engine {
 
         let curr_nodes = self.total_nodes;
         let mut killer_move = None;
-        for mov in moves {
+        for (i, &mov) in moves.iter().enumerate() {
             if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
                 continue;
             }
@@ -148,6 +148,17 @@ impl Engine {
             let unmake = self.board.make_move(mov);
             self.seen_positions.push(self.board.zobrist);
             self.depth_from_root += 1;
+
+            if depth > 1 && i > moves.len() / 2 {
+                let score = -self.negamax(-beta, -alpha, depth - 2, &mut line, killer_move).0;
+                if score <= alpha {
+                    self.depth_from_root -= 1;
+                    self.seen_positions.pop();
+                    self.board.unmake_move(unmake);
+                    continue;
+                }
+            }
+
             let (score, chosen_move) = self.negamax(-beta, -alpha, depth - 1, &mut line, killer_move);
             let score = -score;
             killer_move = chosen_move;
