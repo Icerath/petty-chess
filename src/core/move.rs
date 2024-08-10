@@ -43,7 +43,7 @@ impl fmt::Debug for Move {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let promote = match self.flags().promotion() {
-            Some(Promotion::Knight) => "k",
+            Some(Promotion::Knight) => "n",
             Some(Promotion::Bishop) => "b",
             Some(Promotion::Rook) => "r",
             Some(Promotion::Queen) => "q",
