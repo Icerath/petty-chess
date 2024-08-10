@@ -1,5 +1,3 @@
-use movegen::FullGen;
-
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
 use crate::prelude::*;
 
@@ -15,45 +13,35 @@ const MVV_LVA: [[u8; 6]; 6] = [
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let endgame = self.endgame();
-        moves.sort_by_cached_key(|&mov| {
-            let mut score = 0;
-            if let Some(killer) = killer {
-                if killer == mov {
-                    return -i16::MAX as i32;
-                }
+        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, endgame));
+    }
+    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, endgame: f32) -> i32 {
+        let mut score = 0;
+        if let Some(killer) = killer {
+            if killer == mov {
+                return i16::MAX as i32;
             }
-            let piece = self.board[mov.from()].unwrap();
+        }
+        let piece = self.board[mov.from()].unwrap();
 
-            score += ((abs_piece_square_value(mov.to(), piece, endgame)
-                - abs_piece_square_value(mov.from(), piece, endgame)) as f32
-                * (0.2 * (1.0 - endgame))) as i32;
+        score += ((abs_piece_square_value(mov.to(), piece, endgame)
+            - abs_piece_square_value(mov.from(), piece, endgame)) as f32
+            * (0.2 * (1.0 - endgame))) as i32;
 
-            if let Some(target_piece) = self.board[mov.to()] {
-                score += MVV_LVA[target_piece.kind()][piece.kind()] as i32 * 4;
-            } else if mov.flags() == MoveFlags::EnPassant {
-                score += MVV_LVA[Pawn][Pawn] as i32 * 4;
-            }
+        if let Some(target_piece) = self.board[mov.to()] {
+            score += MVV_LVA[target_piece.kind()][piece.kind()] as i32 * 4;
+        } else if mov.flags() == MoveFlags::EnPassant {
+            score += MVV_LVA[Pawn][Pawn] as i32 * 4;
+        }
 
-            if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-                score += abs_piece_value(kind, endgame);
-            };
+        if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
+            score += abs_piece_value(kind, endgame);
+        };
 
-            if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
-                score += 10;
-            }
+        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+            score += 10;
+        }
 
-            if self.depth_from_root <= 4 {
-                let unmake = self.board.make_move(mov);
-                let is_check = MoveGenerator::<FullGen>::new(&mut self.board)
-                    .attack_map()
-                    .contains(self.board.active_king_pos);
-                self.board.unmake_move(unmake);
-                if is_check {
-                    score += 35;
-                }
-            }
-
-            -score
-        });
+        score
     }
 }
