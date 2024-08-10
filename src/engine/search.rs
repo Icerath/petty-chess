@@ -58,13 +58,14 @@ impl Engine {
                 }
 
                 if score > alpha {
-                    new_pv.insert(0, mov);
-                    new_pv.extend(line);
+                    line.push(mov);
+                    new_pv = line;
                     best_move = mov;
                     alpha = score;
                     node_type = Nodetype::Exact;
                 }
             }
+            new_pv.reverse();
             self.pv = new_pv;
 
             if let Some(&mov) = self.pv.first() {
@@ -91,17 +92,15 @@ impl Engine {
                 Score::Centipawns { cp: absolute_eval, bounds: None }
             };
 
-            let mut info = Info {
+            let info = Info {
                 depth: Some(depth as u32),
                 score: Some(score),
                 nodes: Some(self.total_nodes),
                 time: Some(self.time_started.elapsed()),
                 pv: Some(self.pv.clone()),
-                currmove: Some(final_move),
                 ..Info::default()
             };
             tracing::info!("{info}");
-            info.pv = None;
             println!("{}", UciResponse::Info(Box::new(info)));
 
             if is_checkmate {
@@ -183,7 +182,7 @@ impl Engine {
                 return (beta, Some(mov));
             }
             if score > alpha {
-                line.insert(0, mov);
+                line.push(mov);
                 *pline = line;
                 alpha = score;
                 nodetype = Nodetype::Exact;
