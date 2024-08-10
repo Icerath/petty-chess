@@ -21,31 +21,31 @@ impl Magic {
     }
     #[must_use]
     #[inline]
-    pub fn rook_attacks(&self, square: Pos, occupancy: Bitboard) -> Bitboard {
-        self.rook_tables[square].get_attacks(occupancy)
+    pub fn rook_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
+        self.rook_tables[sq].get_attacks(occupancy)
     }
     #[must_use]
     #[inline]
-    pub fn bishop_attacks(&self, square: Pos, occupancy: Bitboard) -> Bitboard {
-        self.bishop_tables[square].get_attacks(occupancy)
+    pub fn bishop_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
+        self.bishop_tables[sq].get_attacks(occupancy)
     }
     #[must_use]
     #[inline]
-    pub fn queen_attacks(&self, square: Pos, occupancy: Bitboard) -> Bitboard {
-        self.bishop_tables[square].get_attacks(occupancy) | self.rook_tables[square].get_attacks(occupancy)
+    pub fn queen_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
+        self.bishop_tables[sq].get_attacks(occupancy) | self.rook_tables[sq].get_attacks(occupancy)
     }
     #[allow(unused)]
     fn init() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| SquareTables::init(Pos(i as i8)).unwrap()),
-            bishop_tables: std::array::from_fn(|i| SquareTables::init(Pos(i as i8)).unwrap()),
+            rook_tables: std::array::from_fn(|i| SquareTables::init(Square(i as i8)).unwrap()),
+            bishop_tables: std::array::from_fn(|i| SquareTables::init(Square(i as i8)).unwrap()),
         }
     }
     #[allow(unused)]
     fn preinit() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| SquareTables::preinit(Pos(i as i8))),
-            bishop_tables: std::array::from_fn(|i| SquareTables::preinit(Pos(i as i8))),
+            rook_tables: std::array::from_fn(|i| SquareTables::preinit(Square(i as i8))),
+            bishop_tables: std::array::from_fn(|i| SquareTables::preinit(Square(i as i8))),
         }
     }
 }
@@ -58,21 +58,21 @@ struct SquareTables<const PIECE: usize> {
 }
 
 impl<const PIECE: usize> SquareTables<PIECE> {
-    fn preinit(square: Pos) -> Self {
-        let mask = Self::mask(square);
-        let magic = if PIECE == BISHOP { BISHOP_MAGICS[square] } else { ROOK_MAGICS[square] };
+    fn preinit(sq: Square) -> Self {
+        let mask = Self::mask(sq);
+        let magic = if PIECE == BISHOP { BISHOP_MAGICS[sq] } else { ROOK_MAGICS[sq] };
         let mut attacks: Box<[u64; PIECE]> = Box::new([0; PIECE]);
 
         for i in 0..1 << mask.count_ones() {
             let occupancy = index_to_uint64(i, mask);
             let index = (occupancy.wrapping_mul(magic) >> (64 - mask.count_ones())) as usize;
-            attacks[index] = Self::attacks(square, Bitboard(occupancy));
+            attacks[index] = Self::attacks(sq, Bitboard(occupancy));
         }
         Self { mask, shift: 64 - mask.count_ones(), attacks, magic }
     }
 
-    fn init(square: Pos) -> Result<Self, ()> {
-        let mask = Self::mask(square);
+    fn init(sq: Square) -> Result<Self, ()> {
+        let mask = Self::mask(sq);
         let occupancies: Box<[u64; PIECE]> = Box::new(std::array::from_fn(|i| index_to_uint64(i, mask)));
 
         'trials: for _ in 0..100_000_000 {
@@ -81,7 +81,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
 
             for occupancy in occupancies.into_iter() {
                 let index = (occupancy.wrapping_mul(magic) >> (64 - mask.count_ones())) as usize;
-                let correct_attacks = Self::attacks(square, Bitboard(occupancy));
+                let correct_attacks = Self::attacks(sq, Bitboard(occupancy));
                 if used[index] == 0 {
                     used[index] = correct_attacks;
                 } else if used[index] != correct_attacks {
@@ -99,28 +99,28 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         Bitboard(self.attacks[index])
     }
     #[allow(clippy::needless_range_loop)]
-    fn mask(square: Pos) -> u64 {
+    fn mask(sq: Square) -> u64 {
         let mut result = Bitboard(0);
         let start = if PIECE == BISHOP { 4 } else { 0 };
         let end = if PIECE == ROOK { 4 } else { 8 };
 
         for direction_index in start..end {
-            for n in 1..NUM_SQUARES_TO_EDGE[square][direction_index] {
-                let target_square = Pos(square.0 + DIRECTION_OFFSETS[direction_index] * n);
+            for n in 1..NUM_SQUARES_TO_EDGE[sq][direction_index] {
+                let target_square = Square(sq.0 + DIRECTION_OFFSETS[direction_index] * n);
                 result.insert(target_square);
             }
         }
         result.0
     }
     #[allow(clippy::needless_range_loop)]
-    fn attacks(square: Pos, occupancy: Bitboard) -> u64 {
+    fn attacks(sq: Square, occupancy: Bitboard) -> u64 {
         let mut result = Bitboard(0);
         let start = if PIECE == BISHOP { 4 } else { 0 };
         let end = if PIECE == ROOK { 4 } else { 8 };
 
         for direction_index in start..end {
-            for n in 1..=NUM_SQUARES_TO_EDGE[square][direction_index] {
-                let target_square = Pos(square.0 + DIRECTION_OFFSETS[direction_index] * n);
+            for n in 1..=NUM_SQUARES_TO_EDGE[sq][direction_index] {
+                let target_square = Square(sq.0 + DIRECTION_OFFSETS[direction_index] * n);
                 result.insert(target_square);
                 if occupancy.contains(target_square) {
                     break;

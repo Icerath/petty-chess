@@ -9,5 +9,5 @@ pub mod move_flags;
 pub mod movegen;
 pub mod perft;
 pub mod piece;
-pub mod position;
+pub mod square;
 pub mod zobrist;

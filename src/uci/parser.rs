@@ -203,8 +203,8 @@ fn test_uci_parsing() {
         Ok(Uci::Go(GoCommand {
             searchmoves: Some(
                 vec![
-                    Move::new(Pos::E2, Pos::E4, MoveFlags::QueenPromotion),
-                    Move::new(Pos::E7, Pos::E5, MoveFlags::Quiet)
+                    Move::new(Square::E2, Square::E4, MoveFlags::QueenPromotion),
+                    Move::new(Square::E7, Square::E5, MoveFlags::Quiet)
                 ]
                 .into()
             ),

@@ -10,25 +10,25 @@ pub struct Bitboard(pub u64);
 
 impl Bitboard {
     #[inline]
-    pub fn insert(&mut self, pos: Pos) {
-        self.0 |= 1 << pos.0;
+    pub fn insert(&mut self, sq: Square) {
+        self.0 |= 1 << sq.0;
     }
     #[inline]
-    pub fn remove(&mut self, pos: Pos) {
-        self.0 &= !(1 << pos.0);
-    }
-    #[inline]
-    #[must_use]
-    pub fn contains(self, pos: Pos) -> bool {
-        self.0 & (1 << pos.0) > 0
+    pub fn remove(&mut self, sq: Square) {
+        self.0 &= !(1 << sq.0);
     }
     #[inline]
     #[must_use]
-    pub fn bitscan(self) -> Pos {
-        Pos(self.0.trailing_zeros() as i8)
+    pub fn contains(self, sq: Square) -> bool {
+        self.0 & (1 << sq.0) > 0
     }
     #[inline]
-    pub fn for_each<F: FnMut(Pos)>(mut self, mut f: F) {
+    #[must_use]
+    pub fn bitscan(self) -> Square {
+        Square(self.0.trailing_zeros() as i8)
+    }
+    #[inline]
+    pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while self.0 > 0 {
             let next = self.bitscan();
             f(next);
@@ -114,19 +114,19 @@ impl BitOrAssign for Bitboard {
     }
 }
 
-impl FromIterator<Pos> for Bitboard {
+impl FromIterator<Square> for Bitboard {
     #[inline]
-    fn from_iter<T: IntoIterator<Item = Pos>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = Square>>(iter: T) -> Self {
         let mut ret = Self(0);
         ret.extend(iter);
         ret
     }
 }
 
-impl Extend<Pos> for Bitboard {
+impl Extend<Square> for Bitboard {
     #[inline]
-    fn extend<T: IntoIterator<Item = Pos>>(&mut self, iter: T) {
-        iter.into_iter().for_each(|pos| self.insert(pos));
+    fn extend<T: IntoIterator<Item = Square>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|sq| self.insert(sq));
     }
 }
 
@@ -140,8 +140,8 @@ impl fmt::Display for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for rank in (0..8).rev() {
             for file in 0..8 {
-                let pos = Pos::new(Rank(rank), File(file));
-                write!(f, "{}", self.contains(pos) as u8)?;
+                let sq = Square::new(Rank(rank), File(file));
+                write!(f, "{}", self.contains(sq) as u8)?;
             }
             writeln!(f)?;
         }

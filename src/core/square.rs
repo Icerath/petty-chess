@@ -5,9 +5,9 @@ use std::{
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
-pub struct Pos(pub i8);
+pub struct Square(pub i8);
 
-impl Pos {
+impl Square {
     #[inline]
     #[must_use]
     pub fn all() -> impl ExactSizeIterator<Item = Self> {
@@ -58,17 +58,17 @@ impl Rank {
     }
 }
 
-impl<T> Index<Pos> for [T] {
+impl<T> Index<Square> for [T] {
     type Output = T;
     #[inline]
-    fn index(&self, pos: Pos) -> &Self::Output {
+    fn index(&self, pos: Square) -> &Self::Output {
         &self[pos.0 as usize]
     }
 }
 
-impl<T> IndexMut<Pos> for [T] {
+impl<T> IndexMut<Square> for [T] {
     #[inline]
-    fn index_mut(&mut self, pos: Pos) -> &mut Self::Output {
+    fn index_mut(&mut self, pos: Square) -> &mut Self::Output {
         &mut self[pos.0 as usize]
     }
 }
@@ -83,13 +83,13 @@ impl File {
     }
 }
 
-impl fmt::Debug for Pos {
+impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Self::SQUARES[*self])
     }
 }
 
-impl fmt::Display for Pos {
+impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self, f)
     }
@@ -106,14 +106,14 @@ impl fmt::Display for InvalidPos {
 
 impl std::error::Error for InvalidPos {}
 
-impl FromStr for Pos {
+impl FromStr for Square {
     type Err = InvalidPos;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES.iter().position(|&square| square == input).map(|index| Pos(index as i8)).ok_or(InvalidPos)
+        Self::SQUARES.iter().position(|&sq| sq == input).map(|index| Square(index as i8)).ok_or(InvalidPos)
     }
 }
 
-impl Pos {
+impl Square {
     #[must_use]
     pub fn algebraic(self) -> &'static str {
         Self::SQUARES[self]

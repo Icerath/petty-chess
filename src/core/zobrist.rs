@@ -11,7 +11,7 @@ impl Zobrist {
         self.0 ^= SIDE_KEY;
     }
     #[inline]
-    pub fn xor_piece(&mut self, pos: Pos, piece: Piece) {
+    pub fn xor_piece(&mut self, pos: Square, piece: Piece) {
         self.0 ^= PIECE_KEYS[piece][pos];
     }
     #[inline]
@@ -19,8 +19,8 @@ impl Zobrist {
         self.0 ^= CASTLE_KEYS[can_castle.bits() as usize];
     }
     #[inline]
-    pub fn xor_en_passant(&mut self, square: Pos) {
-        self.0 ^= EN_PASSANT_KEYS[square];
+    pub fn xor_en_passant(&mut self, sq: Square) {
+        self.0 ^= EN_PASSANT_KEYS[sq];
     }
 }
 

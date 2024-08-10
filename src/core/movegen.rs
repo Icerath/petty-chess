@@ -91,10 +91,10 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.attack_map();
             let squares = match (self.board.active_colour, mov.flags() == MoveFlags::KingCastle) {
-                (Colour::White, true) => [Pos::F1, Pos::G1],
-                (Colour::White, false) => [Pos::C1, Pos::D1],
-                (Colour::Black, true) => [Pos::F8, Pos::G8],
-                (Colour::Black, false) => [Pos::C8, Pos::D8],
+                (Colour::White, true) => [Square::F1, Square::G1],
+                (Colour::White, false) => [Square::C1, Square::D1],
+                (Colour::Black, true) => [Square::F8, Square::G8],
+                (Colour::Black, false) => [Square::C8, Square::D8],
             };
             if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos)
             {
@@ -140,24 +140,24 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         attacked_squares
     }
     #[inline]
-    fn push_squares(&mut self, from: Pos, mut squares: Bitboard) {
+    fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
         squares &= !self.board.friendly_pieces();
-        squares.for_each(|square| {
-            if self.board[square].is_some() {
-                self.moves.push(Move::new(from, square, MoveFlags::Capture));
+        squares.for_each(|sq| {
+            if self.board[sq].is_some() {
+                self.moves.push(Move::new(from, sq, MoveFlags::Capture));
             } else if !G::CAPTURES_ONLY {
-                self.moves.push(Move::new(from, square, MoveFlags::Quiet));
+                self.moves.push(Move::new(from, sq, MoveFlags::Quiet));
             }
         });
     }
-    fn gen_pawn_moves(&mut self, from: Pos) {
+    fn gen_pawn_moves(&mut self, from: Square) {
         let forward = self.board.active_colour.forward();
 
         let can_promote = (self.board.white_to_play() && from.rank().0 == 6)
             || (self.board.black_to_play() && from.rank().0 == 1);
 
         if !G::CAPTURES_ONLY {
-            let to = Pos(from.0 + forward * 8);
+            let to = Square(from.0 + forward * 8);
             if self.board[to].is_none() {
                 let can_double_push = (self.board.white_to_play() && from.rank().0 == 1)
                     || (self.board.black_to_play() && from.rank().0 == 6);
@@ -167,7 +167,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 }
 
                 if can_double_push {
-                    let to = Pos(from.0 + forward * 16);
+                    let to = Square(from.0 + forward * 16);
                     if self.board[to].is_none() {
                         self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
                     }
@@ -181,7 +181,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 }
             }
         }
-        if let Some(to) = Pos(from.0 + forward * 8).add_file(1) {
+        if let Some(to) = Square(from.0 + forward * 8).add_file(1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
@@ -195,7 +195,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 }
             }
         }
-        if let Some(to) = Pos(from.0 + forward * 8).add_file(-1) {
+        if let Some(to) = Square(from.0 + forward * 8).add_file(-1) {
             if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
@@ -217,49 +217,49 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
     }
-    fn gen_king_moves(&mut self, from: Pos) {
+    fn gen_king_moves(&mut self, from: Square) {
         self.push_squares(from, KING_MOVES[from]);
         if G::CAPTURES_ONLY {
             return;
         }
         if self.board.white_to_play() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
-                && self.board[Pos::F1].is_none()
-                && self.board[Pos::G1].is_none()
+                && self.board[Square::F1].is_none()
+                && self.board[Square::G1].is_none()
             {
-                self.moves.push(Move::new(from, Pos::G1, MoveFlags::KingCastle));
+                self.moves.push(Move::new(from, Square::G1, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE)
-                && self.board[Pos::C1].is_none()
-                && self.board[Pos::D1].is_none()
-                && self.board[Pos::B1].is_none()
+                && self.board[Square::C1].is_none()
+                && self.board[Square::D1].is_none()
+                && self.board[Square::B1].is_none()
             {
-                self.moves.push(Move::new(from, Pos::C1, MoveFlags::QueenCastle));
+                self.moves.push(Move::new(from, Square::C1, MoveFlags::QueenCastle));
             }
         } else {
             if self.board.can_castle.contains(CanCastle::BLACK_KING_SIDE)
-                && self.board[Pos::F8].is_none()
-                && self.board[Pos::G8].is_none()
+                && self.board[Square::F8].is_none()
+                && self.board[Square::G8].is_none()
             {
-                self.moves.push(Move::new(from, Pos::G8, MoveFlags::KingCastle));
+                self.moves.push(Move::new(from, Square::G8, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE)
-                && self.board[Pos::B8].is_none()
-                && self.board[Pos::C8].is_none()
-                && self.board[Pos::D8].is_none()
+                && self.board[Square::B8].is_none()
+                && self.board[Square::C8].is_none()
+                && self.board[Square::D8].is_none()
             {
-                self.moves.push(Move::new(from, Pos::C8, MoveFlags::QueenCastle));
+                self.moves.push(Move::new(from, Square::C8, MoveFlags::QueenCastle));
             }
         }
     }
     #[inline]
-    pub fn is_square_attacked(&mut self, square: Pos) -> bool {
+    pub fn is_square_attacked(&mut self, sq: Square) -> bool {
         self.board.active_colour = !self.board.active_colour;
         std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
         let atk_map = self.gen_attack_map();
         std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
         self.board.active_colour = !self.board.active_colour;
-        atk_map.contains(square)
+        atk_map.contains(sq)
     }
 }
 
@@ -269,7 +269,7 @@ const fn compute_pawn_moves() -> [[Bitboard; 64]; 2] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Pos(index);
+        let pos = Square(index);
 
         let num_up = pos.rank().0;
         let num_down = 7 - pos.rank().0;
@@ -305,7 +305,7 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Pos(index);
+        let pos = Square(index);
 
         let num_up = 7 - pos.rank().0;
         let num_down = pos.rank().0;
@@ -340,7 +340,7 @@ const fn compute_king_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Pos(index);
+        let pos = Square(index);
 
         let num_up = 7 - pos.rank().0;
         let num_down = pos.rank().0;
@@ -383,7 +383,7 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Pos(index);
+        let pos = Square(index);
 
         let num_up = 7 - pos.rank().0;
         let num_down = pos.rank().0;

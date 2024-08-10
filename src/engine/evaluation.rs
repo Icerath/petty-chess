@@ -128,7 +128,7 @@ impl Engine {
 }
 #[inline]
 #[must_use]
-pub fn piece_value_at_square(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+pub fn piece_value_at_square(pos: Square, piece: Piece, endgame: f32) -> i32 {
     piece_value(piece, endgame) + piece_square_value(pos, piece, endgame)
 }
 
@@ -140,7 +140,7 @@ pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
 
 #[inline]
 #[must_use]
-pub fn abs_piece_value_at_square(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+pub fn abs_piece_value_at_square(pos: Square, piece: Piece, endgame: f32) -> i32 {
     abs_piece_value(piece.kind(), endgame) + abs_piece_square_value(pos, piece, endgame)
 }
 
@@ -154,14 +154,14 @@ pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
 
 #[inline]
 #[must_use]
-pub fn piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
+pub fn piece_square_value(pos: Square, piece: Piece, endgame: f32) -> i32 {
     abs_piece_square_value(pos, piece, endgame) * piece.colour().positive()
 }
 
 #[inline]
 #[must_use]
-pub fn abs_piece_square_value(pos: Pos, piece: Piece, endgame: f32) -> i32 {
-    let index = if piece.is_white() { Pos::new(Rank(7 - pos.rank().0), pos.file()) } else { pos };
+pub fn abs_piece_square_value(pos: Square, piece: Piece, endgame: f32) -> i32 {
+    let index = if piece.is_white() { Square::new(Rank(7 - pos.rank().0), pos.file()) } else { pos };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 

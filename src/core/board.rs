@@ -8,7 +8,7 @@ pub struct Board {
     pub pieces: [Option<Piece>; 64],
     pub active_colour: Colour,
     pub can_castle: CanCastle,
-    pub en_passant_target_square: Option<Pos>,
+    pub en_passant_target_square: Option<Square>,
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
     pub cached: Cached,
@@ -16,8 +16,8 @@ pub struct Board {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Cached {
-    pub active_king_pos: Pos,
-    pub inactive_king_pos: Pos,
+    pub active_king_pos: Square,
+    pub inactive_king_pos: Square,
     pub zobrist: Zobrist,
     pub piece_bitboards: [Bitboard; 12],
 }
@@ -27,7 +27,7 @@ pub struct Unmake {
     mov: Move,
     captured_piece: Option<Piece>,
     can_castle: CanCastle,
-    en_passant_target_square: Option<Pos>,
+    en_passant_target_square: Option<Square>,
 }
 
 impl Board {
@@ -37,17 +37,17 @@ impl Board {
             self.zobrist.xor_side_to_move();
         }
         self.cached.zobrist.xor_can_castle(self.can_castle);
-        if let Some(square) = self.en_passant_target_square {
-            self.cached.zobrist.xor_en_passant(square);
+        if let Some(sq) = self.en_passant_target_square {
+            self.cached.zobrist.xor_en_passant(sq);
         }
-        for (pos, piece) in self.piece_positions() {
-            self.piece_bitboards[piece].insert(pos);
-            self.zobrist.xor_piece(pos, piece);
+        for (sq, piece) in self.piece_positions() {
+            self.piece_bitboards[piece].insert(sq);
+            self.zobrist.xor_piece(sq, piece);
             let PieceKind::King = piece.kind() else { continue };
             if piece.colour() == self.active_colour {
-                self.active_king_pos = pos;
+                self.active_king_pos = sq;
             } else {
-                self.inactive_king_pos = pos;
+                self.inactive_king_pos = sq;
             }
         }
     }
@@ -61,8 +61,8 @@ impl Board {
             can_castle: self.can_castle,
             en_passant_target_square: self.en_passant_target_square,
         };
-        if let Some(square) = self.en_passant_target_square {
-            self.zobrist.xor_en_passant(square);
+        if let Some(sq) = self.en_passant_target_square {
+            self.zobrist.xor_en_passant(sq);
         }
         self.en_passant_target_square = None;
         self.cached.zobrist.xor_can_castle(self.can_castle);
@@ -76,10 +76,10 @@ impl Board {
         }
         for pos in [mov.from(), mov.to()] {
             match pos {
-                Pos::A1 => self.can_castle.remove(CanCastle::WHITE_QUEEN_SIDE),
-                Pos::H1 => self.can_castle.remove(CanCastle::WHITE_KING_SIDE),
-                Pos::A8 => self.can_castle.remove(CanCastle::BLACK_QUEEN_SIDE),
-                Pos::H8 => self.can_castle.remove(CanCastle::BLACK_KING_SIDE),
+                Square::A1 => self.can_castle.remove(CanCastle::WHITE_QUEEN_SIDE),
+                Square::H1 => self.can_castle.remove(CanCastle::WHITE_KING_SIDE),
+                Square::A8 => self.can_castle.remove(CanCastle::BLACK_QUEEN_SIDE),
+                Square::H8 => self.can_castle.remove(CanCastle::BLACK_KING_SIDE),
                 _ => {}
             }
         }
@@ -108,16 +108,16 @@ impl Board {
                 self[back] = None;
             }
             MoveFlags::QueenCastle if self.white_to_play() => {
-                self.swap(Pos::A1, Pos::D1);
+                self.swap(Square::A1, Square::D1);
             }
             MoveFlags::QueenCastle => {
-                self.swap(Pos::A8, Pos::D8);
+                self.swap(Square::A8, Square::D8);
             }
             MoveFlags::KingCastle if self.white_to_play() => {
-                self.swap(Pos::F1, Pos::H1);
+                self.swap(Square::F1, Square::H1);
             }
             MoveFlags::KingCastle => {
-                self.swap(Pos::F8, Pos::H8);
+                self.swap(Square::F8, Square::H8);
             }
             MoveFlags::DoublePawnPush => {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
@@ -147,10 +147,10 @@ impl Board {
                 let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
                 self[back] = unmake.captured_piece;
             }
-            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Pos::A1, Pos::D1),
-            MoveFlags::QueenCastle => self.swap(Pos::A8, Pos::D8),
-            MoveFlags::KingCastle if self.white_to_play() => self.swap(Pos::F1, Pos::H1),
-            MoveFlags::KingCastle => self.swap(Pos::F8, Pos::H8),
+            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Square::A1, Square::D1),
+            MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
+            MoveFlags::KingCastle if self.white_to_play() => self.swap(Square::F1, Square::H1),
+            MoveFlags::KingCastle => self.swap(Square::F8, Square::H8),
             MoveFlags::KnightPromotion
             | MoveFlags::KnightPromotionCapture
             | MoveFlags::BishopPromotion
@@ -237,7 +237,7 @@ impl Board {
 
 impl Board {
     #[inline]
-    pub fn swap(&mut self, lhs: Pos, rhs: Pos) {
+    pub fn swap(&mut self, lhs: Square, rhs: Square) {
         if let Some(piece) = self[lhs] {
             self.zobrist.xor_piece(lhs, piece);
             self.zobrist.xor_piece(rhs, piece);
@@ -254,24 +254,24 @@ impl Board {
     }
     #[inline]
     pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
-        Pos::all().filter_map(|pos| self[pos])
+        Square::all().filter_map(|pos| self[pos])
     }
     #[inline]
-    pub fn piece_positions(&self) -> impl Iterator<Item = (Pos, Piece)> {
+    pub fn piece_positions(&self) -> impl Iterator<Item = (Square, Piece)> {
         let pieces = self.pieces;
-        Pos::all().filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
+        Square::all().filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
     }
 }
 
-impl Index<Pos> for Board {
+impl Index<Square> for Board {
     type Output = Option<Piece>;
-    fn index(&self, index: Pos) -> &Self::Output {
+    fn index(&self, index: Square) -> &Self::Output {
         &self.pieces[index]
     }
 }
 
-impl IndexMut<Pos> for Board {
-    fn index_mut(&mut self, index: Pos) -> &mut Self::Output {
+impl IndexMut<Square> for Board {
+    fn index_mut(&mut self, index: Square) -> &mut Self::Output {
         &mut self.pieces[index]
     }
 }

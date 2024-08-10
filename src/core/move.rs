@@ -10,18 +10,18 @@ impl Move {
     pub const NULL: Move = Self(0);
     #[must_use]
     #[inline]
-    pub fn new(from: Pos, to: Pos, flags: MoveFlags) -> Self {
+    pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
         Self((from.0 as u16) | (to.0 as u16) << 6 | (flags as u16) << 12)
     }
     #[inline]
     #[must_use]
-    pub fn from(self) -> Pos {
-        Pos((self.0 & 0b11_1111) as i8)
+    pub fn from(self) -> Square {
+        Square((self.0 & 0b11_1111) as i8)
     }
     #[must_use]
     #[inline]
-    pub fn to(self) -> Pos {
-        Pos(((self.0 >> 6) & 0b11_1111) as i8)
+    pub fn to(self) -> Square {
+        Square(((self.0 >> 6) & 0b11_1111) as i8)
     }
     #[must_use]
     #[inline]
@@ -76,14 +76,14 @@ impl FromStr for Move {
 #[test]
 fn test_move_repr() {
     let flags = MoveFlags::Capture | MoveFlags::RookPromotion;
-    let mov = Move::new(Pos::H8, Pos::A7, flags);
-    assert_eq!(mov.from(), Pos::H8);
-    assert_eq!(mov.to(), Pos::A7);
+    let mov = Move::new(Square::H8, Square::A7, flags);
+    assert_eq!(mov.from(), Square::H8);
+    assert_eq!(mov.to(), Square::A7);
     assert_eq!(mov.flags(), flags);
 }
 
 #[test]
 fn test_move_parsing() {
-    assert_eq!("e7e5".parse(), Ok(Move::new(Pos::E7, Pos::E5, MoveFlags::Quiet)));
-    assert_eq!("e2e4q".parse(), Ok(Move::new(Pos::E2, Pos::E4, MoveFlags::QueenPromotion)));
+    assert_eq!("e7e5".parse(), Ok(Move::new(Square::E7, Square::E5, MoveFlags::Quiet)));
+    assert_eq!("e2e4q".parse(), Ok(Move::new(Square::E2, Square::E4, MoveFlags::QueenPromotion)));
 }
