@@ -31,8 +31,8 @@ impl Bitboard {
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while self.0 > 0 {
             let next = self.bitscan();
-            f(next);
             self.remove(next);
+            f(next);
         }
     }
     #[inline]
