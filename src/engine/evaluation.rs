@@ -36,7 +36,7 @@ impl Engine {
             total -= (wp - 1).max(0) * 20 * White.positive();
             total -= (bp - 1).max(0) * 20 * Black.positive();
         }
-        // punish isolated pawns
+        // reward non-isolated pawns
         for colour in [White, Black] {
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|pos| {
@@ -45,23 +45,26 @@ impl Engine {
                 let left_open = file == 0 || pawns.filter_file(File(file - 1)).count() == 0;
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
-                if left_open && right_open {
-                    total -= 20 * colour.positive();
+                if !(left_open && right_open) {
+                    total += 15 * colour.positive();
                 }
             });
         }
-        // punish pawns far from king
+        // reward pawns close to king
         for colour in [White, Black] {
             let king = self.board[colour + King].bitscan();
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|pos| {
-                // if not adjacent { return }
                 let is_adjacent = pos.file().0.abs_diff(king.file().0) <= 1;
                 if !is_adjacent {
                     return;
                 }
                 let dif_rank = pos.rank().0.abs_diff(king.rank().0).saturating_sub(1);
-                total -= dif_rank as i32 * 7 * colour.positive();
+                if dif_rank == 0 {
+                    total += 15 * colour.positive();
+                } else if dif_rank == 1 {
+                    total += 10 * colour.positive();
+                }
             });
         }
         // reward rooks on an open file
