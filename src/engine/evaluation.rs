@@ -34,8 +34,8 @@ impl Engine {
             let wp = self.board[WhitePawn].filter_file(File(file)).count() as i32;
             let bp = self.board[BlackPawn].filter_file(File(file)).count() as i32;
 
-            total -= (wp - 1).max(0) * 35 * White.positive();
-            total -= (bp - 1).max(0) * 35 * Black.positive();
+            total -= (wp - 1).max(0) * 20 * White.positive();
+            total -= (bp - 1).max(0) * 20 * Black.positive();
         }
         // punish isolated pawns
         for colour in [White, Black] {
@@ -47,7 +47,7 @@ impl Engine {
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
                 if left_open && right_open {
-                    total -= 40 * colour.positive();
+                    total -= 20 * colour.positive();
                 }
             });
         }
