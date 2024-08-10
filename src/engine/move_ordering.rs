@@ -1,3 +1,5 @@
+use movegen::FullGen;
+
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
 use crate::prelude::*;
 
@@ -12,10 +14,11 @@ const MVV_LVA: [[u8; 6]; 6] = [
 
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
+        let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
         let endgame = self.endgame();
-        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, endgame));
+        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, endgame, pawn_attacks));
     }
-    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, endgame: f32) -> i32 {
+    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, endgame: f32, pawn_attacks: Bitboard) -> i32 {
         let mut score = 0;
         if self.only_pv_nodes {
             if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {
@@ -46,6 +49,10 @@ impl Engine {
 
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             score += 10;
+        }
+
+        if !mov.flags().is_capture() && piece.kind() != Pawn && !pawn_attacks.contains(mov.to()) {
+            score += 5;
         }
 
         score

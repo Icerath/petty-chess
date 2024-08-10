@@ -132,6 +132,14 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         attacked_squares
     }
     #[inline]
+    #[must_use]
+    pub fn pawn_attack_map(&self) -> Bitboard {
+        let mut attacked_squares = Bitboard(0);
+        let colour = !self.board.active_colour;
+        self.board[colour + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        attacked_squares
+    }
+    #[inline]
     fn push_squares(&mut self, from: Pos, mut squares: Bitboard) {
         squares &= !self.board.friendly_pieces();
         squares.for_each(|square| {
