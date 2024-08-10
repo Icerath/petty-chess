@@ -6,7 +6,6 @@ impl Engine {
     }
     pub fn raw_evaluation(&mut self) -> i32 {
         let endgame = self.endgame();
-        self.total_nodes += 1;
 
         if !self.sufficient_material_to_force_checkmate() {
             return 0;

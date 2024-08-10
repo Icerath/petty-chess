@@ -130,6 +130,7 @@ impl Engine {
         if depth == 0 {
             return (self.negamax_search_all_captures(alpha, beta), None);
         }
+        self.total_nodes += 1;
 
         let mut moves = MoveGenerator::<FullGen>::new(&mut self.board).gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
@@ -211,6 +212,8 @@ impl Engine {
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
+        self.total_nodes += 1;
+
         let eval = self.evaluate();
         if eval >= beta {
             return beta;
