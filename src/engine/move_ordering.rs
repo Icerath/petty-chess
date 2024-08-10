@@ -17,7 +17,13 @@ impl Engine {
     }
     pub fn move_order(&mut self, mov: Move, killer: Option<Move>, endgame: f32) -> i32 {
         let mut score = 0;
-        if let Some(killer) = killer {
+        if self.only_pv_nodes {
+            if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {
+                if pv == mov {
+                    return i16::MAX as i32;
+                }
+            }
+        } else if let Some(killer) = killer {
             if killer == mov {
                 return i16::MAX as i32;
             }

@@ -28,6 +28,7 @@ impl Engine {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
+            self.only_pv_nodes = true;
             self.order_moves(&mut moves, None);
             if let Some(&mov) = self.pv.get(self.depth_from_root as usize) {
                 if let Some(mov_index) = moves.iter().position(|&m| m == mov) {
@@ -49,6 +50,7 @@ impl Engine {
                 self.seen_positions.push(self.board.zobrist);
                 self.depth_from_root += 1;
                 let score = -self.negamax(alpha, beta, depth - 1, &mut line, None).0;
+                self.only_pv_nodes = false;
                 self.depth_from_root -= 1;
                 self.seen_positions.pop();
                 self.board.unmake_move(unmake);
@@ -127,6 +129,7 @@ impl Engine {
             return (eval, None);
         }
         if depth == 0 {
+            self.only_pv_nodes = false;
             return (self.negamax_search_all_captures(alpha, beta), None);
         }
         self.total_nodes += 1;
@@ -151,6 +154,7 @@ impl Engine {
 
             if depth > 1 && i > moves.len() / 2 {
                 let score = -self.negamax(-beta, -alpha, depth - 2, &mut line, killer_move).0;
+                self.only_pv_nodes = false;
                 if score <= alpha {
                     self.depth_from_root -= 1;
                     self.seen_positions.pop();

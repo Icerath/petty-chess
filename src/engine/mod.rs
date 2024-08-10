@@ -23,6 +23,7 @@ pub struct Engine {
     pub effective_nodes: u64,
     pub force_cancelled: bool,
     pub transposition_table: TranspositionTable,
+    pub only_pv_nodes: bool,
 }
 
 impl Engine {
@@ -40,6 +41,7 @@ impl Engine {
             effective_nodes: 0,
             force_cancelled: false,
             transposition_table: TranspositionTable::default(),
+            only_pv_nodes: false,
         }
     }
 
