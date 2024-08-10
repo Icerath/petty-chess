@@ -67,16 +67,17 @@ impl Engine {
 }
 
 fn endgame(board: &Board) -> f32 {
-    let mut sum = 0;
-    sum += (board.get(Bishop) | board.get(Knight)).count();
-    sum += 2 * board.get(Rook).count();
-    sum += 4 * board.get(Queen).count();
-    (1.0 - (sum as f32 / 24.0)).min(1.0)
+    let mut sum = -6;
+    sum += (board.get(Bishop) | board.get(Knight)).count() as i32;
+    sum += 2 * board.get(Rook).count() as i32;
+    sum += 4 * board.get(Queen).count() as i32;
+    1.0 - (sum as f32 / 18.0).clamp(0.0, 1.0)
 }
 
 #[test]
 #[allow(clippy::float_cmp)]
 fn test_endgame() {
     assert_eq!(endgame(&Board::start_pos()), 0.0);
-    assert_eq!(endgame(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - - 0 1").unwrap()), 1.0);
+    assert_eq!(endgame(&Board::from_fen("4k3/4p1n1/p5pp/1p3p2/8/5P2/1QP3PP/4K3 w - -").unwrap()), 1.0);
+    assert_eq!(endgame(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - -").unwrap()), 1.0);
 }
