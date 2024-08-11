@@ -10,10 +10,11 @@ impl Engine {
         if !self.sufficient_material_to_force_checkmate() {
             return 0;
         }
-        let mut total = 0;
+        let mut final_total = 0;
 
-        // punish kings next adjacent to open file
         for colour in [White, Black] {
+            let mut total = 0;
+            // punish kings next adjacent to open file
             let file = self.board.piece_bitboards[colour + King].bitscan().file();
             let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
             let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
@@ -24,20 +25,14 @@ impl Engine {
                 let right_open = file.0 != 7 && pawns.filter_file(File(file.0 + 1)).count() == 0;
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-                total -= ((num_open_files * 35 * colour.positive()) as f32 * (1.0 - endgame)) as i32;
+                total -= ((num_open_files * 35) as f32 * (1.0 - endgame)) as i32;
             }
-        }
-
-        // punish double pawns
-        for file in 0..8 {
-            let wp = self.board[WhitePawn].filter_file(File(file)).count() as i32;
-            let bp = self.board[BlackPawn].filter_file(File(file)).count() as i32;
-
-            total -= (wp - 1).max(0) * 20 * White.positive();
-            total -= (bp - 1).max(0) * 20 * Black.positive();
-        }
-        // reward non-isolated pawns
-        for colour in [White, Black] {
+            // punish double pawns
+            for file in 0..8 {
+                let pawns = self.board[colour + Pawn].filter_file(File(file)).count() as i32;
+                total -= (pawns - 1).max(0) * 20;
+            }
+            // reward non-isolated pawns
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|pos| {
                 let file = pos.file().0;
@@ -46,12 +41,10 @@ impl Engine {
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
                 if !(left_open && right_open) {
-                    total += 15 * colour.positive();
+                    total += 15;
                 }
             });
-        }
-        // reward pawns close to king
-        for colour in [White, Black] {
+            // reward pawns close to king
             let king = self.board[colour + King].bitscan();
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|pos| {
@@ -61,53 +54,39 @@ impl Engine {
                 }
                 let dif_rank = pos.rank().0.abs_diff(king.rank().0).saturating_sub(1);
                 if dif_rank == 0 {
-                    total += 15 * colour.positive();
+                    total += 15;
                 } else if dif_rank == 1 {
-                    total += 10 * colour.positive();
+                    total += 10;
                 }
             });
-        }
-        // reward rooks on an open file
-        for colour in [White, Black] {
+            // reward rooks on an open file
             let friendly_pawns = self.board[colour + Pawn];
             let all_pawns = self.board.get(Pawn);
             self.board[colour + Rook].for_each(|pos| {
                 if all_pawns.filter_file(pos.file()).count() == 0 {
-                    total += 20 * colour.positive();
+                    total += 20;
                 } else if friendly_pawns.filter_file(pos.file()).count() == 0 {
-                    total += 10 * colour.positive();
+                    total += 10;
                 }
             });
-        }
-        // reward rooks able to see eachother
-        for colour in [White, Black] {
+            // reward rooks able to see eachother
             let rooks = self.board[colour + Rook];
-            if rooks.count() < 2 {
-                continue;
+            if rooks.count() >= 2 {
+                let rook_attacks = Magic::get().rook_attacks(rooks.bitscan(), self.board.all_pieces());
+                if rook_attacks.contains(rooks.rbitscan()) {
+                    total += 20;
+                }
             }
-            let rook_attacks = Magic::get().rook_attacks(rooks.bitscan(), self.board.all_pieces());
-            if rook_attacks.contains(rooks.rbitscan()) {
-                total += 20 * colour.positive();
+            // reward bishop pair
+            total += self.has_bishop_pair(colour) as i32 * 20;
+            // material and piece square table values
+            for piecekind in [Pawn, Knight, Bishop, Rook, Queen, King] {
+                self.board[colour + piecekind]
+                    .for_each(|square| total += abs_piece_value_at_square(square, colour + piecekind, endgame));
             }
+            final_total += total * colour.positive();
         }
-        // reward bishop pair
-        total += self.has_bishop_pair(White) as i32 * 20 * White.positive();
-        total += self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
-
-        // square tables and piece values
-        self.board[WhitePawn].for_each(|pos| total += piece_value_at_square(pos, WhitePawn, endgame));
-        self.board[BlackPawn].for_each(|pos| total += piece_value_at_square(pos, BlackPawn, endgame));
-        self.board[WhiteKnight].for_each(|pos| total += piece_value_at_square(pos, WhiteKnight, endgame));
-        self.board[BlackKnight].for_each(|pos| total += piece_value_at_square(pos, BlackKnight, endgame));
-        self.board[WhiteBishop].for_each(|pos| total += piece_value_at_square(pos, WhiteBishop, endgame));
-        self.board[BlackBishop].for_each(|pos| total += piece_value_at_square(pos, BlackBishop, endgame));
-        self.board[WhiteRook].for_each(|pos| total += piece_value_at_square(pos, WhiteRook, endgame));
-        self.board[BlackRook].for_each(|pos| total += piece_value_at_square(pos, BlackRook, endgame));
-        self.board[WhiteQueen].for_each(|pos| total += piece_value_at_square(pos, WhiteQueen, endgame));
-        self.board[BlackQueen].for_each(|pos| total += piece_value_at_square(pos, BlackQueen, endgame));
-        self.board[WhiteKing].for_each(|pos| total += piece_square_value(pos, WhiteKing, endgame));
-        self.board[BlackKing].for_each(|pos| total += piece_square_value(pos, BlackKing, endgame));
-        total
+        final_total
     }
     #[inline]
     #[must_use]
