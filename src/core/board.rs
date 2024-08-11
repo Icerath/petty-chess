@@ -16,8 +16,8 @@ pub struct Board {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Cached {
-    pub active_king_pos: Square,
-    pub inactive_king_pos: Square,
+    pub active_king_sq: Square,
+    pub inactive_king_sq: Square,
     pub zobrist: Zobrist,
     pub piece_bitboards: [Bitboard; 12],
 }
@@ -40,14 +40,14 @@ impl Board {
         if let Some(sq) = self.en_passant_target_square {
             self.cached.zobrist.xor_en_passant(sq);
         }
-        for (sq, piece) in self.piece_positions() {
+        for (sq, piece) in self.piece_squares() {
             self.piece_bitboards[piece].insert(sq);
             self.zobrist.xor_piece(sq, piece);
             let PieceKind::King = piece.kind() else { continue };
             if piece.colour() == self.active_colour {
-                self.active_king_pos = sq;
+                self.active_king_sq = sq;
             } else {
-                self.inactive_king_pos = sq;
+                self.inactive_king_sq = sq;
             }
         }
     }
@@ -67,15 +67,15 @@ impl Board {
         self.en_passant_target_square = None;
         self.cached.zobrist.xor_can_castle(self.can_castle);
         if from_piece.kind() == PieceKind::King {
-            self.active_king_pos = mov.to();
+            self.active_king_sq = mov.to();
             if self.white_to_play() {
                 self.can_castle.remove(CanCastle::BOTH_WHITE);
             } else {
                 self.can_castle.remove(CanCastle::BOTH_BLACK);
             }
         }
-        for pos in [mov.from(), mov.to()] {
-            match pos {
+        for sq in [mov.from(), mov.to()] {
+            match sq {
                 Square::A1 => self.can_castle.remove(CanCastle::WHITE_QUEEN_SIDE),
                 Square::H1 => self.can_castle.remove(CanCastle::WHITE_KING_SIDE),
                 Square::A8 => self.can_castle.remove(CanCastle::BLACK_QUEEN_SIDE),
@@ -181,13 +181,13 @@ impl Board {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
-        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
         self.active_colour = !self.active_colour;
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
         self.active_colour = !self.active_colour;
-        std::mem::swap(&mut self.cached.active_king_pos, &mut self.cached.inactive_king_pos);
+        std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
         self.halfmove_clock -= 1;
         if self.black_to_play() {
             self.fullmove_counter -= 1;
@@ -243,9 +243,9 @@ impl Board {
     #[inline]
     pub fn get_king_square(&self, side: Colour) -> Square {
         if self.active_colour == side {
-            self.active_king_pos
+            self.active_king_sq
         } else {
-            self.inactive_king_pos
+            self.inactive_king_sq
         }
     }
 }
@@ -269,12 +269,12 @@ impl Board {
     }
     #[inline]
     pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
-        Square::all().filter_map(|pos| self[pos])
+        Square::all().filter_map(|sq| self[sq])
     }
     #[inline]
-    pub fn piece_positions(&self) -> impl Iterator<Item = (Square, Piece)> {
+    pub fn piece_squares(&self) -> impl Iterator<Item = (Square, Piece)> {
         let pieces = self.pieces;
-        Square::all().filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
+        Square::all().filter_map(move |sq| pieces[sq].map(|piece| (sq, piece)))
     }
     #[inline]
     #[must_use]

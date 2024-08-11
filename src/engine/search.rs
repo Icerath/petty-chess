@@ -104,7 +104,7 @@ impl Engine {
         self.pv[0]
     }
     fn seen_position(&self) -> bool {
-        self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
+        self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
     }
     pub(crate) fn negamax(
         &mut self,
@@ -189,7 +189,7 @@ impl Engine {
         if !encountered_legal_move {
             if MoveGenerator::<CapturesOnly>::new(&mut self.board)
                 .attack_map()
-                .contains(self.board.active_king_pos)
+                .contains(self.board.active_king_sq)
             {
                 return (-Self::mate_score(), None);
             }
@@ -249,7 +249,7 @@ impl Engine {
                 .filter(|mov| !mov.flags().is_capture())
                 .any(|&mov| movegen.is_legal(mov));
 
-            let is_check = movegen.attack_map().contains(self.board.active_king_pos);
+            let is_check = movegen.attack_map().contains(self.board.active_king_sq);
             if !legal_moves && is_check {
                 // TODO - doesn't product a correct `mate in` score
                 return -Self::mate_score();

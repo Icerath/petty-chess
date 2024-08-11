@@ -80,15 +80,15 @@ impl Rank {
 impl<T> Index<Square> for [T] {
     type Output = T;
     #[inline]
-    fn index(&self, pos: Square) -> &Self::Output {
-        &self[pos.0 as usize]
+    fn index(&self, sq: Square) -> &Self::Output {
+        &self[sq.0 as usize]
     }
 }
 
 impl<T> IndexMut<Square> for [T] {
     #[inline]
-    fn index_mut(&mut self, pos: Square) -> &mut Self::Output {
-        &mut self[pos.0 as usize]
+    fn index_mut(&mut self, sq: Square) -> &mut Self::Output {
+        &mut self[sq.0 as usize]
     }
 }
 
@@ -115,20 +115,20 @@ impl fmt::Display for Square {
 }
 
 #[derive(Debug)]
-pub struct InvalidPos;
+pub struct InvalidSquare;
 
-impl fmt::Display for InvalidPos {
+impl fmt::Display for InvalidSquare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self, f)
     }
 }
 
-impl std::error::Error for InvalidPos {}
+impl std::error::Error for InvalidSquare {}
 
 impl FromStr for Square {
-    type Err = InvalidPos;
+    type Err = InvalidSquare;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES.iter().position(|&sq| sq == input).map(|index| Square(index as i8)).ok_or(InvalidPos)
+        Self::SQUARES.iter().position(|&sq| sq == input).map(|index| Square(index as i8)).ok_or(InvalidSquare)
     }
 }
 

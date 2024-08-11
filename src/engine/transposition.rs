@@ -61,7 +61,7 @@ impl TranspositionTable {
         if eval.abs() == Eval::MATE_EVAL.0 {
             return;
         }
-        if seen_positions.iter().filter(|&&pos| pos == board.zobrist).count() > 1 {
+        if seen_positions.iter().filter(|&&sq| sq == board.zobrist).count() > 1 {
             return;
         }
         let entry = Entry { eval, nodetype, depth, treesize };

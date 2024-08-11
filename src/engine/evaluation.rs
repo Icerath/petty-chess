@@ -15,9 +15,9 @@ impl Engine {
         for colour in [White, Black] {
             let mut total = 0;
             let king = if self.board.active_colour == colour {
-                self.board.active_king_pos
+                self.board.active_king_sq
             } else {
-                self.board.inactive_king_pos
+                self.board.inactive_king_sq
             };
             let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
             let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
@@ -40,8 +40,8 @@ impl Engine {
             }
             // reward non-isolated pawns
             let pawns = self.board[colour + Pawn];
-            pawns.for_each(|pos| {
-                let file = pos.file().0;
+            pawns.for_each(|sq| {
+                let file = sq.file().0;
                 let left_open = file == 0 || pawns.filter_file(File(file - 1)).count() == 0;
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
@@ -52,12 +52,12 @@ impl Engine {
             // reward pawns close to king
             let king = self.board[colour + King].bitscan();
             let pawns = self.board[colour + Pawn];
-            pawns.for_each(|pos| {
-                let is_adjacent = pos.file().0.abs_diff(king.file().0) <= 1;
+            pawns.for_each(|sq| {
+                let is_adjacent = sq.file().0.abs_diff(king.file().0) <= 1;
                 if !is_adjacent {
                     return;
                 }
-                let dif_rank = pos.rank().0.abs_diff(king.rank().0).saturating_sub(1);
+                let dif_rank = sq.rank().0.abs_diff(king.rank().0).saturating_sub(1);
                 if dif_rank == 0 {
                     total += 15;
                 } else if dif_rank == 1 {
@@ -65,10 +65,10 @@ impl Engine {
                 }
             });
             // reward rooks on an open file
-            self.board[colour + Rook].for_each(|pos| {
-                if all_pawns.filter_file(pos.file()).count() == 0 {
+            self.board[colour + Rook].for_each(|sq| {
+                if all_pawns.filter_file(sq.file()).count() == 0 {
                     total += 20;
-                } else if friendly_pawns.filter_file(pos.file()).count() == 0 {
+                } else if friendly_pawns.filter_file(sq.file()).count() == 0 {
                     total += 10;
                 }
             });
@@ -98,7 +98,7 @@ impl Engine {
             _ => None,
         };
         if let Some(mop_up_colour) = mop_up_colour {
-            let md = self.board.active_king_pos.manhattan_distance(self.board.inactive_king_pos);
+            let md = self.board.active_king_sq.manhattan_distance(self.board.inactive_king_sq);
             let cmd = self.board.get_king_square(!mop_up_colour).centre_manhattan_distance() as i32;
             let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_colour.positive();
             final_total += (mop_up_score as f32 * endgame) as i32;
@@ -134,8 +134,8 @@ impl Engine {
 }
 #[inline]
 #[must_use]
-pub fn piece_value_at_square(pos: Square, piece: Piece, endgame: f32) -> i32 {
-    piece_value(piece, endgame) + piece_square_value(pos, piece, endgame)
+pub fn piece_value_at_square(sq: Square, piece: Piece, endgame: f32) -> i32 {
+    piece_value(piece, endgame) + piece_square_value(sq, piece, endgame)
 }
 
 #[inline]
@@ -146,8 +146,8 @@ pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
 
 #[inline]
 #[must_use]
-pub fn abs_piece_value_at_square(pos: Square, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_value(piece.kind(), endgame) + abs_piece_square_value(pos, piece, endgame)
+pub fn abs_piece_value_at_square(sq: Square, piece: Piece, endgame: f32) -> i32 {
+    abs_piece_value(piece.kind(), endgame) + abs_piece_square_value(sq, piece, endgame)
 }
 
 #[inline]
@@ -160,14 +160,14 @@ pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
 
 #[inline]
 #[must_use]
-pub fn piece_square_value(pos: Square, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_square_value(pos, piece, endgame) * piece.colour().positive()
+pub fn piece_square_value(sq: Square, piece: Piece, endgame: f32) -> i32 {
+    abs_piece_square_value(sq, piece, endgame) * piece.colour().positive()
 }
 
 #[inline]
 #[must_use]
-pub fn abs_piece_square_value(pos: Square, piece: Piece, endgame: f32) -> i32 {
-    let index = if piece.is_white() { Square::new(Rank(7 - pos.rank().0), pos.file()) } else { pos };
+pub fn abs_piece_square_value(sq: Square, piece: Piece, endgame: f32) -> i32 {
+    let index = if piece.is_white() { Square::new(Rank(7 - sq.rank().0), sq.file()) } else { sq };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 

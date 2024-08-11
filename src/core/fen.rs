@@ -34,21 +34,21 @@ impl Board {
 
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Square>;
-        for pos in (0..64).map(Square) {
-            let rpos = Square::new(Rank(7 - pos.rank().0), pos.file());
-            if let Some(piece) = self[rpos] {
+        for sq in (0..64).map(Square) {
+            let rsq = Square::new(Rank(7 - sq.rank().0), sq.file());
+            if let Some(piece) = self[rsq] {
                 if let Some(prev) = prev {
-                    if let Some(dif @ 1..) = pos.file().0.checked_sub((prev.file().0 + 1) % 8) {
+                    if let Some(dif @ 1..) = sq.file().0.checked_sub((prev.file().0 + 1) % 8) {
                         buf.push((dif as u8 + b'0') as char);
                     }
-                } else if pos.file().0 != 0 {
-                    buf.push((pos.file().0 as u8 + b'0') as char);
+                } else if sq.file().0 != 0 {
+                    buf.push((sq.file().0 as u8 + b'0') as char);
                 }
                 buf.push(piece.symbol());
-                prev = Some(pos);
+                prev = Some(sq);
             }
-            if pos != Square(63) && pos.file().0 == 7 {
-                if self[rpos].is_none() {
+            if sq != Square(63) && sq.file().0 == 7 {
+                if self[rsq].is_none() {
                     if let Some(prev) = prev {
                         if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
                             buf.push((dif as u8 + b'0') as char);
@@ -58,7 +58,7 @@ impl Board {
                     }
                 }
                 buf.push('/');
-                prev = Some(Square(pos.0));
+                prev = Some(sq);
             }
         }
 
@@ -90,7 +90,7 @@ impl Board {
 
         buf.push(' ');
         match self.en_passant_target_square {
-            Some(pos) => buf.push_str(pos.algebraic()),
+            Some(sq) => buf.push_str(sq.algebraic()),
             _ => buf.push('-'),
         }
 
@@ -156,8 +156,8 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
             _ => return None,
         };
         let colour = if c.is_ascii_uppercase() { White } else { Black };
-        let pos = Square::new(Rank(rank), File(file));
-        pieces[pos] = Some(kind + colour);
+        let sq = Square::new(Rank(rank), File(file));
+        pieces[sq] = Some(kind + colour);
         file += 1;
     }
     Some(pieces)

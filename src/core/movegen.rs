@@ -80,7 +80,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         pieces[Bishop].for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
         pieces[Rook].for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
         pieces[Queen].for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
-        self.gen_king_moves(self.board.active_king_pos);
+        self.gen_king_moves(self.board.active_king_sq);
         std::mem::take(&mut self.moves)
     }
     #[must_use]
@@ -94,13 +94,12 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 (Colour::Black, true) => [Square::F8, Square::G8],
                 (Colour::Black, false) => [Square::C8, Square::D8],
             };
-            if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_pos)
-            {
+            if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_sq) {
                 return false;
             }
         }
         let unmake = self.board.make_move(mov);
-        let is_attacked = self.is_square_attacked(self.board.inactive_king_pos);
+        let is_attacked = self.is_square_attacked(self.board.inactive_king_sq);
         self.board.unmake_move(unmake);
         !is_attacked
     }
@@ -126,7 +125,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
-        attacked_squares |= KING_MOVES[self.board.inactive_king_pos];
+        attacked_squares |= KING_MOVES[self.board.inactive_king_sq];
         attacked_squares
     }
     #[inline]
@@ -253,9 +252,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[inline]
     pub fn is_square_attacked(&mut self, sq: Square) -> bool {
         self.board.active_colour = !self.board.active_colour;
-        std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
+        std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
         let atk_map = self.gen_attack_map();
-        std::mem::swap(&mut self.board.cached.active_king_pos, &mut self.board.cached.inactive_king_pos);
+        std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
         self.board.active_colour = !self.board.active_colour;
         atk_map.contains(sq)
     }
@@ -267,12 +266,12 @@ const fn compute_pawn_moves() -> [[Bitboard; 64]; 2] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Square(index);
+        let sq = Square(index);
 
-        let num_up = pos.rank().0;
-        let num_down = 7 - pos.rank().0;
-        let num_left = pos.file().0;
-        let num_right = 7 - pos.file().0;
+        let num_up = sq.rank().0;
+        let num_down = 7 - sq.rank().0;
+        let num_left = sq.file().0;
+        let num_right = 7 - sq.file().0;
 
         let up = -8;
         let down = -up;
@@ -303,12 +302,12 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Square(index);
+        let sq = Square(index);
 
-        let num_up = 7 - pos.rank().0;
-        let num_down = pos.rank().0;
-        let num_left = pos.file().0;
-        let num_right = 7 - pos.file().0;
+        let num_up = 7 - sq.rank().0;
+        let num_down = sq.rank().0;
+        let num_left = sq.file().0;
+        let num_right = 7 - sq.file().0;
 
         let mut bitboard = Bitboard(0);
 
@@ -338,12 +337,12 @@ const fn compute_king_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Square(index);
+        let sq = Square(index);
 
-        let num_up = 7 - pos.rank().0;
-        let num_down = pos.rank().0;
-        let num_left = pos.file().0;
-        let num_right = 7 - pos.file().0;
+        let num_up = 7 - sq.rank().0;
+        let num_down = sq.rank().0;
+        let num_left = sq.file().0;
+        let num_right = 7 - sq.file().0;
 
         let mut bitboard = Bitboard(0);
 
@@ -381,14 +380,14 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let pos = Square(index);
+        let sq = Square(index);
 
-        let num_up = 7 - pos.rank().0;
-        let num_down = pos.rank().0;
-        let num_left = pos.file().0;
-        let num_right = 7 - pos.file().0;
+        let num_up = 7 - sq.rank().0;
+        let num_down = sq.rank().0;
+        let num_left = sq.file().0;
+        let num_right = 7 - sq.file().0;
 
-        squares[pos.0 as usize] = [
+        squares[sq.0 as usize] = [
             num_up,
             num_down,
             num_left,
