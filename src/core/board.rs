@@ -211,6 +211,11 @@ impl Board {
     }
     #[must_use]
     #[inline]
+    pub fn side_pieces(&self, side: Colour) -> Bitboard {
+        self.side_bitboards(side).into_iter().fold(Bitboard(0), |acc, x| acc | x)
+    }
+    #[must_use]
+    #[inline]
     pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
         self.side_bitboards(self.active_colour)
     }
@@ -270,6 +275,16 @@ impl Board {
     pub fn piece_positions(&self) -> impl Iterator<Item = (Square, Piece)> {
         let pieces = self.pieces;
         Square::all().filter_map(move |pos| pieces[pos].map(|piece| (pos, piece)))
+    }
+    #[inline]
+    #[must_use]
+    pub fn is_piece_at(&self, sq: Square) -> bool {
+        self.all_pieces().contains(sq)
+    }
+    #[inline]
+    #[must_use]
+    pub fn is_side(&self, sq: Square, side: Colour) -> bool {
+        self.side_pieces(side).contains(sq)
     }
 }
 

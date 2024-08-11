@@ -11,7 +11,7 @@ const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
 pub struct CapturesOnly;
 pub struct FullGen;
 
-trait GenType {
+pub trait GenType {
     const CAPTURES_ONLY: bool;
 }
 
@@ -23,7 +23,6 @@ impl GenType for FullGen {
     const CAPTURES_ONLY: bool = false;
 }
 
-#[allow(private_bounds)]
 pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
@@ -54,7 +53,6 @@ impl Board {
     }
 }
 
-#[allow(private_bounds)]
 impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
@@ -143,7 +141,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
         squares &= !self.board.friendly_pieces();
         squares.for_each(|sq| {
-            if self.board[sq].is_some() {
+            if self.board.is_piece_at(sq) {
                 self.moves.push(Move::new(from, sq, MoveFlags::Capture));
             } else if !G::CAPTURES_ONLY {
                 self.moves.push(Move::new(from, sq, MoveFlags::Quiet));
@@ -158,7 +156,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
 
         if !G::CAPTURES_ONLY {
             let to = Square(from.0 + forward * 8);
-            if self.board[to].is_none() {
+            if !self.board.is_piece_at(to) {
                 let can_double_push = (self.board.white_to_play() && from.rank().0 == 1)
                     || (self.board.black_to_play() && from.rank().0 == 6);
 
@@ -168,7 +166,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
 
                 if can_double_push {
                     let to = Square(from.0 + forward * 16);
-                    if self.board[to].is_none() {
+                    if !self.board.is_piece_at(to) {
                         self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
                     }
                 } else if can_promote {
@@ -182,7 +180,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(to) = Square(from.0 + forward * 8).add_file(1) {
-            if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
+            if self.board.is_side(to, !self.board.active_colour) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
@@ -196,7 +194,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(to) = Square(from.0 + forward * 8).add_file(-1) {
-            if self.board[to].map(Piece::colour) == Some(!self.board.active_colour) {
+            if self.board.is_side(to, !self.board.active_colour) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
@@ -224,29 +222,29 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         }
         if self.board.white_to_play() {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
-                && self.board[Square::F1].is_none()
-                && self.board[Square::G1].is_none()
+                && !self.board.is_piece_at(Square::F1)
+                && !self.board.is_piece_at(Square::G1)
             {
                 self.moves.push(Move::new(from, Square::G1, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE)
-                && self.board[Square::C1].is_none()
-                && self.board[Square::D1].is_none()
-                && self.board[Square::B1].is_none()
+                && !self.board.is_piece_at(Square::C1)
+                && !self.board.is_piece_at(Square::D1)
+                && !self.board.is_piece_at(Square::B1)
             {
                 self.moves.push(Move::new(from, Square::C1, MoveFlags::QueenCastle));
             }
         } else {
             if self.board.can_castle.contains(CanCastle::BLACK_KING_SIDE)
-                && self.board[Square::F8].is_none()
-                && self.board[Square::G8].is_none()
+                && !self.board.is_piece_at(Square::F8)
+                && !self.board.is_piece_at(Square::G8)
             {
                 self.moves.push(Move::new(from, Square::G8, MoveFlags::KingCastle));
             }
             if self.board.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE)
-                && self.board[Square::B8].is_none()
-                && self.board[Square::C8].is_none()
-                && self.board[Square::D8].is_none()
+                && !self.board.is_piece_at(Square::B8)
+                && !self.board.is_piece_at(Square::C8)
+                && !self.board.is_piece_at(Square::D8)
             {
                 self.moves.push(Move::new(from, Square::C8, MoveFlags::QueenCastle));
             }
