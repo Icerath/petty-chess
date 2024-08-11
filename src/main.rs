@@ -1,4 +1,5 @@
 use std::{
+    fmt::Write,
     io::BufRead as _,
     time::{Duration, Instant},
 };
@@ -73,6 +74,7 @@ impl Application {
             Uci::PonderHit => {}
             Uci::Quit => self.running = false,
             Uci::Perft { depth } => self.go_perft(depth.unwrap_or(1) as u8),
+            Uci::Display => self.display(),
         }
     }
     fn respond_with_id(&self) {
@@ -99,7 +101,6 @@ impl Application {
             self.engine.board.make_move(mov);
         }
         self.engine.seen_positions.push(self.engine.board.zobrist);
-        eprintln!("Direct eval at pos: {}", self.engine.raw_evaluation());
     }
     fn go(&mut self, command: GoCommand) {
         let start = Instant::now();
@@ -130,6 +131,26 @@ impl Application {
             TimeControl::MoveTime(time) => self.engine.time_available = time,
             TimeControl::Infinite => self.engine.time_available = Duration::MAX,
         }
+    }
+    fn display(&mut self) {
+        let mut out = String::new();
+        for rank in (0..8).rev() {
+            out.push_str("+---+---+---+---+---+---+---+---+\n|");
+            for file in 0..8 {
+                out.push(' ');
+                let square = Square::new(Rank(rank), File(file));
+                let piece = self.engine.board[square];
+                out.push(piece.map_or(' ', Piece::symbol));
+                out.push_str(" |");
+            }
+            _ = writeln!(out, " {}", rank + 1);
+        }
+        out.push_str("+---+---+---+---+---+---+---+---+\n");
+        out.push_str("  a   b   c   d   e   f   g   h  \n");
+        println!("{out}");
+        println!("Fen: {}", self.engine.board.to_fen());
+        println!("Key: {:?}", self.engine.board.zobrist);
+        println!("Direct Eval: {:?}", self.engine.raw_evaluation());
     }
 }
 

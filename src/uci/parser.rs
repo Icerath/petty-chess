@@ -62,6 +62,7 @@ impl Uci {
                 "ponderhit" => Some(Uci::PonderHit),
                 "quit" => Some(Uci::Quit),
                 "perft" => Some(Uci::Perft { depth: tokens.bump_spin().map(|i| i as u32) }),
+                "d" => Some(Uci::Display),
                 _ => continue,
             };
         }

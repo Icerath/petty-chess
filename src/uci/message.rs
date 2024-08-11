@@ -16,6 +16,7 @@ pub enum UciMessage {
     PonderHit,
     Quit,
     Perft { depth: Option<u32> },
+    Display,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
