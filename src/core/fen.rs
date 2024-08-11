@@ -115,7 +115,7 @@ impl Board {
         let can_castle = parse_can_castle(fields.next()?)?;
         let en_passant_target_square = parse_en_passant(fields.next()?)?;
         let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
-        let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
+        let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(1);
 
         let mut board = Board {
             pieces,
