@@ -28,6 +28,11 @@ impl Bitboard {
         Square(self.0.trailing_zeros() as i8)
     }
     #[inline]
+    #[must_use]
+    pub fn rbitscan(self) -> Square {
+        Square(self.0.leading_zeros() as i8)
+    }
+    #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while self.0 > 0 {
             let next = self.bitscan();

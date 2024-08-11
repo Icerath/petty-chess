@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{core::magic::Magic, prelude::*};
 
 impl Engine {
     pub fn evaluate(&mut self) -> i32 {
@@ -73,13 +73,23 @@ impl Engine {
             let all_pawns = self.board.get(Pawn);
             self.board[colour + Rook].for_each(|pos| {
                 if all_pawns.filter_file(pos.file()).count() == 0 {
-                    total += 40 * colour.positive();
-                } else if friendly_pawns.filter_file(pos.file()).count() == 0 {
                     total += 20 * colour.positive();
+                } else if friendly_pawns.filter_file(pos.file()).count() == 0 {
+                    total += 10 * colour.positive();
                 }
             });
         }
-
+        // reward rooks able to see eachother
+        for colour in [White, Black] {
+            let rooks = self.board[colour + Rook];
+            if rooks.count() < 2 {
+                continue;
+            }
+            let rook_attacks = Magic::get().rook_attacks(rooks.bitscan(), self.board.all_pieces());
+            if rook_attacks.contains(rooks.rbitscan()) {
+                total += 20 * colour.positive();
+            }
+        }
         // reward bishop pair
         total += self.has_bishop_pair(White) as i32 * 20 * White.positive();
         total += self.has_bishop_pair(Black) as i32 * 20 * Black.positive();
@@ -97,7 +107,6 @@ impl Engine {
         self.board[BlackQueen].for_each(|pos| total += piece_value_at_square(pos, BlackQueen, endgame));
         self.board[WhiteKing].for_each(|pos| total += piece_square_value(pos, WhiteKing, endgame));
         self.board[BlackKing].for_each(|pos| total += piece_square_value(pos, BlackKing, endgame));
-
         total
     }
     #[inline]
