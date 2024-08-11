@@ -22,7 +22,6 @@ impl Engine {
         if moves.is_empty() {
             return Move::NULL;
         }
-        let mut final_move = moves[0];
 
         'outer: for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
@@ -39,7 +38,6 @@ impl Engine {
 
             let mut new_pv = Moves::new();
 
-            let mut best_move = final_move;
             let mut alpha = -beta;
             let mut node_type = Nodetype::Alpha;
 
@@ -49,7 +47,7 @@ impl Engine {
                 let unmake = self.board.make_move(mov);
                 self.seen_positions.push(self.board.zobrist);
                 self.depth_from_root += 1;
-                let score = -self.negamax(alpha, beta, depth - 1, &mut line, None).0;
+                let score = -self.negamax(-beta, -alpha, depth - 1, &mut line, None).0;
                 self.only_pv_nodes = false;
                 self.depth_from_root -= 1;
                 self.seen_positions.pop();
@@ -62,17 +60,12 @@ impl Engine {
                 if score > alpha {
                     line.push(mov);
                     new_pv = line;
-                    best_move = mov;
                     alpha = score;
                     node_type = Nodetype::Exact;
                 }
             }
             new_pv.reverse();
             self.pv = new_pv;
-
-            if let Some(&mov) = self.pv.first() {
-                assert_eq!(mov, best_move);
-            }
             self.transposition_table.insert(
                 &self.board,
                 &self.seen_positions,
@@ -83,7 +76,6 @@ impl Engine {
             );
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
-            final_move = best_move;
 
             let is_checkmate = alpha.abs() == Self::mate_score();
 
@@ -109,7 +101,7 @@ impl Engine {
                 break;
             }
         }
-        final_move
+        self.pv[0]
     }
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&pos| pos == self.board.zobrist).count() > 1
@@ -143,6 +135,7 @@ impl Engine {
         let curr_nodes = self.total_nodes;
         let mut killer_move = None;
         for (i, &mov) in moves.iter().enumerate() {
+            _ = i;
             if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
                 continue;
             }
@@ -152,16 +145,16 @@ impl Engine {
             self.seen_positions.push(self.board.zobrist);
             self.depth_from_root += 1;
 
-            if depth > 1 && i > moves.len() / 2 {
-                let score = -self.negamax(-beta, -alpha, depth - 2, &mut line, killer_move).0;
-                self.only_pv_nodes = false;
-                if score <= alpha {
-                    self.depth_from_root -= 1;
-                    self.seen_positions.pop();
-                    self.board.unmake_move(unmake);
-                    continue;
-                }
-            }
+            // if depth > 1 && i > moves.len() / 2 {
+            //     let score = -self.negamax(-beta, -alpha, depth - 2, &mut line, killer_move).0;
+            //     self.only_pv_nodes = false;
+            //     if score <= alpha {
+            //         self.depth_from_root -= 1;
+            //         self.seen_positions.pop();
+            //         self.board.unmake_move(unmake);
+            //         continue;
+            //     }
+            // }
 
             let (score, chosen_move) = self.negamax(-beta, -alpha, depth - 1, &mut line, killer_move);
             let score = -score;
