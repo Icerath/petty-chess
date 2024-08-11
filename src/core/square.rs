@@ -40,6 +40,25 @@ impl Square {
         let file = self.file().checked_add(file)?;
         Some(Self::new(self.rank(), file))
     }
+    #[must_use]
+    #[inline]
+    pub fn manhattan_distance(self, other: Self) -> u8 {
+        self.file().0.abs_diff(other.file().0) + self.rank().0.abs_diff(other.rank().0)
+    }
+    #[must_use]
+    #[inline]
+    pub fn centre_manhattan_distance(self) -> u8 {
+        [
+            3, 3, 3, 3, 3, 3, 3, 3, //
+            3, 2, 2, 2, 2, 2, 2, 3, //
+            3, 2, 1, 1, 1, 1, 2, 3, //
+            3, 2, 1, 0, 0, 1, 2, 3, //
+            3, 2, 1, 0, 0, 1, 2, 3, //
+            3, 2, 1, 1, 1, 1, 2, 3, //
+            3, 2, 2, 2, 2, 2, 2, 3, //
+            3, 3, 3, 3, 3, 3, 3, 3, //
+        ][self]
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -201,4 +220,10 @@ impl Square {
     pub const F8: Self = Self(61);
     pub const G8: Self = Self(62);
     pub const H8: Self = Self(63);
+}
+
+#[test]
+fn test_manhattan_distance() {
+    assert_eq!(Square::A1.manhattan_distance(Square::H8), 14);
+    assert_eq!(Square::E2.manhattan_distance(Square::E2), 0);
 }

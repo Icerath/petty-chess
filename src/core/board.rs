@@ -230,8 +230,18 @@ impl Board {
         self.enemy_bitboards().into_iter().fold(Bitboard(0), |acc, x| acc | x)
     }
     #[must_use]
+    #[inline]
     pub fn all_pieces(&self) -> Bitboard {
         self.cached.piece_bitboards.into_iter().fold(Bitboard(0), |acc, x| acc | x)
+    }
+    #[must_use]
+    #[inline]
+    pub fn get_king_square(&self, side: Colour) -> Square {
+        if self.active_colour == side {
+            self.active_king_pos
+        } else {
+            self.inactive_king_pos
+        }
     }
 }
 

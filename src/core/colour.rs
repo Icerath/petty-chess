@@ -20,7 +20,7 @@ impl Colour {
     }
     #[must_use]
     #[inline]
-    pub fn forward(self) -> i8 {
+    pub const fn forward(self) -> i8 {
         match self {
             Self::Black => -1,
             Self::White => 1,
@@ -29,7 +29,7 @@ impl Colour {
     /// What is considered a beneficial score for this colour
     #[inline]
     #[must_use]
-    pub fn positive(self) -> i32 {
+    pub const fn positive(self) -> i32 {
         self.forward() as i32
     }
 }

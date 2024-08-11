@@ -91,6 +91,19 @@ impl Engine {
 
             final_total += total * colour.positive();
         }
+        // mop up evaluation
+        let mop_up_colour = match final_total {
+            100.. => Some(White),
+            ..=-100 => Some(Black),
+            _ => None,
+        };
+        if let Some(mop_up_colour) = mop_up_colour {
+            let md = self.board.active_king_pos.manhattan_distance(self.board.inactive_king_pos);
+            let cmd = self.board.get_king_square(!mop_up_colour).centre_manhattan_distance() as i32;
+            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_colour.positive();
+            final_total += (mop_up_score as f32 * endgame) as i32;
+        }
+
         final_total
     }
     #[inline]
