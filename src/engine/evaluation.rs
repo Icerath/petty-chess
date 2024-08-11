@@ -14,12 +14,18 @@ impl Engine {
 
         for colour in [White, Black] {
             let mut total = 0;
-            // punish kings next adjacent to open file
-            let file = self.board.piece_bitboards[colour + King].bitscan().file();
+            let king = if self.board.active_colour == colour {
+                self.board.active_king_pos
+            } else {
+                self.board.inactive_king_pos
+            };
             let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
             let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
+            let all_pawns = self.board.get(Pawn);
 
+            // punish kings next adjacent to open file
             for pawns in [friendly_pawns, enemy_pawns] {
+                let file = king.file();
                 let left_open = file.0 != 0 && pawns.filter_file(File(file.0 - 1)).count() == 0;
                 let middle_open = pawns.filter_file(file).count() == 0;
                 let right_open = file.0 != 7 && pawns.filter_file(File(file.0 + 1)).count() == 0;
@@ -29,14 +35,13 @@ impl Engine {
             }
             // punish double pawns
             for file in 0..8 {
-                let pawns = self.board[colour + Pawn].filter_file(File(file)).count() as i32;
-                total -= (pawns - 1).max(0) * 20;
+                let pawns_in_file = friendly_pawns.filter_file(File(file)).count() as i32;
+                total -= (pawns_in_file - 1).max(0) * 20;
             }
             // reward non-isolated pawns
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|pos| {
                 let file = pos.file().0;
-
                 let left_open = file == 0 || pawns.filter_file(File(file - 1)).count() == 0;
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
@@ -60,8 +65,6 @@ impl Engine {
                 }
             });
             // reward rooks on an open file
-            let friendly_pawns = self.board[colour + Pawn];
-            let all_pawns = self.board.get(Pawn);
             self.board[colour + Rook].for_each(|pos| {
                 if all_pawns.filter_file(pos.file()).count() == 0 {
                     total += 20;
@@ -80,10 +83,12 @@ impl Engine {
             // reward bishop pair
             total += self.has_bishop_pair(colour) as i32 * 20;
             // material and piece square table values
-            for piecekind in [Pawn, Knight, Bishop, Rook, Queen, King] {
-                self.board[colour + piecekind]
-                    .for_each(|square| total += abs_piece_value_at_square(square, colour + piecekind, endgame));
+            for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
+                let piece = colour + piecekind;
+                self.board[piece].for_each(|square| total += abs_piece_value_at_square(square, piece, endgame));
             }
+            total += abs_piece_square_value(king, colour + King, endgame);
+
             final_total += total * colour.positive();
         }
         final_total
