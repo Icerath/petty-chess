@@ -17,7 +17,7 @@ impl Engine {
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
 
-        let beta = Self::mate_score();
+        let beta = Self::infinity();
         let mut moves = self.board.gen_legal_moves();
         if moves.is_empty() {
             return Move::NULL;
