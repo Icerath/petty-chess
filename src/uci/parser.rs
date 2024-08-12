@@ -57,6 +57,7 @@ impl Uci {
                     });
                     Some(Uci::Position { fen, moves: tokens.moves() })
                 }
+                "fen" => Some(Uci::Position { fen: tokens.fen()?.into(), moves: tokens.moves() }),
                 "go" => Some(Uci::Go(Self::parse_go(&mut tokens))),
                 "stop" => Some(Uci::Stop),
                 "ponderhit" => Some(Uci::PonderHit),
