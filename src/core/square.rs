@@ -104,11 +104,6 @@ impl File {
     }
     #[must_use]
     #[inline]
-    pub fn adjacent_file_mask(self) -> Bitboard {
-        (self - 1).mask() | (self + 1).mask()
-    }
-    #[must_use]
-    #[inline]
     // Produces a mask representing a file from 0..8
     // Produces an empty bitboard for File(-1) and File(8)
     // Oher file values are undefined behaviour
