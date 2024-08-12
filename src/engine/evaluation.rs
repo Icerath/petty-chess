@@ -40,11 +40,10 @@ impl Engine {
                 total -= (pawns_in_file - 1).max(0) * 20;
             }
             // reward non-isolated pawns
-            let pawns = self.board[colour + Pawn];
-            pawns.for_each(|sq| {
+            friendly_pawns.for_each(|sq| {
                 let file = sq.file().0;
-                let left_open = file == 0 || (pawns & (File(file - 1).mask())).count() == 0;
-                let right_open = file == 7 || (pawns & (File(file + 1).mask())).count() == 0;
+                let left_open = file == 0 || (friendly_pawns & (File(file - 1).mask())).count() == 0;
+                let right_open = file == 7 || (friendly_pawns & (File(file + 1).mask())).count() == 0;
 
                 if !(left_open && right_open) {
                     let distance = file.abs_diff(4).min(file.abs_diff(3));

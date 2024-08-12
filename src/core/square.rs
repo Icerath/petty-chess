@@ -124,8 +124,6 @@ impl File {
             File(7).compute_mask(),
             Bitboard::EMPTY,
         ];
-        debug_assert!(self.0 < 9);
-        unsafe { std::hint::assert_unchecked(self.0 < 9) };
         FILES[usize::try_from(self.0).unwrap_or(8)]
     }
 
