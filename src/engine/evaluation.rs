@@ -46,7 +46,14 @@ impl Engine {
                 let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
 
                 if !(left_open && right_open) {
-                    total += 15;
+                    let distance = file.abs_diff(4).min(file.abs_diff(3));
+                    total += match distance {
+                        0 => 20,
+                        1 => 15,
+                        2 => 10,
+                        3 => 5,
+                        _ => unreachable!(),
+                    };
                 }
             });
             // reward pawns close to king
