@@ -85,7 +85,6 @@ impl Board {
         }
 
         self.cached.zobrist.xor_can_castle(self.can_castle);
-        self.zobrist.xor_side_to_move();
         self.zobrist.xor_piece(mov.from(), from_piece);
         self.zobrist.xor_piece(mov.to(), from_piece);
         if let Some(piece) = self[mov.to()] {
@@ -175,8 +174,17 @@ impl Board {
         self.en_passant_target_square = unmake.en_passant_target_square;
         self.can_castle = unmake.can_castle;
     }
+    pub fn make_null_move(&mut self) -> Option<Square> {
+        self.increment_ply();
+        self.en_passant_target_square.take()
+    }
+    pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
+        self.en_passant_target_square = prev_en_passant;
+        self.decrement_ply();
+    }
     #[inline]
     pub fn increment_ply(&mut self) {
+        self.zobrist.xor_side_to_move();
         if self.black_to_play() {
             self.fullmove_counter += 1;
         }
@@ -192,6 +200,7 @@ impl Board {
         if self.black_to_play() {
             self.fullmove_counter -= 1;
         }
+        self.zobrist.xor_side_to_move();
     }
     #[inline]
     #[must_use]

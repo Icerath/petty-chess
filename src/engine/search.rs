@@ -126,6 +126,25 @@ impl Engine {
         }
         self.total_nodes += 1;
 
+        'null: {
+            if depth < 3 {
+                break 'null;
+            }
+
+            let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
+            if attacked_squares.contains(self.board.active_king_sq) {
+                break 'null;
+            }
+            let unmake = self.board.make_null_move();
+            self.depth_from_root += 1;
+            let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new(), None).0;
+            self.depth_from_root -= 1;
+            self.board.unmake_null_move(unmake);
+            if score >= beta {
+                return (beta, None);
+            }
+        }
+
         let mut moves = MoveGenerator::<FullGen>::new(&mut self.board).gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
 
