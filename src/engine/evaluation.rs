@@ -27,9 +27,9 @@ impl Engine {
             // punish kings next adjacent to open file
             for pawns in [friendly_pawns, enemy_pawns] {
                 let file = king.file();
-                let left_open = file.0 != 0 && (pawns & File(file.0 - 1).mask()).count() == 0;
-                let middle_open = (pawns & file.mask()).count() == 0;
-                let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).count() == 0;
+                let left_open = file.0 != 0 && (pawns & File(file.0 - 1).mask()).is_empty();
+                let middle_open = (pawns & file.mask()).is_empty();
+                let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
                 total -= ((num_open_files * 35) as f32 * (1.0 - endgame)) as i32;
@@ -42,8 +42,8 @@ impl Engine {
             // reward non-isolated pawns
             friendly_pawns.for_each(|sq| {
                 let file = sq.file().0;
-                let left_open = file == 0 || (friendly_pawns & (File(file - 1).mask())).count() == 0;
-                let right_open = file == 7 || (friendly_pawns & (File(file + 1).mask())).count() == 0;
+                let left_open = file == 0 || (friendly_pawns & (File(file - 1).mask())).is_empty();
+                let right_open = file == 7 || (friendly_pawns & (File(file + 1).mask())).is_empty();
 
                 if !(left_open && right_open) {
                     let distance = file.abs_diff(4).min(file.abs_diff(3));
@@ -68,9 +68,9 @@ impl Engine {
             });
             // reward rooks on an open file
             self.board[colour + Rook].for_each(|sq| {
-                if (all_pawns & sq.file().mask()).count() == 0 {
+                if (all_pawns & sq.file().mask()).is_empty() {
                     total += 20;
-                } else if (friendly_pawns & (sq.file().mask())).count() == 0 {
+                } else if (friendly_pawns & (sq.file().mask())).is_empty() {
                     total += 10;
                 }
             });
@@ -120,18 +120,18 @@ impl Engine {
         let w = self.board.side_bitboards(White);
         let b = self.board.side_bitboards(Black);
 
-        w[Queen].count() > 0
-            || b[Queen].count() > 0
-            || w[Rook].count() > 0
-            || b[Rook].count() > 0
-            || w[Pawn].count() > 0
-            || b[Pawn].count() > 0
+        w[Queen].not_empty()
+            || b[Queen].not_empty()
+            || w[Rook].not_empty()
+            || b[Rook].not_empty()
+            || w[Pawn].not_empty()
+            || b[Pawn].not_empty()
             || self.has_bishop_pair(Colour::White)
             || self.has_bishop_pair(Colour::Black)
-            || (w[Bishop].count() > 0 && w[Knight].count() > 0)
-            || (b[Bishop].count() > 0 && b[Knight].count() > 0)
-            || w[Knight].count() >= 3
-            || b[Knight].count() >= 3
+            || (w[Bishop].not_empty() && w[Knight].not_empty())
+            || (b[Bishop].not_empty() && b[Knight].not_empty())
+            || w[Knight].0 >= 3
+            || b[Knight].0 >= 3
     }
 }
 #[inline]
