@@ -1,8 +1,10 @@
 use std::{
     fmt,
-    ops::{Index, IndexMut},
+    ops::{Add, Index, IndexMut, Sub},
     str::FromStr,
 };
+
+use crate::prelude::*;
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Square(pub i8);
@@ -99,6 +101,59 @@ impl File {
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
         let out = self.0 + rhs;
         (0..8).contains(&out).then_some(Self(out))
+    }
+    #[must_use]
+    #[inline]
+    pub fn adjacent_file_mask(self) -> Bitboard {
+        (self - 1).mask() | (self + 1).mask()
+    }
+    #[must_use]
+    #[inline]
+    // Produces a mask representing a file from 0..8
+    // Produces an empty bitboard for File(-1) and File(8)
+    // Oher file values are undefined behaviour
+    pub fn mask(self) -> Bitboard {
+        const FILES: [Bitboard; 9] = [
+            File(0).compute_mask(),
+            File(1).compute_mask(),
+            File(2).compute_mask(),
+            File(3).compute_mask(),
+            File(4).compute_mask(),
+            File(5).compute_mask(),
+            File(6).compute_mask(),
+            File(7).compute_mask(),
+            Bitboard::EMPTY,
+        ];
+        debug_assert!(self.0 < 9);
+        unsafe { std::hint::assert_unchecked(self.0 < 9) };
+        FILES[usize::try_from(self.0).unwrap_or(8)]
+    }
+
+    const fn compute_mask(self) -> Bitboard {
+        Bitboard(
+            (1 << self.0)
+                + (1 << (8 + self.0))
+                + (1 << (16 + self.0))
+                + (1 << (24 + self.0))
+                + (1 << (32 + self.0))
+                + (1 << (40 + self.0))
+                + (1 << (48 + self.0))
+                + (1 << (56 + self.0)),
+        )
+    }
+}
+
+impl Add<i8> for File {
+    type Output = Self;
+    fn add(self, rhs: i8) -> Self::Output {
+        Self(self.0 + rhs)
+    }
+}
+
+impl Sub<i8> for File {
+    type Output = Self;
+    fn sub(self, rhs: i8) -> Self::Output {
+        Self(self.0 - rhs)
     }
 }
 

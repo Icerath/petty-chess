@@ -4,6 +4,7 @@ impl Engine {
     pub fn evaluate(&mut self) -> i32 {
         self.raw_evaluation() * self.board.active_colour.positive()
     }
+    #[allow(clippy::too_many_lines)]
     pub fn raw_evaluation(&mut self) -> i32 {
         let endgame = self.endgame();
 
@@ -26,24 +27,24 @@ impl Engine {
             // punish kings next adjacent to open file
             for pawns in [friendly_pawns, enemy_pawns] {
                 let file = king.file();
-                let left_open = file.0 != 0 && pawns.filter_file(File(file.0 - 1)).count() == 0;
-                let middle_open = pawns.filter_file(file).count() == 0;
-                let right_open = file.0 != 7 && pawns.filter_file(File(file.0 + 1)).count() == 0;
+                let left_open = file.0 != 0 && (pawns & File(file.0 - 1).mask()).count() == 0;
+                let middle_open = (pawns & file.mask()).count() == 0;
+                let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).count() == 0;
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
                 total -= ((num_open_files * 35) as f32 * (1.0 - endgame)) as i32;
             }
             // punish double pawns
             for file in 0..8 {
-                let pawns_in_file = friendly_pawns.filter_file(File(file)).count() as i32;
+                let pawns_in_file = (friendly_pawns & (File(file).mask())).count() as i32;
                 total -= (pawns_in_file - 1).max(0) * 20;
             }
             // reward non-isolated pawns
             let pawns = self.board[colour + Pawn];
             pawns.for_each(|sq| {
                 let file = sq.file().0;
-                let left_open = file == 0 || pawns.filter_file(File(file - 1)).count() == 0;
-                let right_open = file == 7 || pawns.filter_file(File(file + 1)).count() == 0;
+                let left_open = file == 0 || (pawns & (File(file - 1).mask())).count() == 0;
+                let right_open = file == 7 || (pawns & (File(file + 1).mask())).count() == 0;
 
                 if !(left_open && right_open) {
                     let distance = file.abs_diff(4).min(file.abs_diff(3));
@@ -57,13 +58,8 @@ impl Engine {
                 }
             });
             // reward pawns close to king
-            let king = self.board[colour + King].bitscan();
-            let pawns = self.board[colour + Pawn];
-            pawns.for_each(|sq| {
-                let is_adjacent = sq.file().0.abs_diff(king.file().0) <= 1;
-                if !is_adjacent {
-                    return;
-                }
+            let kadj_pawns_mask = (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
+            (friendly_pawns & kadj_pawns_mask).for_each(|sq| {
                 let dif_rank = sq.rank().0.abs_diff(king.rank().0).saturating_sub(1);
                 if dif_rank == 0 {
                     total += 15;
@@ -73,9 +69,9 @@ impl Engine {
             });
             // reward rooks on an open file
             self.board[colour + Rook].for_each(|sq| {
-                if all_pawns.filter_file(sq.file()).count() == 0 {
+                if (all_pawns & sq.file().mask()).count() == 0 {
                     total += 20;
-                } else if friendly_pawns.filter_file(sq.file()).count() == 0 {
+                } else if (friendly_pawns & (sq.file().mask())).count() == 0 {
                     total += 10;
                 }
             });

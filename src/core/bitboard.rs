@@ -9,6 +9,8 @@ use crate::prelude::*;
 pub struct Bitboard(pub u64);
 
 impl Bitboard {
+    pub const EMPTY: Self = Self(0);
+    pub const ALL: Self = Self(u64::MAX);
     #[inline]
     pub fn insert(&mut self, sq: Square) {
         self.0 |= 1 << sq.0;
@@ -48,36 +50,9 @@ impl Bitboard {
 
     #[inline]
     #[must_use]
-    pub fn contains_in_file(&self, file: File) -> bool {
-        self.filter_file(file).0 > 0
+    pub fn contains_in_file(self, file: File) -> bool {
+        (self & file.mask()).0 > 0
     }
-    #[inline]
-    #[must_use]
-    pub fn filter_file(self, file: File) -> Bitboard {
-        Self::FILES[file.0 as usize] & self
-    }
-    const FILES: [Self; 8] = [
-        file_bitboard(File(0)),
-        file_bitboard(File(1)),
-        file_bitboard(File(2)),
-        file_bitboard(File(3)),
-        file_bitboard(File(4)),
-        file_bitboard(File(5)),
-        file_bitboard(File(6)),
-        file_bitboard(File(7)),
-    ];
-}
-const fn file_bitboard(file: File) -> Bitboard {
-    Bitboard(
-        (1 << file.0)
-            + (1 << (8 + file.0))
-            + (1 << (16 + file.0))
-            + (1 << (24 + file.0))
-            + (1 << (32 + file.0))
-            + (1 << (40 + file.0))
-            + (1 << (48 + file.0))
-            + (1 << (56 + file.0)),
-    )
 }
 
 impl Not for Bitboard {
@@ -136,12 +111,6 @@ impl Extend<Square> for Bitboard {
 }
 
 impl fmt::Debug for Bitboard {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:x}", self.0)
-    }
-}
-
-impl fmt::Display for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for rank in (0..8).rev() {
             for file in 0..8 {
