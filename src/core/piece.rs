@@ -84,8 +84,8 @@ impl Default for Piece {
 impl Piece {
     #[must_use]
     #[inline]
-    pub fn new(kind: PieceKind, colour: Colour) -> Self {
-        Self::try_from(kind as u8 + colour as u8 * 6).unwrap()
+    pub fn new(kind: PieceKind, side: Side) -> Self {
+        Self::try_from(kind as u8 + side as u8 * 6).unwrap()
     }
     #[must_use]
     #[inline]
@@ -94,8 +94,8 @@ impl Piece {
     }
     #[must_use]
     #[inline]
-    pub fn colour(self) -> Colour {
-        Colour::from(self as u8 / 6 == 1)
+    pub fn side(self) -> Side {
+        Side::from(self as u8 / 6 == 1)
     }
 }
 
@@ -120,24 +120,24 @@ impl Piece {
     #[must_use]
     #[inline]
     pub fn is_white(self) -> bool {
-        self.colour().is_white()
+        self.side().is_white()
     }
     #[must_use]
     #[inline]
     pub fn is_black(self) -> bool {
-        self.colour().is_black()
+        self.side().is_black()
     }
 }
 
-impl Add<Colour> for PieceKind {
+impl Add<Side> for PieceKind {
     type Output = Piece;
     #[inline]
-    fn add(self, colour: Colour) -> Self::Output {
-        Piece::new(self, colour)
+    fn add(self, side: Side) -> Self::Output {
+        Piece::new(self, side)
     }
 }
 
-impl Add<PieceKind> for Colour {
+impl Add<PieceKind> for Side {
     type Output = Piece;
     #[inline]
     fn add(self, kind: PieceKind) -> Self::Output {
@@ -147,7 +147,7 @@ impl Add<PieceKind> for Colour {
 
 impl fmt::Debug for Piece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Piece").field("colour", &self.colour()).field("kind", &self.kind()).finish()
+        f.debug_struct("Piece").field("side", &self.side()).field("kind", &self.kind()).finish()
     }
 }
 
@@ -157,10 +157,10 @@ fn test_piece_repr() {
     assert_eq!(size_of::<Option<Piece>>(), 1);
 
     for kind in [P::Pawn, P::Knight, P::Bishop, P::Rook, P::Queen, P::King] {
-        for colour in [Colour::White, Colour::Black] {
-            let piece = Piece::new(kind, colour);
+        for side in [Side::White, Side::Black] {
+            let piece = Piece::new(kind, side);
             assert_eq!(piece.kind(), kind);
-            assert_eq!(piece.colour(), colour);
+            assert_eq!(piece.side(), side);
         }
     }
 }

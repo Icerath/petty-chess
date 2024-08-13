@@ -107,7 +107,7 @@ impl Board {
         let mut fields = fen.split(' ');
 
         let pieces = parse_pieces(fields.next()?)?;
-        let active_colour = match fields.next()? {
+        let active_side = match fields.next()? {
             "w" => White,
             "b" => Black,
             _ => return None,
@@ -119,7 +119,7 @@ impl Board {
 
         let mut board = Board {
             pieces,
-            active_colour,
+            active_side,
             can_castle,
             en_passant_target_square,
             halfmove_clock,
@@ -155,9 +155,9 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
             b'k' => King,
             _ => return None,
         };
-        let colour = if c.is_ascii_uppercase() { White } else { Black };
+        let side = if c.is_ascii_uppercase() { White } else { Black };
         let sq = Square::new(Rank(rank), File(file));
-        pieces[sq] = Some(kind + colour);
+        pieces[sq] = Some(kind + side);
         file += 1;
     }
     Some(pieces)

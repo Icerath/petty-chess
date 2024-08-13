@@ -3,21 +3,21 @@ pub mod engine;
 pub mod uci;
 
 pub mod prelude {
-    pub use Colour::*;
     pub use Piece::*;
     pub use PieceKind::*;
+    pub use Side::*;
 
     pub use super::{
         core::{
             bitboard::Bitboard,
             board::Board,
             can_castle::CanCastle,
-            colour::Colour,
             fen,
             move_flags::{Castle, MoveFlags, Promotion},
             movegen::{self, MoveGenerator},
             piece::{Piece, PieceKind},
             r#move::Move,
+            side::Side,
             square::{File, Rank, Square},
             zobrist::Zobrist,
         },

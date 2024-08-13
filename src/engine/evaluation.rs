@@ -2,7 +2,7 @@ use crate::{core::magic::Magic, prelude::*};
 
 impl Engine {
     pub fn evaluate(&mut self) -> i32 {
-        self.raw_evaluation() * self.board.active_colour.positive()
+        self.raw_evaluation() * self.board.active_side.positive()
     }
     #[allow(clippy::too_many_lines)]
     pub fn raw_evaluation(&mut self) -> i32 {
@@ -13,15 +13,15 @@ impl Engine {
         }
         let mut final_total = 0;
 
-        for colour in [White, Black] {
+        for side in [White, Black] {
             let mut total = 0;
-            let king = if self.board.active_colour == colour {
+            let king = if self.board.active_side == side {
                 self.board.active_king_sq
             } else {
                 self.board.inactive_king_sq
             };
-            let friendly_pawns = self.board.piece_bitboards[colour + Pawn];
-            let enemy_pawns = self.board.piece_bitboards[!colour + Pawn];
+            let friendly_pawns = self.board.piece_bitboards[side + Pawn];
+            let enemy_pawns = self.board.piece_bitboards[!side + Pawn];
             let all_pawns = self.board.get(Pawn);
 
             // punish kings next adjacent to open file
@@ -67,7 +67,7 @@ impl Engine {
                 }
             });
             // reward rooks on an open file
-            self.board[colour + Rook].for_each(|sq| {
+            self.board[side + Rook].for_each(|sq| {
                 if (all_pawns & sq.file().mask()).is_empty() {
                     total += 20;
                 } else if (friendly_pawns & (sq.file().mask())).is_empty() {
@@ -75,7 +75,7 @@ impl Engine {
                 }
             });
             // reward rooks able to see eachother
-            let rooks = self.board[colour + Rook];
+            let rooks = self.board[side + Rook];
             if rooks.count() >= 2 {
                 let rook_attacks = Magic::get().rook_attacks(rooks.bitscan(), self.board.all_pieces());
                 if rook_attacks.contains(rooks.rbitscan()) {
@@ -83,26 +83,26 @@ impl Engine {
                 }
             }
             // reward bishop pair
-            total += self.has_bishop_pair(colour) as i32 * 20;
+            total += self.has_bishop_pair(side) as i32 * 20;
             // material and piece square table values
             for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
-                let piece = colour + piecekind;
+                let piece = side + piecekind;
                 self.board[piece].for_each(|square| total += abs_piece_value_at_square(square, piece, endgame));
             }
-            total += abs_piece_square_value(king, colour + King, endgame);
+            total += abs_piece_square_value(king, side + King, endgame);
 
-            final_total += total * colour.positive();
+            final_total += total * side.positive();
         }
         // mop up evaluation
-        let mop_up_colour = match final_total {
+        let mop_up_side = match final_total {
             100.. => Some(White),
             ..=-100 => Some(Black),
             _ => None,
         };
-        if let Some(mop_up_colour) = mop_up_colour {
+        if let Some(mop_up_side) = mop_up_side {
             let md = self.board.active_king_sq.manhattan_distance(self.board.inactive_king_sq);
-            let cmd = self.board.get_king_square(!mop_up_colour).centre_manhattan_distance() as i32;
-            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_colour.positive();
+            let cmd = self.board.get_king_square(!mop_up_side).centre_manhattan_distance() as i32;
+            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
             final_total += (mop_up_score as f32 * endgame) as i32;
         }
 
@@ -110,7 +110,7 @@ impl Engine {
     }
     #[inline]
     #[must_use]
-    pub fn has_bishop_pair(&self, side: Colour) -> bool {
+    pub fn has_bishop_pair(&self, side: Side) -> bool {
         // Ignoring underpromotion for now
         self.board[side + Bishop].count() >= 2
     }
@@ -126,8 +126,8 @@ impl Engine {
             || b[Rook].not_empty()
             || w[Pawn].not_empty()
             || b[Pawn].not_empty()
-            || self.has_bishop_pair(Colour::White)
-            || self.has_bishop_pair(Colour::Black)
+            || self.has_bishop_pair(Side::White)
+            || self.has_bishop_pair(Side::Black)
             || (w[Bishop].not_empty() && w[Knight].not_empty())
             || (b[Bishop].not_empty() && b[Knight].not_empty())
             || w[Knight].0 >= 3
@@ -143,7 +143,7 @@ pub fn piece_value_at_square(sq: Square, piece: Piece, endgame: f32) -> i32 {
 #[inline]
 #[must_use]
 pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
-    abs_piece_value(piece.kind(), endgame) * piece.colour().positive()
+    abs_piece_value(piece.kind(), endgame) * piece.side().positive()
 }
 
 #[inline]
@@ -163,7 +163,7 @@ pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
 #[inline]
 #[must_use]
 pub fn piece_square_value(sq: Square, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_square_value(sq, piece, endgame) * piece.colour().positive()
+    abs_piece_square_value(sq, piece, endgame) * piece.side().positive()
 }
 
 #[inline]

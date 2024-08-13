@@ -6,7 +6,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct Board {
     pub pieces: [Option<Piece>; 64],
-    pub active_colour: Colour,
+    pub active_side: Side,
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Square>,
     pub halfmove_clock: u8,
@@ -44,7 +44,7 @@ impl Board {
             self.piece_bitboards[piece].insert(sq);
             self.zobrist.xor_piece(sq, piece);
             let PieceKind::King = piece.kind() else { continue };
-            if piece.colour() == self.active_colour {
+            if piece.side() == self.active_side {
                 self.active_king_sq = sq;
             } else {
                 self.inactive_king_sq = sq;
@@ -99,7 +99,7 @@ impl Board {
 
         match mov.flags() {
             MoveFlags::EnPassant => {
-                let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
+                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 let pawn = self[back].unwrap();
                 unmake.captured_piece = Some(pawn);
                 self.cached.zobrist.xor_piece(back, pawn);
@@ -119,12 +119,12 @@ impl Board {
                 self.swap(Square::F8, Square::H8);
             }
             MoveFlags::DoublePawnPush => {
-                let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
+                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 self.en_passant_target_square = Some(back);
                 self.zobrist.xor_en_passant(back);
             }
             flags if flags.promotion().is_some() => {
-                let piece = self.active_colour + PieceKind::from(flags.promotion().unwrap());
+                let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
                 self[mov.to()] = Some(piece);
                 self.zobrist.xor_piece(mov.to(), from_piece);
                 self.zobrist.xor_piece(mov.to(), piece);
@@ -143,7 +143,7 @@ impl Board {
 
         match mov.flags() {
             MoveFlags::EnPassant => {
-                let back = mov.to().add_rank(-self.active_colour.forward()).unwrap();
+                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 self[back] = unmake.captured_piece;
             }
             MoveFlags::QueenCastle if self.white_to_play() => self.swap(Square::A1, Square::D1),
@@ -158,7 +158,7 @@ impl Board {
             | MoveFlags::RookPromotionCapture
             | MoveFlags::QueenPromotion
             | MoveFlags::QueenPromotionCapture => {
-                self[mov.to()] = Some(self.active_colour + Pawn);
+                self[mov.to()] = Some(self.active_side + Pawn);
             }
             _ => {}
         }
@@ -190,11 +190,11 @@ impl Board {
         }
         self.halfmove_clock += 1;
         std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
-        self.active_colour = !self.active_colour;
+        self.active_side = !self.active_side;
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
-        self.active_colour = !self.active_colour;
+        self.active_side = !self.active_side;
         std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
         self.halfmove_clock -= 1;
         if self.black_to_play() {
@@ -205,28 +205,28 @@ impl Board {
     #[inline]
     #[must_use]
     pub fn white_to_play(&self) -> bool {
-        self.active_colour.is_white()
+        self.active_side.is_white()
     }
     #[inline]
     #[must_use]
     pub fn black_to_play(&self) -> bool {
-        self.active_colour.is_black()
+        self.active_side.is_black()
     }
     #[must_use]
     #[inline]
-    pub fn side_bitboards(&self, side: Colour) -> [Bitboard; 6] {
+    pub fn side_bitboards(&self, side: Side) -> [Bitboard; 6] {
         let offset = if side.is_black() { 0 } else { 6 };
         self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
     }
     #[must_use]
     #[inline]
-    pub fn side_pieces(&self, side: Colour) -> Bitboard {
+    pub fn side_pieces(&self, side: Side) -> Bitboard {
         self.side_bitboards(side).into_iter().fold(Bitboard(0), |acc, x| acc | x)
     }
     #[must_use]
     #[inline]
     pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
-        self.side_bitboards(self.active_colour)
+        self.side_bitboards(self.active_side)
     }
     #[must_use]
     #[inline]
@@ -236,7 +236,7 @@ impl Board {
     #[must_use]
     #[inline]
     pub fn enemy_bitboards(&self) -> [Bitboard; 6] {
-        self.side_bitboards(!self.active_colour)
+        self.side_bitboards(!self.active_side)
     }
     #[must_use]
     #[inline]
@@ -250,8 +250,8 @@ impl Board {
     }
     #[must_use]
     #[inline]
-    pub fn get_king_square(&self, side: Colour) -> Square {
-        if self.active_colour == side {
+    pub fn get_king_square(&self, side: Side) -> Square {
+        if self.active_side == side {
             self.active_king_sq
         } else {
             self.inactive_king_sq
@@ -292,7 +292,7 @@ impl Board {
     }
     #[inline]
     #[must_use]
-    pub fn is_side(&self, sq: Square, side: Colour) -> bool {
+    pub fn is_side(&self, sq: Square, side: Side) -> bool {
         self.side_pieces(side).contains(sq)
     }
 }

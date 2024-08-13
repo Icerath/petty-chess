@@ -79,7 +79,7 @@ impl Engine {
 
             let is_checkmate = alpha.abs() == Self::mate_score();
 
-            let absolute_eval = alpha * self.board.active_colour.positive();
+            let absolute_eval = alpha * self.board.active_side.positive();
             let score = if is_checkmate {
                 Score::Mate { mate: depth as i32 / 2 * alpha.signum() }
             } else {

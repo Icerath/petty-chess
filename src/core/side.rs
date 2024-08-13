@@ -2,12 +2,12 @@ use core::ops::Not;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
-pub enum Colour {
+pub enum Side {
     Black,
     White,
 }
 
-impl Colour {
+impl Side {
     #[must_use]
     #[inline]
     pub fn is_black(self) -> bool {
@@ -26,7 +26,7 @@ impl Colour {
             Self::White => 1,
         }
     }
-    /// What is considered a beneficial score for this colour
+    /// What is considered a beneficial score for this side
     #[inline]
     #[must_use]
     pub const fn positive(self) -> i32 {
@@ -35,22 +35,22 @@ impl Colour {
 }
 
 #[rustfmt::skip]
-impl From<bool> for Colour {
+impl From<bool> for Side {
     #[inline]
     fn from(value: bool) -> Self {
-        if value { Colour::White } else { Colour::Black }
+        if value { Side::White } else { Side::Black }
     }
 }
 
-impl From<Colour> for bool {
+impl From<Side> for bool {
     #[inline]
-    fn from(val: Colour) -> Self {
+    fn from(val: Side) -> Self {
         val as u8 == 1
     }
 }
 
-impl Not for Colour {
-    type Output = Colour;
+impl Not for Side {
+    type Output = Side;
     #[inline]
     fn not(self) -> Self::Output {
         match self {

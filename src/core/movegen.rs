@@ -88,11 +88,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     pub fn is_legal(&mut self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.attack_map();
-            let squares = match (self.board.active_colour, mov.flags() == MoveFlags::KingCastle) {
-                (Colour::White, true) => [Square::F1, Square::G1],
-                (Colour::White, false) => [Square::C1, Square::D1],
-                (Colour::Black, true) => [Square::F8, Square::G8],
-                (Colour::Black, false) => [Square::C8, Square::D8],
+            let squares = match (self.board.active_side, mov.flags() == MoveFlags::KingCastle) {
+                (Side::White, true) => [Square::F1, Square::G1],
+                (Side::White, false) => [Square::C1, Square::D1],
+                (Side::Black, true) => [Square::F8, Square::G8],
+                (Side::Black, false) => [Square::C8, Square::D8],
             };
             if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_sq) {
                 return false;
@@ -116,11 +116,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     fn gen_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let colour = !self.board.active_colour;
+        let side = !self.board.active_side;
         let enemy_pieces = self.board.enemy_bitboards();
         let all_pieces = self.board.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
@@ -132,8 +132,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let colour = !self.board.active_colour;
-        self.board[colour + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        let side = !self.board.active_side;
+        self.board[side + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         attacked_squares
     }
     #[inline]
@@ -148,7 +148,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         });
     }
     fn gen_pawn_moves(&mut self, from: Square) {
-        let forward = self.board.active_colour.forward();
+        let forward = self.board.active_side.forward();
 
         let can_promote = (self.board.white_to_play() && from.rank().0 == 6)
             || (self.board.black_to_play() && from.rank().0 == 1);
@@ -179,7 +179,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(to) = Square(from.0 + forward * 8).add_file(1) {
-            if self.board.is_side(to, !self.board.active_colour) {
+            if self.board.is_side(to, !self.board.active_side) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
@@ -193,7 +193,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(to) = Square(from.0 + forward * 8).add_file(-1) {
-            if self.board.is_side(to, !self.board.active_colour) {
+            if self.board.is_side(to, !self.board.active_side) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
@@ -251,11 +251,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     }
     #[inline]
     pub fn is_square_attacked(&mut self, sq: Square) -> bool {
-        self.board.active_colour = !self.board.active_colour;
+        self.board.active_side = !self.board.active_side;
         std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
         let atk_map = self.gen_attack_map();
         std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
-        self.board.active_colour = !self.board.active_colour;
+        self.board.active_side = !self.board.active_side;
         atk_map.contains(sq)
     }
 }
