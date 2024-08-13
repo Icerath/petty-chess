@@ -54,12 +54,6 @@ impl Bitboard {
     }
     #[inline]
     #[must_use]
-    pub fn not_empty(self) -> bool {
-        self.0 != 0
-    }
-
-    #[inline]
-    #[must_use]
     pub fn contains_in_file(self, file: File) -> bool {
         (self & file.mask()).0 > 0
     }

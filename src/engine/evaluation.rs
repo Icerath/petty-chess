@@ -120,16 +120,16 @@ impl Engine {
         let w = self.board.side_bitboards(White);
         let b = self.board.side_bitboards(Black);
 
-        w[Queen].not_empty()
-            || b[Queen].not_empty()
-            || w[Rook].not_empty()
-            || b[Rook].not_empty()
-            || w[Pawn].not_empty()
-            || b[Pawn].not_empty()
+        !w[Queen].is_empty()
+            || !b[Queen].is_empty()
+            || !w[Rook].is_empty()
+            || !b[Rook].is_empty()
+            || !w[Pawn].is_empty()
+            || !b[Pawn].is_empty()
             || self.has_bishop_pair(Side::White)
             || self.has_bishop_pair(Side::Black)
-            || (w[Bishop].not_empty() && w[Knight].not_empty())
-            || (b[Bishop].not_empty() && b[Knight].not_empty())
+            || (!w[Bishop].is_empty() && !w[Knight].is_empty())
+            || (!b[Bishop].is_empty() && !b[Knight].is_empty())
             || w[Knight].0 >= 3
             || b[Knight].0 >= 3
     }
