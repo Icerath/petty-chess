@@ -109,8 +109,7 @@ impl Engine {
         final_total
     }
     #[inline]
-    #[must_use]
-    pub fn has_bishop_pair(&self, side: Side) -> bool {
+    fn has_bishop_pair(&self, side: Side) -> bool {
         // Ignoring underpromotion for now
         self.board[side + Bishop].count() >= 2
     }

@@ -26,7 +26,6 @@ impl GenType for FullGen {
 pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
-    attacked_squares: Option<Bitboard>,
     pub queen_knight_promote_only: bool,
     magic: &'static Magic,
     ty: PhantomData<G>,
@@ -59,7 +58,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         Self {
             moves: Moves::default(),
             board,
-            attacked_squares: None,
             queen_knight_promote_only: true,
             magic: Magic::get(),
             ty: PhantomData,
@@ -71,6 +69,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         moves.retain(|&mut mov| self.is_legal(mov));
         moves
     }
+    #[must_use]
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
         let pieces = self.board.friendly_bitboards();
         let all_pieces = self.board.all_pieces();
@@ -103,24 +102,20 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         self.board.unmake_move(unmake);
         !is_attacked
     }
+    #[must_use]
+    #[inline]
     pub fn attack_map(&mut self) -> Bitboard {
-        if let Some(attack_map) = self.attacked_squares {
-            return attack_map;
-        }
-        let attack_map = self.gen_attack_map();
-        self.attacked_squares = Some(attack_map);
-        attack_map
+        self.gen_attack_map()
     }
     // Generate attack map for enemy pieces
-    #[allow(clippy::needless_range_loop)]
-    #[must_use]
+    #[inline]
     fn gen_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let side = !self.board.active_side;
+        let colour = !self.board.active_side;
         let enemy_pieces = self.board.enemy_bitboards();
         let all_pieces = self.board.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
@@ -129,11 +124,10 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         attacked_squares
     }
     #[inline]
-    #[must_use]
-    pub fn pawn_attack_map(&self) -> Bitboard {
+    pub(crate) fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let side = !self.board.active_side;
-        self.board[side + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+        let colour = !self.board.active_side;
+        self.board[colour + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
         attacked_squares
     }
     #[inline]

@@ -75,7 +75,7 @@ impl FromStr for Move {
 
 #[test]
 fn test_move_repr() {
-    let flags = MoveFlags::Capture | MoveFlags::RookPromotion;
+    let flags = MoveFlags::RookPromotionCapture;
     let mov = Move::new(Square::H8, Square::A7, flags);
     assert_eq!(mov.from(), Square::H8);
     assert_eq!(mov.to(), Square::A7);

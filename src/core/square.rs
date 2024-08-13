@@ -10,11 +10,6 @@ use crate::prelude::*;
 pub struct Square(pub i8);
 
 impl Square {
-    #[inline]
-    #[must_use]
-    pub fn all() -> impl ExactSizeIterator<Item = Self> {
-        (0..64).map(Self)
-    }
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
@@ -41,6 +36,11 @@ impl Square {
     pub fn add_file(self, file: i8) -> Option<Self> {
         let file = self.file().checked_add(file)?;
         Some(Self::new(self.rank(), file))
+    }
+    #[inline]
+    #[must_use]
+    pub fn all() -> impl ExactSizeIterator<Item = Self> {
+        (0..64).map(Self)
     }
     #[must_use]
     #[inline]
@@ -71,7 +71,6 @@ pub struct Rank(pub i8);
 
 impl Rank {
     #[must_use]
-    #[allow(clippy::cast_possible_wrap)]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
         let out = self.0 + rhs;
@@ -96,7 +95,6 @@ impl<T> IndexMut<Square> for [T] {
 
 impl File {
     #[must_use]
-    #[allow(clippy::cast_possible_wrap)]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
         let out = self.0 + rhs;

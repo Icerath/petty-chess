@@ -30,7 +30,10 @@ impl Side {
     #[inline]
     #[must_use]
     pub const fn positive(self) -> i32 {
-        self.forward() as i32
+        match self {
+            Self::Black => -1,
+            Self::White => 1,
+        }
     }
 }
 

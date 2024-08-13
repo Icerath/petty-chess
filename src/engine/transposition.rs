@@ -58,7 +58,7 @@ impl TranspositionTable {
         nodetype: Nodetype,
         treesize: u64,
     ) {
-        if eval.abs() == Eval::MATE_EVAL.0 {
+        if eval.abs() == Eval::MATE.0 {
             return;
         }
         if seen_positions.iter().filter(|&&sq| sq == board.zobrist).count() > 1 {

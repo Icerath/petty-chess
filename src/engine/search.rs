@@ -4,6 +4,7 @@ use movegen::{CapturesOnly, FullGen};
 
 use super::{transposition::Nodetype, Engine};
 use crate::{
+    engine::score::Eval,
     prelude::*,
     uci::{Info, Score, UciResponse},
 };
@@ -17,7 +18,7 @@ impl Engine {
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
 
-        let beta = Self::infinity();
+        let beta = Eval::INFINITY.0;
         let mut moves = self.board.gen_legal_moves();
         if moves.is_empty() {
             return Move::NULL;
@@ -77,7 +78,7 @@ impl Engine {
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
 
-            let is_checkmate = alpha.abs() == Self::mate_score();
+            let is_checkmate = alpha.abs() == Eval::MATE.0;
 
             let absolute_eval = alpha * self.board.active_side.positive();
             let score = if is_checkmate {
@@ -198,7 +199,7 @@ impl Engine {
                 .attack_map()
                 .contains(self.board.active_king_sq)
             {
-                return (-Self::mate_score(), None);
+                return (-Eval::MATE.0, None);
             }
             return (0, None);
         }
@@ -259,7 +260,7 @@ impl Engine {
             let is_check = movegen.attack_map().contains(self.board.active_king_sq);
             if !legal_moves && is_check {
                 // TODO - doesn't product a correct `mate in` score
-                return -Self::mate_score();
+                return -Eval::MATE.0;
             }
         }
 

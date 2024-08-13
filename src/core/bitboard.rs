@@ -85,7 +85,6 @@ impl BitAndAssign for Bitboard {
 impl BitOr for Bitboard {
     type Output = Self;
     #[inline]
-    #[must_use]
     fn bitor(self, rhs: Self) -> Self::Output {
         Self(self.0 | rhs.0)
     }

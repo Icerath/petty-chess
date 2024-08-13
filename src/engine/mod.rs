@@ -6,7 +6,6 @@ pub mod transposition;
 
 use std::time::{Duration, Instant};
 
-use score::Eval;
 use transposition::TranspositionTable;
 
 use crate::prelude::*;
@@ -44,8 +43,6 @@ impl Engine {
             only_pv_nodes: false,
         }
     }
-
-    #[must_use]
     pub(crate) fn is_cancelled(&mut self) -> bool {
         self.time_started.elapsed() >= self.time_available || self.force_cancelled
     }
@@ -53,16 +50,6 @@ impl Engine {
     #[inline]
     pub fn endgame(&self) -> f32 {
         endgame(&self.board)
-    }
-    #[inline]
-    #[must_use]
-    pub const fn infinity() -> i32 {
-        Eval::INFINITY.0
-    }
-    #[inline]
-    #[must_use]
-    pub const fn mate_score() -> i32 {
-        Eval::MATE_EVAL.0
     }
 }
 

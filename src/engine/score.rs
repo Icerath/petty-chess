@@ -9,10 +9,10 @@ pub struct Eval(pub i32);
 
 impl Eval {
     pub const INFINITY: Self = Self(i32::MAX);
-    pub const MATE_EVAL: Self = Self(i32::MAX - 1);
+    pub const MATE: Self = Self(i32::MAX - 1);
 
     const NEG_INF: Self = Self(-Self::INFINITY.0);
-    const NEG_MATE: Self = Self(-Self::MATE_EVAL.0);
+    const NEG_MATE: Self = Self(-Self::MATE.0);
 }
 
 impl Mul<f32> for Eval {
@@ -35,7 +35,7 @@ impl fmt::Debug for Eval {
         match *self {
             Self::INFINITY => tuple.field(&"infinity"),
             Self::NEG_INF => tuple.field(&"-infinity"),
-            Self::MATE_EVAL => tuple.field(&"mate"),
+            Self::MATE => tuple.field(&"mate"),
             Self::NEG_MATE => tuple.field(&"-mate"),
             _ => tuple.field(&self.0),
         }

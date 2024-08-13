@@ -1,4 +1,4 @@
-use std::{ops::BitOr, str::FromStr};
+use std::str::FromStr;
 
 use derive_try_from_primitive::TryFromPrimitive;
 
@@ -53,6 +53,7 @@ impl MoveFlags {
         })
     }
     #[must_use]
+    #[inline]
     pub fn is_capture(self) -> bool {
         self as u8 & 0b0100 == 0b0100
     }
@@ -89,20 +90,6 @@ impl From<Promotion> for PieceKind {
     }
 }
 
-impl BitOr<Self> for MoveFlags {
-    type Output = Self;
-    fn bitor(self, rhs: Self) -> Self::Output {
-        Self::try_from(self as u8 | rhs as u8).unwrap()
-    }
-}
-
-impl BitOr<Promotion> for MoveFlags {
-    type Output = Self;
-    fn bitor(self, rhs: Promotion) -> Self::Output {
-        self | Self::from(rhs)
-    }
-}
-
 impl FromStr for Promotion {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -118,7 +105,5 @@ impl FromStr for Promotion {
 
 #[test]
 fn test_moveflags() {
-    assert_eq!(MoveFlags::Capture | MoveFlags::Quiet, MoveFlags::Capture);
     assert_eq!(MoveFlags::from(Promotion::Bishop), MoveFlags::BishopPromotion);
-    assert_eq!(MoveFlags::from(Promotion::Queen) | MoveFlags::Capture, MoveFlags::QueenPromotionCapture);
 }
