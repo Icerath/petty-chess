@@ -61,6 +61,20 @@ impl Square {
             3, 3, 3, 3, 3, 3, 3, 3, //
         ][self]
     }
+    #[inline]
+    #[must_use]
+    /// # Panics
+    /// Panics on debug builds when file is 0 or 7.
+    /// Instead produces incorrect masks on release
+    pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
+        let (file, rank) = (self.file(), self.rank());
+        let mut mask = file.mask() | (file + 1).mask() | (file - 1).mask();
+        match side {
+            Side::White => mask.0 <<= (rank.0 + 1) * 8,
+            Side::Black => mask.0 >>= (8 - rank.0) * 8,
+        }
+        mask
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
