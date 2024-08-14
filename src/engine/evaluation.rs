@@ -64,8 +64,8 @@ impl Engine {
                 let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy_pawns).is_empty();
                 if is_passed_pawn {
                     let offset = match side {
-                        Side::Black => sq.rank().0 as usize,
-                        Side::White => 7 - sq.rank().0 as usize,
+                        Side::White => sq.rank().0 as usize,
+                        Side::Black => 7 - sq.rank().0 as usize,
                     };
                     total += BONUSES[offset];
                 }
