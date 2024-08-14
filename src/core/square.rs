@@ -75,6 +75,20 @@ impl Square {
         }
         mask
     }
+    /// # Panics
+    /// Panics on debug builds when file is 0 or 7.
+    /// Instead produces incorrect masks on release
+    #[inline]
+    #[must_use]
+    pub fn outpost_mask(self, side: Side) -> Bitboard {
+        let (file, rank) = (self.file(), self.rank());
+        let mut mask = (file + 1).mask() | (file - 1).mask();
+        match side {
+            Side::White => mask.0 = mask.0.checked_shl((rank.0 as u32 + 1) * 8).unwrap_or_default(),
+            Side::Black => mask.0 = mask.0.checked_shr((8 - rank.0 as u32) * 8).unwrap_or_default(),
+        }
+        mask
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -89,6 +103,14 @@ impl Rank {
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
         let out = self.0 + rhs;
         (0..8).contains(&out).then_some(Self(out))
+    }
+    #[must_use]
+    #[inline]
+    pub fn relative_to(self, side: Side) -> Self {
+        match side {
+            Side::White => self,
+            Side::Black => Self(7 - self.0),
+        }
     }
 }
 

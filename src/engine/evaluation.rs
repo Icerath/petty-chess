@@ -24,6 +24,7 @@ impl Engine {
             let enemy_pawns = self.board.piece_bitboards[!side + Pawn];
             let all_pawns = self.board.get(Pawn);
             let rooks = self.board[side + Rook];
+            let minor_pieces = self.board[Knight + side] | self.board[Bishop + side];
 
             // punish kings next adjacent to open file
             for pawns in [friendly_pawns, enemy_pawns] {
@@ -69,7 +70,16 @@ impl Engine {
                     total += BONUSES[offset];
                 }
             });
-
+            // reward outposts
+            minor_pieces.for_each(|sq| {
+                if sq.rank().relative_to(side).0 < 4 {
+                    return;
+                }
+                let is_outpost = (sq.outpost_mask(side) & enemy_pawns).is_empty();
+                if is_outpost {
+                    total += 20;
+                }
+            });
             // reward pawns close to king
             let kadj_pawns_mask = (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
             (friendly_pawns & kadj_pawns_mask).for_each(|sq| {
