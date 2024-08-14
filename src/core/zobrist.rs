@@ -12,7 +12,7 @@ impl Zobrist {
     }
     #[inline]
     pub fn xor_piece(&mut self, sq: Square, piece: Piece) {
-        self.0 ^= PIECE_KEYS[piece][sq];
+        self.0 ^= PIECE_KEYS[piece as usize][sq];
     }
     #[inline]
     pub fn xor_can_castle(&mut self, can_castle: CanCastle) {

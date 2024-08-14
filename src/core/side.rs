@@ -3,8 +3,8 @@ use core::ops::Not;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum Side {
-    Black,
-    White,
+    Black = 0,
+    White = 1,
 }
 
 impl Side {

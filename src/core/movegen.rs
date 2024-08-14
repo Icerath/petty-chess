@@ -111,11 +111,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[inline]
     fn gen_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let colour = !self.board.active_side;
+        let side = !self.board.active_side;
         let enemy_pieces = self.board.enemy_bitboards();
         let all_pieces = self.board.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
@@ -126,13 +126,13 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[inline]
     pub(crate) fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
-        let colour = !self.board.active_side;
-        self.board[colour + Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[colour as usize][from]);
+        let side = !self.board.active_side;
+        self.board.get(side + Pawn).for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         attacked_squares
     }
     #[inline]
     fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
-        squares &= !self.board.friendly_pieces();
+        squares &= !self.board[self.board.active_side];
         squares.for_each(|sq| {
             if self.board.is_piece_at(sq) {
                 self.moves.push(Move::new(from, sq, MoveFlags::Capture));

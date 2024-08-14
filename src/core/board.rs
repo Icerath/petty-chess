@@ -19,7 +19,8 @@ pub struct Cached {
     pub active_king_sq: Square,
     pub inactive_king_sq: Square,
     pub zobrist: Zobrist,
-    pub piece_bitboards: [Bitboard; 12],
+    pub piece_bitboards: Pieces,
+    pub side_pieces: SidePieces,
 }
 
 pub struct Unmake {
@@ -41,7 +42,7 @@ impl Board {
             self.cached.zobrist.xor_en_passant(sq);
         }
         for (sq, piece) in self.piece_squares() {
-            self.piece_bitboards[piece].insert(sq);
+            self.insert_piece(sq, piece);
             self.zobrist.xor_piece(sq, piece);
             let PieceKind::King = piece.kind() else { continue };
             if piece.side() == self.active_side {
@@ -50,6 +51,16 @@ impl Board {
                 self.inactive_king_sq = sq;
             }
         }
+    }
+    // inserts a piece into the board's bitboards
+    pub fn insert_piece(&mut self, sq: Square, piece: Piece) {
+        self[piece.kind()].insert(sq);
+        self[piece.side()].insert(sq);
+    }
+    // inserts a piece from the board's bitboards
+    pub fn remove_piece(&mut self, sq: Square, piece: Piece) {
+        self[piece.kind()].remove(sq);
+        self[piece.side()].remove(sq);
     }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let from_piece = self[mov.from()].unwrap();
@@ -89,10 +100,10 @@ impl Board {
         self.zobrist.xor_piece(mov.to(), from_piece);
         if let Some(piece) = self[mov.to()] {
             self.zobrist.xor_piece(mov.to(), piece);
-            self.piece_bitboards[piece].remove(mov.to());
+            self.remove_piece(mov.to(), piece);
         }
-        self.piece_bitboards[from_piece].remove(mov.from());
-        self.piece_bitboards[from_piece].insert(mov.to());
+        self.remove_piece(mov.from(), from_piece);
+        self.insert_piece(mov.to(), from_piece);
 
         self[mov.from()] = None;
         self[mov.to()] = Some(from_piece);
@@ -103,7 +114,7 @@ impl Board {
                 let pawn = self[back].unwrap();
                 unmake.captured_piece = Some(pawn);
                 self.cached.zobrist.xor_piece(back, pawn);
-                self.piece_bitboards[pawn].remove(back);
+                self.remove_piece(back, pawn);
                 self[back] = None;
             }
             MoveFlags::QueenCastle if self.white_to_play() => {
@@ -128,8 +139,8 @@ impl Board {
                 self[mov.to()] = Some(piece);
                 self.zobrist.xor_piece(mov.to(), from_piece);
                 self.zobrist.xor_piece(mov.to(), piece);
-                self.piece_bitboards[from_piece].remove(mov.to());
-                self.piece_bitboards[piece].insert(mov.to());
+                self.remove_piece(mov.to(), from_piece);
+                self.insert_piece(mov.to(), piece);
             }
             MoveFlags::Quiet | MoveFlags::Capture => {}
             _ => unreachable!("{:?}", mov.flags()),
@@ -214,39 +225,23 @@ impl Board {
     }
     #[must_use]
     #[inline]
-    pub fn side_bitboards(&self, side: Side) -> [Bitboard; 6] {
-        let offset = if side.is_black() { 0 } else { 6 };
-        self.cached.piece_bitboards[offset..offset + 6].try_into().unwrap()
+    pub fn side_bitboards(&self, side: Side) -> Pieces {
+        self.piece_bitboards.map(|bitboard| bitboard & self[side])
     }
     #[must_use]
     #[inline]
-    pub fn side_pieces(&self, side: Side) -> Bitboard {
-        self.side_bitboards(side).into_iter().fold(Bitboard(0), |acc, x| acc | x)
-    }
-    #[must_use]
-    #[inline]
-    pub fn friendly_bitboards(&self) -> [Bitboard; 6] {
+    pub fn friendly_bitboards(&self) -> Pieces {
         self.side_bitboards(self.active_side)
     }
     #[must_use]
     #[inline]
-    pub fn friendly_pieces(&self) -> Bitboard {
-        self.friendly_bitboards().into_iter().fold(Bitboard(0), |acc, x| acc | x)
-    }
-    #[must_use]
-    #[inline]
-    pub fn enemy_bitboards(&self) -> [Bitboard; 6] {
+    pub fn enemy_bitboards(&self) -> Pieces {
         self.side_bitboards(!self.active_side)
     }
     #[must_use]
     #[inline]
-    pub fn enemy_pieces(&self) -> Bitboard {
-        self.enemy_bitboards().into_iter().fold(Bitboard(0), |acc, x| acc | x)
-    }
-    #[must_use]
-    #[inline]
     pub fn all_pieces(&self) -> Bitboard {
-        self.cached.piece_bitboards.into_iter().fold(Bitboard(0), |acc, x| acc | x)
+        self[White] | self[Black]
     }
     #[must_use]
     #[inline]
@@ -260,25 +255,26 @@ impl Board {
 }
 
 impl Board {
+    #[must_use]
+    #[inline]
+    pub fn get(&self, piece: Piece) -> Bitboard {
+        self.piece_bitboards[piece.kind()] & self.side_pieces[piece.side()]
+    }
     #[inline]
     pub fn swap(&mut self, lhs: Square, rhs: Square) {
         if let Some(piece) = self[lhs] {
             self.zobrist.xor_piece(lhs, piece);
             self.zobrist.xor_piece(rhs, piece);
-            self.piece_bitboards[piece].remove(lhs);
-            self.piece_bitboards[piece].insert(rhs);
+            self.remove_piece(lhs, piece);
+            self.insert_piece(rhs, piece);
         }
         if let Some(piece) = self[rhs] {
             self.zobrist.xor_piece(lhs, piece);
             self.zobrist.xor_piece(rhs, piece);
-            self.piece_bitboards[piece].remove(rhs);
-            self.piece_bitboards[piece].insert(lhs);
+            self.remove_piece(rhs, piece);
+            self.insert_piece(lhs, piece);
         }
         self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
-    }
-    #[inline]
-    pub fn pieces(&self) -> impl Iterator<Item = Piece> + '_ {
-        Square::all().filter_map(|sq| self[sq])
     }
     #[inline]
     pub fn piece_squares(&self) -> impl Iterator<Item = (Square, Piece)> {
@@ -293,7 +289,7 @@ impl Board {
     #[inline]
     #[must_use]
     pub fn is_side(&self, sq: Square, side: Side) -> bool {
-        self.side_pieces(side).contains(sq)
+        self[side].contains(sq)
     }
 }
 
@@ -333,5 +329,71 @@ impl Deref for Board {
 impl DerefMut for Board {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.cached
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct Pieces([Bitboard; 6]);
+
+impl Pieces {
+    #[inline]
+    #[must_use]
+    pub fn map(&self, f: impl FnMut(Bitboard) -> Bitboard) -> Self {
+        Self(self.0.map(f))
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct SidePieces([Bitboard; 2]);
+
+impl Index<PieceKind> for Pieces {
+    type Output = Bitboard;
+    fn index(&self, kind: PieceKind) -> &Self::Output {
+        &self.0[kind as usize]
+    }
+}
+
+impl IndexMut<PieceKind> for Pieces {
+    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
+        &mut self.0[kind as usize]
+    }
+}
+
+impl Index<Side> for SidePieces {
+    type Output = Bitboard;
+    fn index(&self, side: Side) -> &Self::Output {
+        &self.0[side as usize]
+    }
+}
+
+impl IndexMut<Side> for SidePieces {
+    fn index_mut(&mut self, side: Side) -> &mut Self::Output {
+        &mut self.0[side as usize]
+    }
+}
+
+impl Index<PieceKind> for Board {
+    type Output = Bitboard;
+    fn index(&self, index: PieceKind) -> &Self::Output {
+        &self.piece_bitboards[index]
+    }
+}
+
+impl IndexMut<PieceKind> for Board {
+    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
+        &mut self.piece_bitboards[kind]
+    }
+}
+
+impl Index<Side> for Board {
+    type Output = Bitboard;
+    fn index(&self, side: Side) -> &Self::Output {
+        &self.side_pieces[side]
+    }
+}
+
+impl IndexMut<Side> for Board {
+    fn index_mut(&mut self, side: Side) -> &mut Self::Output {
+        &mut self.side_pieces[side]
     }
 }

@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::{Add, Index, IndexMut};
+use std::ops::Add;
 
 use derive_try_from_primitive::TryFromPrimitive;
 
@@ -31,47 +31,6 @@ pub enum PieceKind {
     Rook,
     Queen,
     King,
-}
-
-impl<T> Index<Piece> for [T] {
-    type Output = T;
-    fn index(&self, piece: Piece) -> &Self::Output {
-        &self[piece as usize]
-    }
-}
-
-impl<T> IndexMut<Piece> for [T] {
-    fn index_mut(&mut self, piece: Piece) -> &mut Self::Output {
-        &mut self[piece as usize]
-    }
-}
-
-impl<T> Index<PieceKind> for [T] {
-    type Output = T;
-    fn index(&self, kind: PieceKind) -> &Self::Output {
-        &self[kind as usize]
-    }
-}
-
-impl<T> IndexMut<PieceKind> for [T] {
-    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
-        &mut self[kind as usize]
-    }
-}
-
-impl Index<Piece> for Board {
-    type Output = Bitboard;
-    fn index(&self, index: Piece) -> &Self::Output {
-        &self.piece_bitboards[index]
-    }
-}
-
-impl Board {
-    #[must_use]
-    #[inline]
-    pub fn get(&self, kind: PieceKind) -> Bitboard {
-        self.piece_bitboards[kind] | self.piece_bitboards[kind as usize + 6]
-    }
 }
 
 impl Default for Piece {

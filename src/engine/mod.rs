@@ -55,9 +55,9 @@ impl Engine {
 
 fn endgame(board: &Board) -> f32 {
     let mut sum = -6;
-    sum += (board.get(Bishop) | board.get(Knight)).count() as i32;
-    sum += 2 * board.get(Rook).count() as i32;
-    sum += 4 * board.get(Queen).count() as i32;
+    sum += (board[Bishop] | board[Knight]).count() as i32;
+    sum += 2 * board[Rook].count() as i32;
+    sum += 4 * board[Queen].count() as i32;
     1.0 - (sum as f32 / 18.0).clamp(0.0, 1.0)
 }
 

@@ -38,9 +38,9 @@ impl Engine {
             * (0.2 * (1.0 - endgame))) as i32;
 
         if let Some(target_piece) = self.board[mov.to()] {
-            score += MVV_LVA[target_piece.kind()][piece.kind()] as i32 * 4;
+            score += MVV_LVA[target_piece.kind() as usize][piece.kind() as usize] as i32 * 4;
         } else if mov.flags() == MoveFlags::EnPassant {
-            score += MVV_LVA[Pawn][Pawn] as i32 * 4;
+            score += MVV_LVA[Pawn as usize][Pawn as usize] as i32 * 4;
         }
 
         if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {

@@ -20,14 +20,10 @@ impl Engine {
             } else {
                 self.board.inactive_king_sq
             };
-            let friendly_pawns = self.board.piece_bitboards[side + Pawn];
-            let enemy_pawns = self.board.piece_bitboards[!side + Pawn];
-            let all_pawns = self.board.get(Pawn);
-            let rooks = self.board[side + Rook];
-            let minor_pieces = self.board[Knight + side] | self.board[Bishop + side];
-
+            let friendly = self.board.side_bitboards(side);
+            let enemy = self.board.side_bitboards(!side);
             // punish kings next adjacent to open file
-            for pawns in [friendly_pawns, enemy_pawns] {
+            for pawns in [friendly[Pawn], enemy[Pawn]] {
                 const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
                 let file = king.file();
                 let penalty = PENALTIES[file.0 as usize];
@@ -41,14 +37,14 @@ impl Engine {
             }
             // punish double pawns
             for file in 0..8 {
-                let pawns_in_file = (friendly_pawns & (File(file).mask())).count() as i32;
+                let pawns_in_file = (friendly[Pawn] & (File(file).mask())).count() as i32;
                 total -= (pawns_in_file - 1).max(0) * 20;
             }
             // reward non-isolated pawns
-            friendly_pawns.for_each(|sq| {
+            friendly[Pawn].for_each(|sq| {
                 let file = sq.file();
-                let left_open = (friendly_pawns & (file - 1).mask()).is_empty();
-                let right_open = (friendly_pawns & (file + 1).mask()).is_empty();
+                let left_open = (friendly[Pawn] & (file - 1).mask()).is_empty();
+                let right_open = (friendly[Pawn] & (file + 1).mask()).is_empty();
 
                 if !(left_open && right_open) {
                     let distance = file.0.abs_diff(4).min(file.0.abs_diff(3));
@@ -62,9 +58,9 @@ impl Engine {
                 }
             });
             // reward passed pawns
-            friendly_pawns.for_each(|sq| {
+            friendly[Pawn].for_each(|sq| {
                 const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
-                let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy_pawns).is_empty();
+                let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
                 if is_passed_pawn {
                     let offset = match side {
                         Side::White => sq.rank().0 as usize,
@@ -74,18 +70,18 @@ impl Engine {
                 }
             });
             // reward outposts
-            minor_pieces.for_each(|sq| {
+            (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
                 if sq.rank().relative_to(side).0 < 4 {
                     return;
                 }
-                let is_outpost = (sq.outpost_mask(side) & enemy_pawns).is_empty();
+                let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
                 if is_outpost {
                     total += 20;
                 }
             });
             // reward pawns close to king
             let kadj_pawns_mask = (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
-            (friendly_pawns & kadj_pawns_mask).for_each(|sq| {
+            (friendly[Pawn] & kadj_pawns_mask).for_each(|sq| {
                 const BONUSES: [[i32; 2]; 8] =
                     [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
 
@@ -93,17 +89,17 @@ impl Engine {
                 total += BONUSES[sq.file().0 as usize].get(dif_rank as usize).unwrap_or(&0);
             });
             // reward rooks on an open file
-            rooks.for_each(|sq| {
-                if (all_pawns & sq.file().mask()).is_empty() {
+            friendly[Rook].for_each(|sq| {
+                if (self.board[Pawn] & sq.file().mask()).is_empty() {
                     total += 20;
-                } else if (friendly_pawns & (sq.file().mask())).is_empty() {
+                } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
                     total += 10;
                 }
             });
             // reward rooks able to see eachother
-            if rooks.count() >= 2 {
-                let rook_attacks = Magic::get().rook_attacks(rooks.bitscan(), self.board.all_pieces());
-                if rook_attacks.contains(rooks.rbitscan()) {
+            if friendly[Rook].count() >= 2 {
+                let rook_attacks = Magic::get().rook_attacks(friendly[Rook].bitscan(), self.board.all_pieces());
+                if rook_attacks.contains(friendly[Rook].rbitscan()) {
                     total += 20;
                 }
             }
@@ -112,7 +108,9 @@ impl Engine {
             // material and piece square table values
             for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
                 let piece = side + piecekind;
-                self.board[piece].for_each(|square| total += abs_piece_value_at_square(square, piece, endgame));
+                self.board
+                    .get(piece)
+                    .for_each(|square| total += abs_piece_value_at_square(square, piece, endgame));
             }
             total += abs_piece_square_value(king, side + King, endgame);
 
@@ -136,7 +134,7 @@ impl Engine {
     #[inline]
     fn has_bishop_pair(&self, side: Side) -> bool {
         // Ignoring underpromotion for now
-        self.board[side + Bishop].count() >= 2
+        self.board.get(side + Bishop).count() >= 2
     }
     #[inline]
     #[must_use]
