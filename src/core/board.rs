@@ -16,8 +16,6 @@ pub struct Board {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Cached {
-    pub active_king_sq: Square,
-    pub inactive_king_sq: Square,
     pub zobrist: Zobrist,
     pub piece_bitboards: Pieces,
     pub side_pieces: SidePieces,
@@ -44,12 +42,6 @@ impl Board {
         for (sq, piece) in self.piece_squares() {
             self.insert_piece(sq, piece);
             self.zobrist.xor_piece(sq, piece);
-            let PieceKind::King = piece.kind() else { continue };
-            if piece.side() == self.active_side {
-                self.active_king_sq = sq;
-            } else {
-                self.inactive_king_sq = sq;
-            }
         }
     }
     // inserts a piece into the board's bitboards
@@ -78,7 +70,6 @@ impl Board {
         self.en_passant_target_square = None;
         self.cached.zobrist.xor_can_castle(self.can_castle);
         if from_piece.kind() == PieceKind::King {
-            self.active_king_sq = mov.to();
             if self.white_to_play() {
                 self.can_castle.remove(CanCastle::BOTH_WHITE);
             } else {
@@ -200,13 +191,11 @@ impl Board {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
-        std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
         self.active_side = !self.active_side;
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
         self.active_side = !self.active_side;
-        std::mem::swap(&mut self.cached.active_king_sq, &mut self.cached.inactive_king_sq);
         self.halfmove_clock -= 1;
         if self.black_to_play() {
             self.fullmove_counter -= 1;
@@ -246,11 +235,17 @@ impl Board {
     #[must_use]
     #[inline]
     pub fn get_king_square(&self, side: Side) -> Square {
-        if self.active_side == side {
-            self.active_king_sq
-        } else {
-            self.inactive_king_sq
-        }
+        self.get(side + King).bitscan()
+    }
+    #[must_use]
+    #[inline]
+    pub fn active_king(&self) -> Square {
+        self.get_king_square(self.active_side)
+    }
+    #[must_use]
+    #[inline]
+    pub fn inactive_king(&self) -> Square {
+        self.get_king_square(!self.active_side)
     }
 }
 

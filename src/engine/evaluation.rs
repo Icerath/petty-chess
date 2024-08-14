@@ -15,11 +15,7 @@ impl Engine {
 
         for side in [White, Black] {
             let mut total = 0;
-            let king = if self.board.active_side == side {
-                self.board.active_king_sq
-            } else {
-                self.board.inactive_king_sq
-            };
+            let king = self.board.get_king_square(side);
             let friendly = self.board.side_bitboards(side);
             let enemy = self.board.side_bitboards(!side);
             // punish kings next adjacent to open file
@@ -123,7 +119,7 @@ impl Engine {
             _ => None,
         };
         if let Some(mop_up_side) = mop_up_side {
-            let md = self.board.active_king_sq.manhattan_distance(self.board.inactive_king_sq);
+            let md = self.board.active_king().manhattan_distance(self.board.inactive_king());
             let cmd = self.board.get_king_square(!mop_up_side).centre_manhattan_distance() as i32;
             let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
             final_total += (mop_up_score as f32 * endgame) as i32;

@@ -133,7 +133,7 @@ impl Engine {
             }
 
             let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
-            if attacked_squares.contains(self.board.active_king_sq) {
+            if attacked_squares.contains(self.board.active_king()) {
                 break 'null;
             }
             let unmake = self.board.make_null_move();
@@ -197,7 +197,7 @@ impl Engine {
         if !encountered_legal_move {
             if MoveGenerator::<CapturesOnly>::new(&mut self.board)
                 .attack_map()
-                .contains(self.board.active_king_sq)
+                .contains(self.board.active_king())
             {
                 return (-Eval::MATE.0, None);
             }
@@ -257,7 +257,7 @@ impl Engine {
                 .filter(|mov| !mov.flags().is_capture())
                 .any(|&mov| movegen.is_legal(mov));
 
-            let is_check = movegen.attack_map().contains(self.board.active_king_sq);
+            let is_check = movegen.attack_map().contains(self.board.active_king());
             if !legal_moves && is_check {
                 // TODO - doesn't product a correct `mate in` score
                 return -Eval::MATE.0;

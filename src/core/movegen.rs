@@ -79,7 +79,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         pieces[Bishop].for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
         pieces[Rook].for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
         pieces[Queen].for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
-        self.gen_king_moves(self.board.active_king_sq);
+        self.gen_king_moves(self.board.active_king());
         std::mem::take(&mut self.moves)
     }
     #[must_use]
@@ -93,12 +93,12 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 (Side::Black, true) => [Square::F8, Square::G8],
                 (Side::Black, false) => [Square::C8, Square::D8],
             };
-            if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king_sq) {
+            if map.contains(squares[0]) || map.contains(squares[1]) || map.contains(self.board.active_king()) {
                 return false;
             }
         }
         let unmake = self.board.make_move(mov);
-        let is_attacked = self.is_square_attacked(self.board.inactive_king_sq);
+        let is_attacked = self.is_square_attacked(self.board.inactive_king());
         self.board.unmake_move(unmake);
         !is_attacked
     }
@@ -120,7 +120,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
-        attacked_squares |= KING_MOVES[self.board.inactive_king_sq];
+        attacked_squares |= KING_MOVES[self.board.inactive_king()];
         attacked_squares
     }
     #[inline]
@@ -246,9 +246,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[inline]
     pub fn is_square_attacked(&mut self, sq: Square) -> bool {
         self.board.active_side = !self.board.active_side;
-        std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
         let atk_map = self.gen_attack_map();
-        std::mem::swap(&mut self.board.cached.active_king_sq, &mut self.board.cached.inactive_king_sq);
         self.board.active_side = !self.board.active_side;
         atk_map.contains(sq)
     }
