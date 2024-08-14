@@ -28,13 +28,16 @@ impl Engine {
 
             // punish kings next adjacent to open file
             for pawns in [friendly_pawns, enemy_pawns] {
+                const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
                 let file = king.file();
+                let penalty = PENALTIES[file.0 as usize];
+
                 let left_open = file.0 != 0 && (pawns & File(file.0 - 1).mask()).is_empty();
                 let middle_open = (pawns & file.mask()).is_empty();
                 let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-                total -= ((num_open_files * 35) as f32 * (1.0 - endgame)) as i32;
+                total -= ((num_open_files * penalty) as f32 * (1.0 - endgame)) as i32;
             }
             // punish double pawns
             for file in 0..8 {
@@ -83,12 +86,11 @@ impl Engine {
             // reward pawns close to king
             let kadj_pawns_mask = (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
             (friendly_pawns & kadj_pawns_mask).for_each(|sq| {
+                const BONUSES: [[i32; 2]; 8] =
+                    [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
+
                 let dif_rank = sq.rank().0.abs_diff(king.rank().0).saturating_sub(1);
-                if dif_rank == 0 {
-                    total += 15;
-                } else if dif_rank == 1 {
-                    total += 10;
-                }
+                total += BONUSES[sq.file().0 as usize].get(dif_rank as usize).unwrap_or(&0);
             });
             // reward rooks on an open file
             rooks.for_each(|sq| {
@@ -106,7 +108,7 @@ impl Engine {
                 }
             }
             // reward bishop pair
-            total += self.has_bishop_pair(side) as i32 * 20;
+            total += self.has_bishop_pair(side) as i32 * 50;
             // material and piece square table values
             for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
                 let piece = side + piecekind;
