@@ -87,13 +87,13 @@ impl Engine {
         }
 
         'null: {
-            if self.depth_from_root == 0 {
+            if self.depth_from_root < 3 || depth < 3 {
                 break 'null;
             }
-            if depth < 3 {
+            // try avoid zugzwang issue
+            if self.endgame() > 0.9 {
                 break 'null;
             }
-
             let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
             if attacked_squares.contains(self.board.active_king()) {
                 break 'null;
