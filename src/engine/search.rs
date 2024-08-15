@@ -135,9 +135,15 @@ impl Engine {
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
             if self.is_cancelled() {
-                return (alpha, None);
+                return (0, None);
             }
 
+            if score > alpha {
+                line.push(mov);
+                *pline = line;
+                alpha = score;
+                nodetype = Nodetype::Exact;
+            }
             if score >= beta {
                 self.transposition_table.insert(
                     &self.board,
@@ -148,12 +154,6 @@ impl Engine {
                     self.total_nodes - curr_nodes,
                 );
                 return (beta, Some(mov));
-            }
-            if score > alpha {
-                line.push(mov);
-                *pline = line;
-                alpha = score;
-                nodetype = Nodetype::Exact;
             }
         }
 
@@ -203,7 +203,7 @@ impl Engine {
             self.board.unmake_move(unmake);
 
             if self.is_cancelled() {
-                return alpha;
+                return 0;
             }
 
             if score >= beta {
