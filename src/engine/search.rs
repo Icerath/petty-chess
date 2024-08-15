@@ -10,7 +10,6 @@ use crate::{
 };
 
 impl Engine {
-    #[allow(clippy::unnecessary_wraps)]
     pub fn search(&mut self) -> Move {
         self.time_started = Instant::now();
         self.total_nodes = 0;
@@ -24,67 +23,25 @@ impl Engine {
             return Move::NULL;
         }
 
-        'outer: for depth in 1..=255 {
+        for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
             self.only_pv_nodes = true;
             self.order_moves(&mut moves, None);
-            if let Some(&mov) = self.pv.get(self.depth_from_root as usize) {
-                if let Some(mov_index) = moves.iter().position(|&m| m == mov) {
-                    moves.remove(mov_index);
-                    moves.insert(0, mov);
-                }
-            }
-
             let mut new_pv = Moves::new();
-
-            let mut alpha = -beta;
-            let mut node_type = Nodetype::Alpha;
-
-            let curr_nodes = self.total_nodes;
-            for &mov in &moves {
-                let mut line = Moves::new();
-                let unmake = self.board.make_move(mov);
-                self.seen_positions.push(self.board.zobrist);
-                self.depth_from_root += 1;
-                let score = -self.negamax(-beta, -alpha, depth - 1, &mut line, None).0;
-                self.only_pv_nodes = false;
-                self.depth_from_root -= 1;
-                self.seen_positions.pop();
-                self.board.unmake_move(unmake);
-
-                if self.is_cancelled() {
-                    break 'outer;
-                }
-
-                if score > alpha {
-                    line.push(mov);
-                    new_pv = line;
-                    alpha = score;
-                    node_type = Nodetype::Exact;
-                }
-            }
-            new_pv.reverse();
-            self.pv = new_pv;
-            self.transposition_table.insert(
-                &self.board,
-                &self.seen_positions,
-                depth,
-                alpha,
-                node_type,
-                self.total_nodes - curr_nodes,
-            );
+            let score =
+                self.negamax(-beta, beta, depth, &mut new_pv, None).0 * self.board.active_side.positive();
+            self.pv = new_pv.into_iter().rev().collect();
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
 
-            let is_checkmate = alpha.abs() == Eval::MATE.0;
+            let is_checkmate = score.abs() >= Eval::INFINITY.0;
 
-            let absolute_eval = alpha * self.board.active_side.positive();
             let score = if is_checkmate {
-                Score::Mate { mate: depth as i32 / 2 * alpha.signum() }
+                Score::Mate { mate: depth as i32 / 2 * score.signum() }
             } else {
-                Score::Centipawns { cp: absolute_eval, bounds: None }
+                Score::Centipawns { cp: score, bounds: None }
             };
 
             let info = Info {
@@ -125,9 +82,14 @@ impl Engine {
             self.only_pv_nodes = false;
             return (self.negamax_search_all_captures(alpha, beta), None);
         }
-        self.total_nodes += 1;
+        if self.depth_from_root > 0 {
+            self.total_nodes += 1;
+        }
 
         'null: {
+            if self.depth_from_root == 0 {
+                break 'null;
+            }
             if depth < 3 {
                 break 'null;
             }
@@ -251,15 +213,9 @@ impl Engine {
 
         if !encountered_legal_move {
             let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
-            let legal_moves = movegen
-                .gen_pseudolegal_moves()
-                .iter()
-                .filter(|mov| !mov.flags().is_capture())
-                .any(|&mov| movegen.is_legal(mov));
-
+            let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
             let is_check = movegen.attack_map().contains(self.board.active_king());
             if !legal_moves && is_check {
-                // TODO - doesn't product a correct `mate in` score
                 return -Eval::MATE.0;
             }
         }
