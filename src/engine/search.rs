@@ -23,7 +23,6 @@ impl Engine {
             return Move::NULL;
         }
 
-        let mut best_move = Move::NULL;
         for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
@@ -33,9 +32,6 @@ impl Engine {
             let mut new_pv = Moves::new();
             let score = self.negamax(-beta, beta, depth, &mut new_pv, None).0;
             self.pv = new_pv.into_iter().rev().collect();
-            if let Some(&mov) = self.pv.first() {
-                best_move = mov;
-            }
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
 
@@ -62,7 +58,7 @@ impl Engine {
                 break;
             }
         }
-        best_move
+        self.pv[0]
     }
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
@@ -78,8 +74,10 @@ impl Engine {
         if self.seen_position() {
             return (0, None);
         }
-        if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
-            return (eval, None);
+        if self.depth_from_root > 0 {
+            if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
+                return (eval, None);
+            }
         }
         if depth == 0 {
             self.only_pv_nodes = false;
