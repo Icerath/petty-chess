@@ -23,6 +23,7 @@ impl Engine {
             return Move::NULL;
         }
 
+        let mut best_move = Move::NULL;
         for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
@@ -30,9 +31,11 @@ impl Engine {
             self.only_pv_nodes = true;
             self.order_moves(&mut moves, None);
             let mut new_pv = Moves::new();
-            let score =
-                self.negamax(-beta, beta, depth, &mut new_pv, None).0 * self.board.active_side.positive();
+            let score = self.negamax(-beta, beta, depth, &mut new_pv, None).0;
             self.pv = new_pv.into_iter().rev().collect();
+            if let Some(&mov) = self.pv.first() {
+                best_move = mov;
+            }
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
 
@@ -59,7 +62,7 @@ impl Engine {
                 break;
             }
         }
-        self.pv[0]
+        best_move
     }
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
