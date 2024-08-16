@@ -63,6 +63,7 @@ impl Engine {
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
     }
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn negamax(
         &mut self,
         mut alpha: i32,
@@ -105,6 +106,14 @@ impl Engine {
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
+                self.transposition_table.insert(
+                    &self.board,
+                    &self.seen_positions,
+                    depth - 2,
+                    beta,
+                    Nodetype::Beta,
+                    0,
+                );
                 return (beta, None);
             }
         }
