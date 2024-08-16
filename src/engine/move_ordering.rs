@@ -15,10 +15,10 @@ const MVV_LVA: [[u8; 6]; 6] = [
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
-        let endgame = self.endgame();
-        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, endgame, pawn_attacks));
+        let phase = self.phase();
+        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, phase, pawn_attacks));
     }
-    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, endgame: f32, pawn_attacks: Bitboard) -> i32 {
+    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, phase: Phase, pawn_attacks: Bitboard) -> i32 {
         let mut score = 0;
         if self.only_pv_nodes {
             if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {
@@ -33,9 +33,9 @@ impl Engine {
         }
         let piece = self.board[mov.from()].unwrap();
 
-        score += ((abs_piece_square_value(mov.to(), piece, endgame)
-            - abs_piece_square_value(mov.from(), piece, endgame)) as f32
-            * (0.2 * (1.0 - endgame))) as i32;
+        score += (((abs_piece_square_value(mov.to(), piece, phase)
+            - abs_piece_square_value(mov.from(), piece, phase)) as f32
+            * (phase.earlygame().0 * 0.2)) as f32) as i32;
 
         if let Some(target_piece) = self.board[mov.to()] {
             score += MVV_LVA[target_piece.kind() as usize][piece.kind() as usize] as i32 * 4;
@@ -44,7 +44,7 @@ impl Engine {
         }
 
         if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-            score += abs_piece_value(kind, endgame);
+            score += abs_piece_value(kind, phase);
         };
 
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {

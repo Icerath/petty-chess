@@ -6,7 +6,7 @@ impl Engine {
     }
     #[allow(clippy::too_many_lines)]
     pub fn raw_evaluation(&mut self) -> i32 {
-        let endgame = self.endgame();
+        let phase = self.phase();
 
         if !self.sufficient_material_to_force_checkmate() {
             return 0;
@@ -29,7 +29,7 @@ impl Engine {
                 let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-                total -= ((num_open_files * penalty) as f32 * (1.0 - endgame)) as i32;
+                total -= (num_open_files * penalty) * phase.earlygame();
             }
             // punish double pawns
             for file in 0..8 {
@@ -106,9 +106,9 @@ impl Engine {
                 let piece = side + piecekind;
                 self.board
                     .get(piece)
-                    .for_each(|square| total += abs_piece_value_at_square(square, piece, endgame));
+                    .for_each(|square| total += abs_piece_value_at_square(square, piece, phase));
             }
-            total += abs_piece_square_value(king, side + King, endgame);
+            total += abs_piece_square_value(king, side + King, phase);
 
             final_total += total * side.positive();
         }
@@ -122,7 +122,7 @@ impl Engine {
             let md = self.board.active_king().manhattan_distance(self.board.inactive_king());
             let cmd = self.board.get_king_square(!mop_up_side).centre_manhattan_distance() as i32;
             let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
-            final_total += (mop_up_score as f32 * endgame) as i32;
+            final_total += mop_up_score * phase.endgame();
         }
 
         final_total
@@ -154,44 +154,44 @@ impl Engine {
 }
 #[inline]
 #[must_use]
-pub fn piece_value_at_square(sq: Square, piece: Piece, endgame: f32) -> i32 {
-    piece_value(piece, endgame) + piece_square_value(sq, piece, endgame)
+pub fn piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
+    piece_value(piece, phase) + piece_square_value(sq, piece, phase)
 }
 
 #[inline]
 #[must_use]
-pub fn piece_value(piece: Piece, endgame: f32) -> i32 {
-    abs_piece_value(piece.kind(), endgame) * piece.side().positive()
+pub fn piece_value(piece: Piece, phase: Phase) -> i32 {
+    abs_piece_value(piece.kind(), phase) * piece.side().positive()
 }
 
 #[inline]
 #[must_use]
-pub fn abs_piece_value_at_square(sq: Square, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_value(piece.kind(), endgame) + abs_piece_square_value(sq, piece, endgame)
+pub fn abs_piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
+    abs_piece_value(piece.kind(), phase) + abs_piece_square_value(sq, piece, phase)
 }
 
 #[inline]
 #[must_use]
-pub fn abs_piece_value(piece: PieceKind, endgame: f32) -> i32 {
+pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
     let mg = [82, 337, 365, 477, 1025, 0][piece as usize];
     let eg = [94, 281, 297, 512, 936, 0][piece as usize];
-    (mg as f32 * (1.0 - endgame) + eg as f32 * endgame) as i32
+    mg * phase.earlygame() + eg * phase.endgame()
 }
 
 #[inline]
 #[must_use]
-pub fn piece_square_value(sq: Square, piece: Piece, endgame: f32) -> i32 {
-    abs_piece_square_value(sq, piece, endgame) * piece.side().positive()
+pub fn piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
+    abs_piece_square_value(sq, piece, phase) * piece.side().positive()
 }
 
 #[inline]
 #[must_use]
-pub fn abs_piece_square_value(sq: Square, piece: Piece, endgame: f32) -> i32 {
+pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     let index = if piece.is_white() { Square::new(Rank(7 - sq.rank().0), sq.file()) } else { sq };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 
-    (mg as f32 * (1.0 - endgame) + eg as f32 * endgame) as i32
+    mg * phase.earlygame() + eg * phase.endgame()
 }
 
 #[rustfmt::skip]

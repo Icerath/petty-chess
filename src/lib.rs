@@ -21,7 +21,7 @@ pub mod prelude {
             square::{File, Rank, Square},
             zobrist::Zobrist,
         },
-        engine::Engine,
+        engine::{Engine, Phase},
     };
 
     pub type Moves = smallvec::SmallVec<[Move; 64]>;

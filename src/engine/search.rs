@@ -93,7 +93,7 @@ impl Engine {
                 break 'null;
             }
             // try avoid zugzwang issue
-            if self.endgame() > 0.9 {
+            if self.phase().endgame().0 > 0.9 {
                 break 'null;
             }
             let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
