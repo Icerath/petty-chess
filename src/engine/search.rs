@@ -19,6 +19,7 @@ impl Engine {
 
         let beta = Eval::INFINITY.0;
 
+        let mut best_move = Move::NULL;
         for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
@@ -30,6 +31,7 @@ impl Engine {
                 break;
             }
             self.pv = new_pv.into_iter().rev().collect();
+            best_move = *self.pv.first().unwrap_or(&best_move);
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
 
@@ -56,7 +58,7 @@ impl Engine {
                 break;
             }
         }
-        self.pv[0]
+        best_move
     }
     fn seen_position(&self) -> bool {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
