@@ -18,17 +18,12 @@ impl Engine {
         self.transposition_table.num_hits = 0;
 
         let beta = Eval::INFINITY.0;
-        let mut moves = self.board.gen_legal_moves();
-        if moves.is_empty() {
-            return Move::NULL;
-        }
 
         for depth in 1..=255 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
             self.only_pv_nodes = true;
-            self.order_moves(&mut moves, None);
             let mut new_pv = Moves::new();
             let score = self.negamax(-beta, beta, depth, &mut new_pv, None).0;
             if self.is_cancelled() {
