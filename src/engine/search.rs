@@ -31,6 +31,9 @@ impl Engine {
             self.order_moves(&mut moves, None);
             let mut new_pv = Moves::new();
             let score = self.negamax(-beta, beta, depth, &mut new_pv, None).0;
+            if self.is_cancelled() {
+                break;
+            }
             self.pv = new_pv.into_iter().rev().collect();
             self.effective_nodes = self.total_nodes;
             self.depth_reached = depth;
