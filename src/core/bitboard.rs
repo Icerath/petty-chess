@@ -30,6 +30,12 @@ impl Bitboard {
         Square(self.0.trailing_zeros() as i8)
     }
     #[inline]
+    pub fn bitscan_pop(&mut self) -> Square {
+        let sq = self.bitscan();
+        self.0 &= self.0 - 1;
+        sq
+    }
+    #[inline]
     #[must_use]
     pub fn rbitscan(self) -> Square {
         Square(self.0.leading_zeros() as i8)
@@ -37,9 +43,7 @@ impl Bitboard {
     #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while self.0 > 0 {
-            let next = self.bitscan();
-            self.remove(next);
-            f(next);
+            f(self.bitscan_pop());
         }
     }
     #[inline]
