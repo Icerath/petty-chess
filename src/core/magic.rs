@@ -13,11 +13,16 @@ pub struct Magic {
     bishop_tables: [SquareTables<BISHOP>; 64],
 }
 
+static MAGIC: OnceLock<Magic> = OnceLock::new();
+
 impl Magic {
     #[inline]
     pub fn get() -> &'static Magic {
-        static MAGIC: OnceLock<Magic> = OnceLock::new();
         MAGIC.get_or_init(Self::preinit)
+    }
+    #[inline]
+    pub fn get_init() -> &'static Magic {
+        MAGIC.get_or_init(Self::init)
     }
     #[must_use]
     #[inline]
@@ -144,21 +149,9 @@ fn index_to_uint64(index: usize, mut m: u64) -> u64 {
 }
 
 fn pop_1st_bit(bb: &mut u64) -> usize {
-    #[rustfmt::skip]
-    const BIT_TABLE: [usize; 64] = [
-        63, 30,  3, 32, 25, 41, 22, 33,
-        15, 50, 42, 13, 11, 53, 19, 34,
-        61, 29,  2, 51, 21, 43, 45, 10,
-        18, 47,  1, 54,  9, 57,  0, 35,
-        62, 31, 40,  4, 49,  5, 52, 26,
-        60,  6, 23, 44, 46, 27, 56, 16,
-         7, 39, 48, 24, 59, 14, 12, 55,
-        38, 28, 58, 20, 37, 17, 36,  8,
-    ];
-    let b = *bb ^ (*bb - 1);
-    let fold: u32 = ((b & 0xffff_ffff) ^ (b >> 32)) as u32;
+    let bit = bb.trailing_zeros();
     *bb &= *bb - 1;
-    BIT_TABLE[((fold.wrapping_mul(0x783a_9b23)) >> 26) as usize]
+    bit as usize
 }
 
 fn random_u64_fewbits() -> u64 {
@@ -301,3 +294,9 @@ const BISHOP_MAGICS: [u64; 64] = [
     2306511654037291280,
     4902326610100756512,
 ];
+
+#[test]
+fn test_magic_init() {
+    Magic::get_init();
+    super::perft::tests::perft_start();
+}

@@ -31,11 +31,11 @@ impl Board {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
-    fn perft_start() {
+    pub(crate) fn perft_start() {
         let results = [1, 20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::start_pos().run_perft(depth as u8);
