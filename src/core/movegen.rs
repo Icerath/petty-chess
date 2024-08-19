@@ -102,9 +102,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         let unmake = self.board.make_move(mov);
-        let is_attacked = self.board.inactive_king().is_some_and(|pos| self.is_square_attacked(pos));
+        let checkers = self.gen_checkers(!self.board.active_side);
         self.board.unmake_move(unmake);
-        !is_attacked
+        checkers.is_empty()
     }
     #[must_use]
     #[inline]
@@ -255,6 +255,20 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let atk_map = self.gen_attack_map();
         self.board.active_side = !self.board.active_side;
         atk_map.contains(sq)
+    }
+    #[inline]
+    #[must_use]
+    pub fn gen_checkers(&self, side: Side) -> Bitboard {
+        let mut bb = Bitboard::EMPTY;
+        let occupancy = self.board.all_pieces();
+        let Some(king) = self.board.get_king_square(side) else { return bb };
+        bb |= ATTACK_PAWN_MOVES[side as usize][king] & self.board[Pawn];
+        bb |= KNIGHT_MOVES[king] & self.board[Knight];
+        bb |= self.magic.bishop_attacks(king, occupancy) & (self.board[Bishop] | self.board[Queen]);
+        bb |= self.magic.rook_attacks(king, occupancy) & (self.board[Rook] | self.board[Queen]);
+        bb |= KING_MOVES[king] & (self.board[King]);
+
+        bb & self.board[!side]
     }
 }
 
