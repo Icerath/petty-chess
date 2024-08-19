@@ -42,7 +42,7 @@ impl Bitboard {
     }
     #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
-        while self.0 > 0 {
+        while !self.is_empty() {
             f(self.bitscan_pop());
         }
     }
