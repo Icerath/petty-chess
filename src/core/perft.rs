@@ -35,7 +35,7 @@ pub(crate) mod tests {
     use super::*;
 
     #[test]
-    pub(crate) fn perft_start() {
+    fn perft_start() {
         let results = [1, 20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::start_pos().run_perft(depth as u8);
@@ -44,7 +44,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn perft_kiwi() {
+    pub(crate) fn perft_kiwi() {
         let results = [1, 48, 2_039, 97_862, 4_085_603, 193_690_690];
         for (depth, &result) in results.iter().enumerate() {
             let count = Board::kiwipete().run_perft(depth as u8);

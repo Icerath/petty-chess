@@ -9,8 +9,8 @@ const ROOK: usize = 4096;
 const BISHOP: usize = 512;
 
 pub struct Magic {
-    rook_tables: [SquareTables<ROOK>; 64],
-    bishop_tables: [SquareTables<BISHOP>; 64],
+    rook_tables: [Box<SquareTables<ROOK>>; 64],
+    bishop_tables: [Box<SquareTables<BISHOP>>; 64],
 }
 
 static MAGIC: OnceLock<Magic> = OnceLock::new();
@@ -42,15 +42,15 @@ impl Magic {
     #[allow(unused)]
     fn init() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| SquareTables::init(Square(i as i8)).unwrap()),
-            bishop_tables: std::array::from_fn(|i| SquareTables::init(Square(i as i8)).unwrap()),
+            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::init(Square(i as i8)).unwrap())),
+            bishop_tables: std::array::from_fn(|i| Box::new(SquareTables::init(Square(i as i8)).unwrap())),
         }
     }
     #[allow(unused)]
     fn preinit() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| SquareTables::preinit(Square(i as i8))),
-            bishop_tables: std::array::from_fn(|i| SquareTables::preinit(Square(i as i8))),
+            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square(i as i8)))),
+            bishop_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square(i as i8)))),
         }
     }
 }
@@ -58,7 +58,7 @@ impl Magic {
 struct SquareTables<const PIECE: usize> {
     mask: u64,
     shift: u32,
-    attacks: Box<[u64; PIECE]>,
+    attacks: [u64; PIECE],
     magic: u64,
 }
 
@@ -66,31 +66,31 @@ impl<const PIECE: usize> SquareTables<PIECE> {
     fn preinit(sq: Square) -> Self {
         let mask = Self::mask(sq);
         let magic = if PIECE == BISHOP { BISHOP_MAGICS[sq] } else { ROOK_MAGICS[sq] };
-        let mut attacks: Box<[u64; PIECE]> = Box::new([0; PIECE]);
+        let mut attacks: [u64; PIECE] = [0; PIECE];
 
         for i in 0..1 << mask.count_ones() {
-            let occupancy = index_to_uint64(i, mask);
-            let index = (occupancy.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
-            attacks[index] = Self::attacks(sq, Bitboard(occupancy));
+            let occupancy = index_to_bb(i, mask);
+            let index = (occupancy.0.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
+            attacks[index] = Self::attacks(sq, occupancy);
         }
         Self { mask, shift: mask.count_zeros(), attacks, magic }
     }
 
     fn init(sq: Square) -> Result<Self, ()> {
         let mask = Self::mask(sq);
-        let occupancies: Box<[u64; PIECE]> = Box::new(std::array::from_fn(|i| index_to_uint64(i, mask)));
+        let occupancies: [Bitboard; PIECE] = std::array::from_fn(|i| index_to_bb(i, mask));
+        let attacks = occupancies.map(|occupancy| Self::attacks(sq, occupancy));
+        let mut used = [0; PIECE];
 
-        let mut used = Box::new([0; PIECE]);
         'trials: for _ in 0..100_000_000 {
             used.fill(0);
             let magic = random_u64_fewbits();
 
-            for occupancy in occupancies.into_iter() {
-                let index = (occupancy.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
-                let correct_attacks = Self::attacks(sq, Bitboard(occupancy));
+            for (i, occupancy) in occupancies.into_iter().enumerate() {
+                let index = (occupancy.0.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
                 if used[index] == 0 {
-                    used[index] = correct_attacks;
-                } else if used[index] != correct_attacks {
+                    used[index] = attacks[i];
+                } else if used[index] != attacks[i] {
                     continue 'trials;
                 }
             }
@@ -137,22 +137,21 @@ impl<const PIECE: usize> SquareTables<PIECE> {
     }
 }
 
-fn index_to_uint64(index: usize, mut m: u64) -> u64 {
-    let mut result = 0u64;
-    let bits = m.count_ones();
-    for i in 0..bits {
+fn index_to_bb(index: usize, mut m: u64) -> Bitboard {
+    let mut result = Bitboard::EMPTY;
+    for i in 0..m.count_ones() {
         let j = pop_1st_bit(&mut m);
         if (index & (1 << i)) > 0 {
-            result |= 1 << j;
+            result.0 |= 1 << j;
         };
     }
     result
 }
 
-fn pop_1st_bit(bb: &mut u64) -> usize {
+fn pop_1st_bit(bb: &mut u64) -> u32 {
     let bit = bb.trailing_zeros();
     *bb &= *bb - 1;
-    bit as usize
+    bit
 }
 
 fn random_u64_fewbits() -> u64 {
@@ -299,5 +298,5 @@ const BISHOP_MAGICS: [u64; 64] = [
 #[test]
 fn test_magic_init() {
     Magic::get_init();
-    super::perft::tests::perft_start();
+    super::perft::tests::perft_kiwi();
 }
