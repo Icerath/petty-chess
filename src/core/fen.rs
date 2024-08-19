@@ -34,24 +34,24 @@ impl Board {
 
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Square>;
-        for sq in (0..64).map(Square) {
+        for sq in Square::all() {
             let rsq = Square::new(Rank(7 - sq.rank().0), sq.file());
             if let Some(piece) = self[rsq] {
                 if let Some(prev) = prev {
                     if let Some(dif @ 1..) = sq.file().0.checked_sub((prev.file().0 + 1) % 8) {
-                        buf.push((dif as u8 + b'0') as char);
+                        buf.push((dif + b'0') as char);
                     }
                 } else if sq.file().0 != 0 {
-                    buf.push((sq.file().0 as u8 + b'0') as char);
+                    buf.push((sq.file().0 + b'0') as char);
                 }
                 buf.push(piece.symbol());
                 prev = Some(sq);
             }
-            if sq != Square(63) && sq.file().0 == 7 {
+            if sq != Square::H8 && sq.file().0 == 7 {
                 if self[rsq].is_none() {
                     if let Some(prev) = prev {
                         if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
-                            buf.push((dif as u8 + b'0') as char);
+                            buf.push((dif + b'0') as char);
                         }
                     } else {
                         buf.push('8');
@@ -62,9 +62,9 @@ impl Board {
             }
         }
 
-        if self[Square(7)].is_none() {
+        if self[Square::H1].is_none() {
             if let dif @ 1.. = 8 - (prev.unwrap().file().0 + 1) % 8 {
-                buf.push((dif as u8 + b'0') as char);
+                buf.push((dif + b'0') as char);
             }
         }
 
@@ -139,7 +139,7 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
     for c in fen.bytes() {
         let kind = match c.to_ascii_lowercase() {
             b'1'..=b'9' => {
-                file += (c - b'0') as i8;
+                file += c - b'0';
                 continue;
             }
             b'/' => {

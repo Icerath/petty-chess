@@ -42,15 +42,21 @@ impl Magic {
     #[allow(unused)]
     fn init() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::init(Square(i as i8)).unwrap())),
-            bishop_tables: std::array::from_fn(|i| Box::new(SquareTables::init(Square(i as i8)).unwrap())),
+            rook_tables: std::array::from_fn(|i| {
+                Box::new(SquareTables::init(Square::try_from(i).unwrap()).unwrap())
+            }),
+            bishop_tables: std::array::from_fn(|i| {
+                Box::new(SquareTables::init(Square::try_from(i).unwrap()).unwrap())
+            }),
         }
     }
     #[allow(unused)]
     fn preinit() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square(i as i8)))),
-            bishop_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square(i as i8)))),
+            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square::try_from(i).unwrap()))),
+            bishop_tables: std::array::from_fn(|i| {
+                Box::new(SquareTables::preinit(Square::try_from(i).unwrap()))
+            }),
         }
     }
 }
@@ -112,7 +118,8 @@ impl<const PIECE: usize> SquareTables<PIECE> {
 
         for direction_index in start..end {
             for n in 1..NUM_SQUARES_TO_EDGE[sq][direction_index] {
-                let target_square = Square(sq.0 + DIRECTION_OFFSETS[direction_index] * n);
+                let target_square =
+                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n).unwrap();
                 result.insert(target_square);
             }
         }
@@ -126,7 +133,8 @@ impl<const PIECE: usize> SquareTables<PIECE> {
 
         for direction_index in start..end {
             for n in 1..=NUM_SQUARES_TO_EDGE[sq][direction_index] {
-                let target_square = Square(sq.0 + DIRECTION_OFFSETS[direction_index] * n);
+                let target_square =
+                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n).unwrap();
                 result.insert(target_square);
                 if occupancy.contains(target_square) {
                     break;

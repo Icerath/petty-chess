@@ -234,17 +234,17 @@ impl Board {
     }
     #[must_use]
     #[inline]
-    pub fn get_king_square(&self, side: Side) -> Square {
+    pub fn get_king_square(&self, side: Side) -> Option<Square> {
         self.get(side + King).bitscan()
     }
     #[must_use]
     #[inline]
-    pub fn active_king(&self) -> Square {
+    pub fn active_king(&self) -> Option<Square> {
         self.get_king_square(self.active_side)
     }
     #[must_use]
     #[inline]
-    pub fn inactive_king(&self) -> Square {
+    pub fn inactive_king(&self) -> Option<Square> {
         self.get_king_square(!self.active_side)
     }
 }
@@ -269,7 +269,7 @@ impl Board {
             self.remove_piece(rhs, piece);
             self.insert_piece(lhs, piece);
         }
-        self.pieces.swap(lhs.0 as usize, rhs.0 as usize);
+        self.pieces.swap(usize::from(lhs), usize::from(rhs));
     }
     #[inline]
     pub fn piece_squares(&self) -> impl Iterator<Item = (Square, Piece)> {

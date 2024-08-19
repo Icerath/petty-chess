@@ -97,7 +97,7 @@ impl Engine {
                 break 'null;
             }
             let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
-            if attacked_squares.contains(self.board.active_king()) {
+            if self.board.active_king().is_some_and(|king| attacked_squares.contains(king)) {
                 break 'null;
             }
             let unmake = self.board.make_null_move();
@@ -167,11 +167,10 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            if MoveGenerator::<CapturesOnly>::new(&mut self.board)
-                .attack_map()
-                .contains(self.board.active_king())
-            {
-                return (-Eval::MATE.0, None);
+            if let Some(active_king) = self.board.active_king() {
+                if MoveGenerator::<CapturesOnly>::new(&mut self.board).attack_map().contains(active_king) {
+                    return (-Eval::MATE.0, None);
+                }
             }
             return (0, None);
         }
@@ -222,11 +221,13 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
-            let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
-            let is_check = movegen.attack_map().contains(self.board.active_king());
-            if !legal_moves && is_check {
-                return -Eval::MATE.0;
+            if let Some(active_king) = self.board.active_king() {
+                let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
+                let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
+                let is_check = movegen.attack_map().contains(active_king);
+                if !legal_moves && is_check {
+                    return -Eval::MATE.0;
+                }
             }
         }
 

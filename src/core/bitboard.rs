@@ -13,37 +13,57 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     #[inline]
     pub fn insert(&mut self, sq: Square) {
-        self.0 |= 1 << sq.0;
+        self.0 |= 1 << sq.int();
     }
     #[inline]
     pub fn remove(&mut self, sq: Square) {
-        self.0 &= !(1 << sq.0);
+        self.0 &= !(1 << sq.int());
     }
     #[inline]
     #[must_use]
     pub fn contains(self, sq: Square) -> bool {
-        self.0 & (1 << sq.0) > 0
+        self.0 & (1 << sq.int()) > 0
     }
     #[inline]
     #[must_use]
-    pub fn bitscan(self) -> Square {
-        Square(self.0.trailing_zeros() as i8)
+    pub fn bitscan(self) -> Option<Square> {
+        if self.is_empty() {
+            return None;
+        }
+        unsafe { Some(self.bitscan_unchecked()) }
+    }
+    pub unsafe fn bitscan_unchecked(self) -> Square {
+        unsafe { Square::new_int_unchecked(self.0.trailing_zeros() as u8) }
     }
     #[inline]
-    pub fn bitscan_pop(&mut self) -> Square {
-        let sq = self.bitscan();
+    pub fn bitscan_pop(&mut self) -> Option<Square> {
+        let sq = self.bitscan()?;
+        self.0 &= self.0 - 1;
+        Some(sq)
+    }
+    #[inline]
+    pub unsafe fn bitscan_pop_unchecked(&mut self) -> Square {
+        let sq = unsafe { self.bitscan_unchecked() };
         self.0 &= self.0 - 1;
         sq
     }
     #[inline]
     #[must_use]
-    pub fn rbitscan(self) -> Square {
-        Square(self.0.leading_zeros() as i8)
+    pub fn rbitscan(self) -> Option<Square> {
+        if self.is_empty() {
+            return None;
+        }
+        Some(unsafe { self.rbitscan_unchecked() })
+    }
+    #[inline]
+    #[must_use]
+    pub unsafe fn rbitscan_unchecked(self) -> Square {
+        unsafe { Square::new_int_unchecked(self.0.leading_zeros() as u8) }
     }
     #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while !self.is_empty() {
-            f(self.bitscan_pop());
+            f(unsafe { self.bitscan_pop_unchecked() });
         }
     }
     #[inline]

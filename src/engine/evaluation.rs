@@ -15,7 +15,7 @@ impl Engine {
 
         for side in [White, Black] {
             let mut total = 0;
-            let king = self.board.get_king_square(side);
+            let Some(king) = self.board.get_king_square(side) else { continue };
             let friendly = self.board.side_bitboards(side);
             let enemy = self.board.side_bitboards(!side);
             // punish kings next adjacent to open file
@@ -93,9 +93,9 @@ impl Engine {
                 }
             });
             // reward rooks able to see eachother
-            if friendly[Rook].count() >= 2 {
-                let rook_attacks = Magic::get().rook_attacks(friendly[Rook].bitscan(), self.board.all_pieces());
-                if rook_attacks.contains(friendly[Rook].rbitscan()) {
+            if let (Some(rook_a), Some(rook_b)) = (friendly[Rook].bitscan(), friendly[Rook].rbitscan()) {
+                let rook_attacks = Magic::get().rook_attacks(rook_a, self.board.all_pieces());
+                if rook_attacks.contains(rook_b) {
                     total += 20;
                 }
             }
@@ -119,10 +119,14 @@ impl Engine {
             _ => None,
         };
         if let Some(mop_up_side) = mop_up_side {
-            let md = self.board.active_king().manhattan_distance(self.board.inactive_king());
-            let cmd = self.board.get_king_square(!mop_up_side).centre_manhattan_distance() as i32;
-            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
-            final_total += mop_up_score * phase.endgame();
+            if let (Some(active_king), Some(inactive_king)) =
+                (self.board.active_king(), self.board.inactive_king())
+            {
+                let md = active_king.manhattan_distance(inactive_king);
+                let cmd = self.board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance() as i32;
+                let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
+                final_total += mop_up_score * phase.endgame();
+            }
         }
 
         final_total

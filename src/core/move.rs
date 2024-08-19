@@ -11,17 +11,17 @@ impl Move {
     #[must_use]
     #[inline]
     pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
-        Self((from.0 as u16) | (to.0 as u16) << 6 | (flags as u16) << 12)
+        Self((u16::from(from)) | (u16::from(to)) << 6 | (flags as u16) << 12)
     }
     #[inline]
     #[must_use]
     pub fn from(self) -> Square {
-        Square((self.0 & 0b11_1111) as i8)
+        unsafe { Square::new_int_unchecked((self.0 & 0b11_1111) as u8) }
     }
     #[must_use]
     #[inline]
     pub fn to(self) -> Square {
-        Square(((self.0 >> 6) & 0b11_1111) as i8)
+        unsafe { Square::new_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
     }
     #[must_use]
     #[inline]

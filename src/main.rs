@@ -19,7 +19,6 @@ fn main() {
         .unwrap();
 
     tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
-
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
     let mut app = Application::default();
@@ -157,7 +156,7 @@ impl Application {
 fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.gen_legal_moves();
-    moves.sort_by_key(|mov| mov.from().0 + mov.to().0);
+    moves.sort_by_key(|mov| mov.from().int() + mov.to().int());
 
     for mov in moves {
         let unmake = board.make_move(mov);

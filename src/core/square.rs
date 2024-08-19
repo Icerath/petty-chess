@@ -7,9 +7,22 @@ use std::{
 use crate::prelude::*;
 
 #[derive(Default, Clone, Copy, PartialEq)]
-pub struct Square(pub i8);
+pub struct Square(u8);
 
 impl Square {
+    /// # Safety
+    /// int must be < 64
+    #[must_use]
+    #[inline]
+    pub const unsafe fn new_int_unchecked(int: u8) -> Self {
+        Self(int)
+    }
+    #[must_use]
+    #[inline]
+    pub const fn int(self) -> u8 {
+        unsafe { std::hint::assert_unchecked(self.0 < 64) };
+        self.0
+    }
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
@@ -92,17 +105,17 @@ impl Square {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct File(pub i8);
+pub struct File(pub u8);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Rank(pub i8);
+pub struct Rank(pub u8);
 
 impl Rank {
     #[must_use]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = self.0 + rhs;
-        (0..8).contains(&out).then_some(Self(out))
+        let out = self.0 as i8 + rhs;
+        (0..8).contains(&out).then_some(Self(out as u8))
     }
     #[must_use]
     #[inline]
@@ -133,8 +146,8 @@ impl File {
     #[must_use]
     #[inline]
     pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = self.0 + rhs;
-        (0..8).contains(&out).then_some(Self(out))
+        let out = self.0 as i8 + rhs;
+        (0..8).contains(&out).then_some(Self(out as u8))
     }
     #[must_use]
     #[inline]
@@ -142,7 +155,7 @@ impl File {
     // Produces an empty bitboard for File(-1) and File(8)
     // Oher file values are undefined behaviour
     pub fn mask(self) -> Bitboard {
-        const FILES: [Bitboard; 9] = [
+        const FILES: [Bitboard; 8] = [
             File(0).compute_mask(),
             File(1).compute_mask(),
             File(2).compute_mask(),
@@ -151,9 +164,8 @@ impl File {
             File(5).compute_mask(),
             File(6).compute_mask(),
             File(7).compute_mask(),
-            Bitboard::EMPTY,
         ];
-        FILES[usize::try_from(self.0).unwrap_or(8)]
+        FILES.get(usize::from(self.0)).copied().unwrap_or(Bitboard::EMPTY)
     }
 
     const fn compute_mask(self) -> Bitboard {
@@ -173,14 +185,14 @@ impl File {
 impl Add<i8> for File {
     type Output = Self;
     fn add(self, rhs: i8) -> Self::Output {
-        Self(self.0 + rhs)
+        Self(self.0.wrapping_add_signed(rhs))
     }
 }
 
 impl Sub<i8> for File {
     type Output = Self;
     fn sub(self, rhs: i8) -> Self::Output {
-        Self(self.0 - rhs)
+        Self(self.0.wrapping_add_signed(-rhs))
     }
 }
 
@@ -210,7 +222,11 @@ impl std::error::Error for InvalidSquare {}
 impl FromStr for Square {
     type Err = InvalidSquare;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES.iter().position(|&sq| sq == input).map(|index| Square(index as i8)).ok_or(InvalidSquare)
+        Self::SQUARES
+            .iter()
+            .position(|&sq| sq == input)
+            .map(|index| unsafe { Self::new_int_unchecked(index as u8) })
+            .ok_or(InvalidSquare)
     }
 }
 
@@ -303,6 +319,46 @@ impl Square {
     pub const G8: Self = Self(62);
     pub const H8: Self = Self(63);
 }
+
+macro_rules! impl_try_from {
+    ($($int:ident),*) => {
+        $( impl_try_from!(@single $int);)*
+    };
+
+    (@single $int: ident) => {
+        impl TryFrom<$int> for Square {
+            type Error = $int;
+            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_sign_loss)]
+            #[inline]
+            fn try_from(value: $int) -> Result<Self, Self::Error> {
+                match value {
+                    0..81 => Ok(unsafe { Self::new_int_unchecked(value as u8) }),
+                    _ => Err(value),
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_into {
+    ($($int:ident),*) => {
+        $( impl_into!(@single $int);)*
+    };
+    (@single $int: ident) => {
+        impl From<Square> for $int {
+            #[allow(clippy::cast_possible_wrap)]
+            #[must_use]
+            #[inline]
+            fn from(square: Square) -> $int {
+                square.int() as $int
+            }
+        }
+    };
+}
+
+impl_try_from!(u8, i8, u16, i16, u32, i32, usize);
+impl_into!(u8, i8, u16, i16, u32, i32, usize);
 
 #[test]
 fn test_manhattan_distance() {
