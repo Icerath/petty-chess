@@ -70,22 +70,23 @@ impl<const PIECE: usize> SquareTables<PIECE> {
 
         for i in 0..1 << mask.count_ones() {
             let occupancy = index_to_uint64(i, mask);
-            let index = (occupancy.wrapping_mul(magic) >> (64 - mask.count_ones())) as usize;
+            let index = (occupancy.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
             attacks[index] = Self::attacks(sq, Bitboard(occupancy));
         }
-        Self { mask, shift: 64 - mask.count_ones(), attacks, magic }
+        Self { mask, shift: mask.count_zeros(), attacks, magic }
     }
 
     fn init(sq: Square) -> Result<Self, ()> {
         let mask = Self::mask(sq);
         let occupancies: Box<[u64; PIECE]> = Box::new(std::array::from_fn(|i| index_to_uint64(i, mask)));
 
+        let mut used = Box::new([0; PIECE]);
         'trials: for _ in 0..100_000_000 {
-            let mut used = Box::new([0; PIECE]);
+            used.fill(0);
             let magic = random_u64_fewbits();
 
             for occupancy in occupancies.into_iter() {
-                let index = (occupancy.wrapping_mul(magic) >> (64 - mask.count_ones())) as usize;
+                let index = (occupancy.wrapping_mul(magic) >> (mask.count_zeros())) as usize;
                 let correct_attacks = Self::attacks(sq, Bitboard(occupancy));
                 if used[index] == 0 {
                     used[index] = correct_attacks;
@@ -93,7 +94,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
                     continue 'trials;
                 }
             }
-            return Ok(Self { mask, magic, shift: 64 - mask.count_ones(), attacks: used });
+            return Ok(Self { mask, magic, shift: mask.count_zeros(), attacks: used });
         }
         Err(())
     }
