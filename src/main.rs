@@ -5,6 +5,7 @@ use std::{
 };
 
 use petty_chess::{
+    engine::transposition::TranspositionTable,
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
@@ -156,11 +157,13 @@ impl Application {
 fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.gen_legal_moves();
+
+    let mut table = TranspositionTable::default();
     moves.sort_by_key(|mov| mov.from().int() + mov.to().int());
 
     for mov in moves {
         let unmake = board.make_move(mov);
-        let count = board.run_perft(depth - 1);
+        let count = board.run_perft_with_table(&mut table, depth - 1);
         total += count;
         board.unmake_move(unmake);
         eprintln!("{mov}: {count}");
