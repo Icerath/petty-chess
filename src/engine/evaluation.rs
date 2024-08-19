@@ -191,7 +191,7 @@ pub fn piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
 #[inline]
 #[must_use]
 pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
-    let index = if piece.is_white() { Square::new(Rank(7 - sq.rank().0), sq.file()) } else { sq };
+    let index = if piece.is_white() { sq.flip() } else { sq };
     let mg = square_tables::MG[piece.kind() as usize][index];
     let eg = square_tables::EG[piece.kind() as usize][index];
 

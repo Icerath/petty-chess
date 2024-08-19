@@ -26,7 +26,24 @@ impl Square {
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
+        assert!(file.0 < 8 && rank.0 < 8);
         Self(file.0 + rank.0 * 8)
+    }
+    #[must_use]
+    #[inline]
+    pub fn flip(self) -> Self {
+        #[rustfmt::skip]
+        const FLIPPED: [u8; 64] = [
+            56, 57, 58, 59, 60, 61, 62, 63,
+            48, 49, 50, 51, 52, 53, 54, 55,
+            40, 41, 42, 43, 44, 45, 46, 47, 
+            32, 33, 34, 35, 36, 37, 38, 39,
+            24, 25, 26, 27, 28, 29, 30, 31, 
+            16, 17, 18, 19, 20, 21, 22, 23,
+             8,  9, 10, 11, 12, 13, 14, 15,
+             0,  1,  2,  3,  4,  5,  6,  7,
+        ];
+        unsafe { Square::new_int_unchecked(FLIPPED[self]) }
     }
     #[must_use]
     #[inline]
@@ -364,4 +381,12 @@ impl_into!(u8, i8, u16, i16, u32, i32, usize);
 fn test_manhattan_distance() {
     assert_eq!(Square::A1.manhattan_distance(Square::H8), 14);
     assert_eq!(Square::E2.manhattan_distance(Square::E2), 0);
+}
+
+
+#[test]
+fn test_square_flip() {
+    for sq in Square::all() {
+        assert_eq!(Square::new(Rank(7 - sq.rank().0), sq.file()), sq.flip());
+    }
 }

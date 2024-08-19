@@ -35,8 +35,7 @@ impl Board {
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Square>;
         for sq in Square::all() {
-            let rsq = Square::new(Rank(7 - sq.rank().0), sq.file());
-            if let Some(piece) = self[rsq] {
+            if let Some(piece) = self[sq.flip()] {
                 if let Some(prev) = prev {
                     if let Some(dif @ 1..) = sq.file().0.checked_sub((prev.file().0 + 1) % 8) {
                         buf.push((dif + b'0') as char);
@@ -48,7 +47,7 @@ impl Board {
                 prev = Some(sq);
             }
             if sq != Square::H8 && sq.file().0 == 7 {
-                if self[rsq].is_none() {
+                if self[sq.flip()].is_none() {
                     if let Some(prev) = prev {
                         if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
                             buf.push((dif + b'0') as char);
