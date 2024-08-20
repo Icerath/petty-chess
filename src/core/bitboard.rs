@@ -32,6 +32,8 @@ impl Bitboard {
         }
         unsafe { Some(self.bitscan_unchecked()) }
     }
+    #[inline]
+    #[must_use]
     pub unsafe fn bitscan_unchecked(self) -> Square {
         unsafe { Square::new_int_unchecked(self.0.trailing_zeros() as u8) }
     }

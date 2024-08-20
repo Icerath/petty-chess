@@ -43,11 +43,13 @@ impl Engine {
                 Score::Centipawns { cp: score, bounds: None }
             };
 
+            let time_taken = self.time_started.elapsed();
             let info = Info {
                 depth: Some(depth as u32),
                 score: Some(score),
                 nodes: Some(self.total_nodes),
-                time: Some(self.time_started.elapsed()),
+                time: Some(time_taken),
+                nps: Some((self.total_nodes as f64 / time_taken.as_secs_f64()) as u32),
                 pv: Some(self.pv.clone()),
                 ..Info::default()
             };
