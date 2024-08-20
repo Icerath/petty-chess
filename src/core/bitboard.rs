@@ -34,6 +34,8 @@ impl Bitboard {
     }
     #[inline]
     #[must_use]
+    /// # Safety
+    /// bitboard must not be empty
     pub unsafe fn bitscan_unchecked(self) -> Square {
         unsafe { Square::new_int_unchecked(self.0.trailing_zeros() as u8) }
     }
@@ -44,6 +46,8 @@ impl Bitboard {
         Some(sq)
     }
     #[inline]
+    /// # Safety
+    /// bitboard must not be empty
     pub unsafe fn bitscan_pop_unchecked(&mut self) -> Square {
         let sq = unsafe { self.bitscan_unchecked() };
         self.0 &= self.0 - 1;
@@ -59,6 +63,8 @@ impl Bitboard {
     }
     #[inline]
     #[must_use]
+    /// # Safety
+    /// bitboard must not be empty
     pub unsafe fn rbitscan_unchecked(self) -> Square {
         unsafe { Square::new_int_unchecked(self.0.leading_zeros() as u8) }
     }
