@@ -31,13 +31,13 @@ impl Engine {
                 return i16::MAX as i32;
             }
         }
-        let piece = self.board[mov.from()].unwrap();
+        let piece = self.board.get_square(mov.from()).unwrap();
 
         score += (((abs_piece_square_value(mov.to(), piece, phase)
             - abs_piece_square_value(mov.from(), piece, phase)) as f32
             * (phase.earlygame().0 * 0.2)) as f32) as i32;
 
-        if let Some(target_piece) = self.board[mov.to()] {
+        if let Some(target_piece) = self.board.get_square(mov.to()) {
             score += MVV_LVA[target_piece.kind() as usize][piece.kind() as usize] as i32 * 4;
         } else if mov.flags() == MoveFlags::EnPassant {
             score += MVV_LVA[Pawn as usize][Pawn as usize] as i32 * 4;

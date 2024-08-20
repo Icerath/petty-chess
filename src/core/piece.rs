@@ -41,6 +41,20 @@ impl Default for Piece {
 }
 
 impl Piece {
+    pub const ALL: [Self; 12] = [
+        BlackPawn,
+        BlackKnight,
+        BlackBishop,
+        BlackRook,
+        BlackQueen,
+        BlackKing,
+        WhitePawn,
+        WhiteKnight,
+        WhiteBishop,
+        WhiteRook,
+        WhiteQueen,
+        WhiteKing,
+    ];
     #[must_use]
     #[inline]
     pub fn new(kind: PieceKind, side: Side) -> Self {
@@ -55,6 +69,11 @@ impl Piece {
     #[inline]
     pub fn side(self) -> Side {
         Side::from(self as u8 / 6 == 1)
+    }
+    #[must_use]
+    #[inline]
+    pub fn as_static(self) -> &'static Self {
+        &Self::ALL[self as usize]
     }
 }
 
@@ -108,6 +127,10 @@ impl fmt::Debug for Piece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Piece").field("side", &self.side()).field("kind", &self.kind()).finish()
     }
+}
+
+impl PieceKind {
+    pub const ALL: [Self; 6] = [Pawn, Knight, Bishop, Rook, Queen, King];
 }
 
 #[test]

@@ -6,6 +6,7 @@ use crate::prelude::*;
 pub struct Zobrist(u64);
 
 impl Zobrist {
+    pub const DEFAULT: Self = Self(0);
     #[inline]
     pub fn xor_side_to_move(&mut self) {
         self.0 ^= SIDE_KEY;

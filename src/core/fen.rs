@@ -1,6 +1,5 @@
 use std::fmt::Write;
 
-use super::board::Cached;
 use crate::prelude::*;
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -35,7 +34,7 @@ impl Board {
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Square>;
         for sq in Square::all() {
-            if let Some(piece) = self[sq.flip()] {
+            if let Some(piece) = self.get_square(sq.flip()) {
                 if let Some(prev) = prev {
                     if let Some(dif @ 1..) = sq.file().0.checked_sub((prev.file().0 + 1) % 8) {
                         buf.push((dif + b'0') as char);
@@ -47,7 +46,7 @@ impl Board {
                 prev = Some(sq);
             }
             if sq != Square::H8 && sq.file().0 == 7 {
-                if self[sq.flip()].is_none() {
+                if !self.is_piece_at(sq.flip()) {
                     if let Some(prev) = prev {
                         if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
                             buf.push((dif + b'0') as char);
@@ -61,7 +60,7 @@ impl Board {
             }
         }
 
-        if self[Square::H1].is_none() {
+        if !self.is_piece_at(Square::H1) {
             if let dif @ 1.. = 8 - (prev.unwrap().file().0 + 1) % 8 {
                 buf.push((dif + b'0') as char);
             }
@@ -102,10 +101,10 @@ impl Board {
         builder
     }
     #[must_use]
-    pub fn from_fen(fen: &str) -> Option<Self> {
+    pub fn from_fen(fen: &str) -> Option<Board> {
         let mut fields = fen.split(' ');
 
-        let pieces = parse_pieces(fields.next()?)?;
+        let mut board = parse_pieces(fields.next()?)?;
         let active_side = match fields.next()? {
             "w" => White,
             "b" => Black,
@@ -116,25 +115,26 @@ impl Board {
         let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
         let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(1);
 
-        let mut board = Board {
-            pieces,
-            active_side,
-            can_castle,
-            en_passant_target_square,
-            halfmove_clock,
-            fullmove_counter,
-            cached: Cached::default(),
-        };
-        board.create_cache();
+        if active_side == Black {
+            board.swap_side();
+        }
+        board.can_castle = can_castle;
+        board.zobrist.xor_can_castle(can_castle);
+        board.en_passant_target_square = en_passant_target_square;
+        board.halfmove_clock = halfmove_clock;
+        board.fullmove_counter = fullmove_counter;
+        if let Some(en_passant) = en_passant_target_square {
+            board.zobrist.xor_en_passant(en_passant);
+        }
         Some(board)
     }
 }
 
-fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
+fn parse_pieces(fen: &str) -> Option<Board> {
+    let mut board = Board::EMPTY;
     let mut rank = 7;
     let mut file = 0;
 
-    let mut pieces = [None; 64];
     for c in fen.bytes() {
         let kind = match c.to_ascii_lowercase() {
             b'1'..=b'9' => {
@@ -156,10 +156,10 @@ fn parse_pieces(fen: &str) -> Option<[Option<Piece>; 64]> {
         };
         let side = if c.is_ascii_uppercase() { White } else { Black };
         let sq = Square::new(Rank(rank), File(file));
-        pieces[sq] = Some(kind + side);
+        board.insert_piece(sq, side + kind);
         file += 1;
     }
-    Some(pieces)
+    Some(board)
 }
 
 fn parse_can_castle(fen: &str) -> Option<CanCastle> {
@@ -190,7 +190,7 @@ fn parse_en_passant(fen: &str) -> Option<Option<Square>> {
 #[test]
 fn test_fen_parsing() {
     let board = Board::from_fen(STARTING_FEN).expect("Failed to parse starting fen");
-    assert_eq!(board[Square::E1], Some(WhiteKing));
+    assert_eq!(board.get_square(Square::E1), Some(WhiteKing));
     assert_eq!(board.to_fen(), STARTING_FEN);
 
     for fen in [KIWIPETE, PERFT_POSITION_3, PERFT_POSITION_4, PERFT_POSITION_5] {

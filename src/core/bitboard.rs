@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
 };
 
 use crate::prelude::*;
@@ -102,7 +102,7 @@ impl BitAnd for Bitboard {
 impl BitAndAssign for Bitboard {
     #[inline]
     fn bitand_assign(&mut self, rhs: Self) {
-        *self = *self & rhs;
+        self.0 &= rhs.0;
     }
 }
 
@@ -117,7 +117,21 @@ impl BitOr for Bitboard {
 impl BitOrAssign for Bitboard {
     #[inline]
     fn bitor_assign(&mut self, rhs: Self) {
-        *self = *self | rhs;
+        self.0 |= rhs.0;
+    }
+}
+
+impl BitXor<Square> for Bitboard {
+    type Output = Bitboard;
+    #[inline]
+    fn bitxor(self, rhs: Square) -> Self::Output {
+        Self(self.0 ^ (1 << rhs.int()))
+    }
+}
+
+impl BitXorAssign<Square> for Bitboard {
+    fn bitxor_assign(&mut self, rhs: Square) {
+        self.0 ^= 1 << rhs.int();
     }
 }
 

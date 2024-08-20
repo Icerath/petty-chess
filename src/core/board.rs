@@ -1,79 +1,76 @@
 use core::fmt;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Index, IndexMut};
 
 use crate::prelude::*;
 
 #[derive(Clone)]
 pub struct Board {
-    pub pieces: [Option<Piece>; 64],
     pub active_side: Side,
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Square>,
-    pub halfmove_clock: u8,
-    pub fullmove_counter: u16,
-    pub cached: Cached,
-}
-
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct Cached {
     pub zobrist: Zobrist,
     pub piece_bitboards: Pieces,
     pub side_pieces: SidePieces,
+    pub halfmove_clock: u8,
+    pub fullmove_counter: u16,
 }
 
 pub struct Unmake {
-    cached: Cached,
-    mov: Move,
-    captured_piece: Option<Piece>,
-    can_castle: CanCastle,
-    en_passant_target_square: Option<Square>,
+    board: Board,
 }
 
 impl Board {
-    pub fn create_cache(&mut self) {
-        self.zobrist = Zobrist::default();
-        if self.black_to_play() {
-            self.zobrist.xor_side_to_move();
-        }
-        self.cached.zobrist.xor_can_castle(self.can_castle);
-        if let Some(sq) = self.en_passant_target_square {
-            self.cached.zobrist.xor_en_passant(sq);
-        }
-        for (sq, piece) in self.piece_squares() {
-            self.insert_piece(sq, piece);
-            self.zobrist.xor_piece(sq, piece);
-        }
+    pub const EMPTY: Self = Self {
+        active_side: Side::White,
+        can_castle: CanCastle::empty(),
+        en_passant_target_square: None,
+        halfmove_clock: 0,
+        fullmove_counter: 1,
+        zobrist: Zobrist::DEFAULT,
+        piece_bitboards: Pieces([Bitboard::EMPTY; 6]),
+        side_pieces: SidePieces([Bitboard::EMPTY; 2]),
+    };
+    pub fn swap_side(&mut self) {
+        self.active_side = !self.active_side;
+        self.zobrist.xor_side_to_move();
     }
-    // inserts a piece into the board's bitboards
+    /// Inserts a piece into the board's bitboards.
+    ///
+    /// This will not remove other pieces from this square and
+    /// calling/ this when a piece is already present with produce an invalid zobrist hash
     pub fn insert_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()].insert(sq);
         self[piece.side()].insert(sq);
+        self.zobrist.xor_piece(sq, piece);
     }
-    // inserts a piece from the board's bitboards
+    /// removes a piece from the board's bitboards
+    ///
+    /// calling this when a piece is not present with produce an invalid zobrist hash
     pub fn remove_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()].remove(sq);
         self[piece.side()].remove(sq);
+        self.zobrist.xor_piece(sq, piece);
+    }
+    /// inserts a piece at sq if it doesn't exist or removes it if it does exist.
+    pub fn xor_piece(&mut self, sq: Square, piece: Piece) {
+        self[piece.kind()] ^= sq;
+        self[piece.side()] ^= sq;
+        self.zobrist.xor_piece(sq, piece);
     }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
-        let from_piece = self[mov.from()].unwrap();
+        let unmake = Unmake { board: self.clone() };
 
-        let mut unmake = Unmake {
-            cached: self.cached.clone(),
-            mov,
-            captured_piece: self[mov.to()],
-            can_castle: self.can_castle,
-            en_passant_target_square: self.en_passant_target_square,
-        };
+        let from_piece = self.get_square(mov.from()).unwrap();
+
         if let Some(sq) = self.en_passant_target_square {
             self.zobrist.xor_en_passant(sq);
         }
         self.en_passant_target_square = None;
-        self.cached.zobrist.xor_can_castle(self.can_castle);
+        self.zobrist.xor_can_castle(self.can_castle);
         if from_piece.kind() == PieceKind::King {
-            if self.white_to_play() {
-                self.can_castle.remove(CanCastle::BOTH_WHITE);
-            } else {
-                self.can_castle.remove(CanCastle::BOTH_BLACK);
+            match self.active_side {
+                Side::White => self.can_castle.remove(CanCastle::BOTH_WHITE),
+                Side::Black => self.can_castle.remove(CanCastle::BOTH_BLACK),
             }
         }
         for sq in [mov.from(), mov.to()] {
@@ -85,41 +82,24 @@ impl Board {
                 _ => {}
             }
         }
-
-        self.cached.zobrist.xor_can_castle(self.can_castle);
-        self.zobrist.xor_piece(mov.from(), from_piece);
-        self.zobrist.xor_piece(mov.to(), from_piece);
-        if let Some(piece) = self[mov.to()] {
-            self.zobrist.xor_piece(mov.to(), piece);
+        self.zobrist.xor_can_castle(self.can_castle);
+        if let Some(piece) = self.get_square(mov.to()) {
             self.remove_piece(mov.to(), piece);
         }
         self.remove_piece(mov.from(), from_piece);
         self.insert_piece(mov.to(), from_piece);
 
-        self[mov.from()] = None;
-        self[mov.to()] = Some(from_piece);
-
         match mov.flags() {
+            MoveFlags::Quiet | MoveFlags::Capture => {}
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
-                let pawn = self[back].unwrap();
-                unmake.captured_piece = Some(pawn);
-                self.cached.zobrist.xor_piece(back, pawn);
+                let pawn = !self.active_side + Pawn;
                 self.remove_piece(back, pawn);
-                self[back] = None;
             }
-            MoveFlags::QueenCastle if self.white_to_play() => {
-                self.swap(Square::A1, Square::D1);
-            }
-            MoveFlags::QueenCastle => {
-                self.swap(Square::A8, Square::D8);
-            }
-            MoveFlags::KingCastle if self.white_to_play() => {
-                self.swap(Square::F1, Square::H1);
-            }
-            MoveFlags::KingCastle => {
-                self.swap(Square::F8, Square::H8);
-            }
+            MoveFlags::QueenCastle if self.active_side == White => self.swap(Square::A1, Square::D1),
+            MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
+            MoveFlags::KingCastle if self.active_side == White => self.swap(Square::F1, Square::H1),
+            MoveFlags::KingCastle => self.swap(Square::F8, Square::H8),
             MoveFlags::DoublePawnPush => {
                 let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 self.en_passant_target_square = Some(back);
@@ -127,54 +107,16 @@ impl Board {
             }
             flags if flags.promotion().is_some() => {
                 let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
-                self[mov.to()] = Some(piece);
-                self.zobrist.xor_piece(mov.to(), from_piece);
-                self.zobrist.xor_piece(mov.to(), piece);
                 self.remove_piece(mov.to(), from_piece);
                 self.insert_piece(mov.to(), piece);
             }
-            MoveFlags::Quiet | MoveFlags::Capture => {}
             _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
-        self.decrement_ply();
-        let mov = unmake.mov;
-
-        match mov.flags() {
-            MoveFlags::EnPassant => {
-                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
-                self[back] = unmake.captured_piece;
-            }
-            MoveFlags::QueenCastle if self.white_to_play() => self.swap(Square::A1, Square::D1),
-            MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
-            MoveFlags::KingCastle if self.white_to_play() => self.swap(Square::F1, Square::H1),
-            MoveFlags::KingCastle => self.swap(Square::F8, Square::H8),
-            MoveFlags::KnightPromotion
-            | MoveFlags::KnightPromotionCapture
-            | MoveFlags::BishopPromotion
-            | MoveFlags::BishopPromotionCapture
-            | MoveFlags::RookPromotion
-            | MoveFlags::RookPromotionCapture
-            | MoveFlags::QueenPromotion
-            | MoveFlags::QueenPromotionCapture => {
-                self[mov.to()] = Some(self.active_side + Pawn);
-            }
-            _ => {}
-        }
-
-        self[mov.from()] = self[mov.to()];
-        if mov.flags() == MoveFlags::EnPassant {
-            self[mov.to()] = None;
-        } else {
-            self[mov.to()] = unmake.captured_piece;
-        }
-
-        self.cached = unmake.cached;
-        self.en_passant_target_square = unmake.en_passant_target_square;
-        self.can_castle = unmake.can_castle;
+        *self = unmake.board;
     }
     pub fn make_null_move(&mut self) -> Option<Square> {
         self.increment_ply();
@@ -257,24 +199,22 @@ impl Board {
     }
     #[inline]
     pub fn swap(&mut self, lhs: Square, rhs: Square) {
-        if let Some(piece) = self[lhs] {
-            self.zobrist.xor_piece(lhs, piece);
-            self.zobrist.xor_piece(rhs, piece);
+        let lhs_piece = self.get_square(lhs);
+        let rhs_piece = self.get_square(rhs);
+        if let Some(piece) = lhs_piece {
             self.remove_piece(lhs, piece);
             self.insert_piece(rhs, piece);
         }
-        if let Some(piece) = self[rhs] {
-            self.zobrist.xor_piece(lhs, piece);
-            self.zobrist.xor_piece(rhs, piece);
+        if let Some(piece) = rhs_piece {
             self.remove_piece(rhs, piece);
             self.insert_piece(lhs, piece);
         }
-        self.pieces.swap(usize::from(lhs), usize::from(rhs));
     }
     #[inline]
-    pub fn piece_squares(&self) -> impl Iterator<Item = (Square, Piece)> {
-        let pieces = self.pieces;
-        Square::all().filter_map(move |sq| pieces[sq].map(|piece| (sq, piece)))
+    pub fn for_each_piece(&self, mut f: impl FnMut(Square, Piece)) {
+        for piece in Piece::ALL {
+            self.get(piece).for_each(|sq| f(sq, piece));
+        }
     }
     #[inline]
     #[must_use]
@@ -286,18 +226,17 @@ impl Board {
     pub fn is_side(&self, sq: Square, side: Side) -> bool {
         self[side].contains(sq)
     }
-}
-
-impl Index<Square> for Board {
-    type Output = Option<Piece>;
-    fn index(&self, index: Square) -> &Self::Output {
-        &self.pieces[index]
+    #[inline]
+    #[must_use]
+    pub fn get_square(&self, square: Square) -> Option<Piece> {
+        let side = if self[White].contains(square) { White } else { Black };
+        let kind = self.get_square_kind(square)?;
+        Some(side + kind)
     }
-}
-
-impl IndexMut<Square> for Board {
-    fn index_mut(&mut self, index: Square) -> &mut Self::Output {
-        &mut self.pieces[index]
+    #[inline]
+    #[must_use]
+    pub fn get_square_kind(&self, square: Square) -> Option<PieceKind> {
+        PieceKind::ALL.into_iter().find(|&kind| self[kind].contains(square))
     }
 }
 
@@ -310,20 +249,6 @@ impl fmt::Debug for Board {
 impl Default for Board {
     fn default() -> Self {
         Self::start_pos()
-    }
-}
-
-// This is bad practice but shame.
-impl Deref for Board {
-    type Target = Cached;
-    fn deref(&self) -> &Self::Target {
-        &self.cached
-    }
-}
-
-impl DerefMut for Board {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.cached
     }
 }
 

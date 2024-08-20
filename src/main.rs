@@ -139,7 +139,7 @@ impl Application {
             for file in 0..8 {
                 out.push(' ');
                 let square = Square::new(Rank(rank), File(file));
-                let piece = self.engine.board[square];
+                let piece = self.engine.board.get_square(square);
                 out.push(piece.map_or(' ', Piece::symbol));
                 out.push_str(" |");
             }
