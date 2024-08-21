@@ -8,18 +8,18 @@ use crate::prelude::*;
 #[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum Piece {
-    BlackPawn = 0,
-    BlackKnight = 1,
-    BlackBishop = 2,
-    BlackRook = 3,
-    BlackQueen = 4,
-    BlackKing = 5,
-    WhitePawn = 6,
-    WhiteKnight = 7,
-    WhiteBishop = 8,
-    WhiteRook = 9,
-    WhiteQueen = 10,
-    WhiteKing = 11,
+    BlackPawn,
+    WhitePawn,
+    BlackKnight,
+    WhiteKnight,
+    BlackBishop,
+    WhiteBishop,
+    BlackRook,
+    WhiteRook,
+    BlackQueen,
+    WhiteQueen,
+    BlackKing,
+    WhiteKing,
 }
 
 #[derive(TryFromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,37 +43,32 @@ impl Default for Piece {
 impl Piece {
     pub const ALL: [Self; 12] = [
         BlackPawn,
-        BlackKnight,
-        BlackBishop,
-        BlackRook,
-        BlackQueen,
-        BlackKing,
         WhitePawn,
+        BlackKnight,
         WhiteKnight,
+        BlackBishop,
         WhiteBishop,
+        BlackRook,
         WhiteRook,
+        BlackQueen,
         WhiteQueen,
+        BlackKing,
         WhiteKing,
     ];
     #[must_use]
     #[inline]
     pub fn new(kind: PieceKind, side: Side) -> Self {
-        Self::try_from(kind as u8 + side as u8 * 6).unwrap()
+        Self::try_from(kind as u8 * 2 + side as u8).unwrap()
     }
     #[must_use]
     #[inline]
     pub fn kind(self) -> PieceKind {
-        PieceKind::try_from(self as u8 % 6).unwrap()
+        PieceKind::try_from(self as u8 / 2).unwrap()
     }
     #[must_use]
     #[inline]
     pub fn side(self) -> Side {
-        Side::from(self as u8 / 6 == 1)
-    }
-    #[must_use]
-    #[inline]
-    pub fn as_static(self) -> &'static Self {
-        &Self::ALL[self as usize]
+        Side::from(self as u8 % 2 == 1)
     }
 }
 
@@ -89,7 +84,6 @@ impl Piece {
             PieceKind::Queen => 'q',
             PieceKind::King => 'k',
         };
-
         if self.is_white() {
             symbol.make_ascii_uppercase();
         };
