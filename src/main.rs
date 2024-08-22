@@ -88,8 +88,8 @@ impl Application {
         println!("{response}");
     }
     fn startpos_moves(&mut self, position: Board, moves: Moves) {
-        self.engine.seen_positions.clear();
-        self.engine.board = position;
+        self.engine.seen_positions = vec![position.zobrist];
+        self.engine.board = position.clone();
         for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
             let Some(&mov) = legal_moves.iter().find(|m| {
