@@ -126,6 +126,7 @@ impl Board {
         if let Some(en_passant) = en_passant_target_square {
             board.zobrist.xor_en_passant(en_passant);
         }
+        board.update_checkers();
         Some(board)
     }
 }

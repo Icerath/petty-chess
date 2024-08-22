@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use movegen::{CapturesOnly, FullGen};
+use movegen::FullGen;
 
 use super::{transposition::Nodetype, Engine};
 use crate::{
@@ -98,8 +98,7 @@ impl Engine {
             if self.phase().endgame().0 > 0.9 {
                 break 'null;
             }
-            let attacked_squares = MoveGenerator::<FullGen>::new(&mut self.board).attack_map();
-            if self.board.active_king().is_some_and(|king| attacked_squares.contains(king)) {
+            if self.board.in_check() {
                 break 'null;
             }
             let unmake = self.board.make_null_move();
@@ -148,7 +147,6 @@ impl Engine {
             if self.is_cancelled() {
                 return (0, None);
             }
-
             if score > alpha {
                 line.push(mov);
                 *pline = line;
@@ -169,10 +167,8 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            if let Some(active_king) = self.board.active_king() {
-                if MoveGenerator::<CapturesOnly>::new(&mut self.board).attack_map().contains(active_king) {
-                    return (-Eval::MATE.0, None);
-                }
+            if self.board.in_check() {
+                return (-Eval::MATE.0, None);
             }
             return (0, None);
         }
@@ -223,13 +219,10 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            if let Some(active_king) = self.board.active_king() {
-                let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
-                let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
-                let is_check = movegen.attack_map().contains(active_king);
-                if !legal_moves && is_check {
-                    return -Eval::MATE.0;
-                }
+            let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
+            let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
+            if !legal_moves {
+                return if self.board.in_check() { -Eval::MATE.0 } else { 0 };
             }
         }
 

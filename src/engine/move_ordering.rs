@@ -18,7 +18,7 @@ impl Engine {
         let phase = self.phase();
         moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, phase, pawn_attacks));
     }
-    pub fn move_order(&mut self, mov: Move, killer: Option<Move>, phase: Phase, pawn_attacks: Bitboard) -> i32 {
+    fn move_order(&mut self, mov: Move, killer: Option<Move>, phase: Phase, pawn_attacks: Bitboard) -> i32 {
         let mut score = 0;
         if self.only_pv_nodes {
             if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {

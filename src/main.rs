@@ -150,6 +150,11 @@ impl Application {
         println!("{out}");
         println!("Fen: {}", self.engine.board.to_fen());
         println!("Key: {:?}", self.engine.board.zobrist);
+        print!("Checkers: ");
+        self.engine.board.checkers.for_each(|sq| {
+            print!(" {sq}");
+        });
+        println!();
         println!("Direct Eval: {:?}", self.engine.raw_evaluation());
     }
 }

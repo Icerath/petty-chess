@@ -13,6 +13,7 @@ pub struct Board {
     pub side_pieces: SidePieces,
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
+    pub checkers: Bitboard,
 }
 
 pub struct Unmake {
@@ -29,6 +30,7 @@ impl Board {
         zobrist: Zobrist::DEFAULT,
         piece_bitboards: Pieces([Bitboard::EMPTY; 6]),
         side_pieces: SidePieces([Bitboard::EMPTY; 2]),
+        checkers: Bitboard::EMPTY,
     };
     pub fn swap_side(&mut self) {
         self.active_side = !self.active_side;
@@ -113,6 +115,7 @@ impl Board {
             _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
+        self.update_checkers();
         unmake
     }
     pub fn unmake_move(&mut self, unmake: Unmake) {
@@ -237,6 +240,11 @@ impl Board {
     #[must_use]
     pub fn get_square_kind(&self, square: Square) -> Option<PieceKind> {
         PieceKind::ALL.into_iter().find(|&kind| self[kind].contains(square))
+    }
+    #[inline]
+    #[must_use]
+    pub fn in_check(&self) -> bool {
+        !self.checkers.is_empty()
     }
 }
 
