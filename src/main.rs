@@ -27,6 +27,9 @@ fn main() {
         line.clear();
         stdin.read_line(&mut line).unwrap();
         let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
         debug!("{line}");
 
         if let Some(message) = UciMessage::parse(line) {
