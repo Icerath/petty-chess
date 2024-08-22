@@ -17,16 +17,15 @@ impl Engine {
         self.force_cancelled = false;
         self.transposition_table.num_hits = 0;
 
-        let beta = Eval::INFINITY.0;
+        let mut best_move = self.board.gen_legal_moves().first().copied().unwrap_or(Move::NULL);
 
-        let mut best_move = Move::NULL;
-        for depth in 1..=255 {
+        for depth in 1..=64 {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }
             self.only_pv_nodes = true;
             let mut new_pv = Moves::new();
-            let score = self.negamax(-beta, beta, depth, &mut new_pv, None).0;
+            let score = self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
             if self.is_cancelled() {
                 break;
             }
@@ -74,7 +73,7 @@ impl Engine {
         pline: &mut Moves,
         killer_move: Option<Move>,
     ) -> (i32, Option<Move>) {
-        if self.seen_position() {
+        if self.depth_from_root != 0 && self.seen_position() {
             return (0, None);
         }
         if self.depth_from_root > 0 {

@@ -124,30 +124,28 @@ impl Board {
     pub fn make_null_move(&mut self) -> Option<Square> {
         self.increment_ply();
         self.update_checkers();
-        self.en_passant_target_square.take()
+        self.en_passant_target_square.take().inspect(|&sq| self.zobrist.xor_en_passant(sq))
     }
     pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
         self.decrement_ply();
         self.update_checkers();
-        self.en_passant_target_square = prev_en_passant;
+        self.en_passant_target_square = prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
     }
     #[inline]
     pub fn increment_ply(&mut self) {
-        self.zobrist.xor_side_to_move();
         if self.black_to_play() {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
-        self.active_side = !self.active_side;
+        self.swap_side();
     }
     #[inline]
     pub fn decrement_ply(&mut self) {
-        self.active_side = !self.active_side;
+        self.swap_side();
         self.halfmove_clock -= 1;
         if self.black_to_play() {
             self.fullmove_counter -= 1;
         }
-        self.zobrist.xor_side_to_move();
     }
     #[inline]
     #[must_use]

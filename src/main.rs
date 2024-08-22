@@ -95,6 +95,7 @@ impl Application {
             let Some(&mov) = legal_moves.iter().find(|m| {
                 (m.from(), m.to(), m.flags().promotion()) == (mov.from(), mov.to(), mov.flags().promotion())
             }) else {
+                eprintln!("Invalid move: {mov}");
                 break;
             };
             if mov.flags().is_capture() {
