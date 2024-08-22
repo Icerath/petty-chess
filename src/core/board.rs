@@ -123,11 +123,13 @@ impl Board {
     }
     pub fn make_null_move(&mut self) -> Option<Square> {
         self.increment_ply();
+        self.update_checkers();
         self.en_passant_target_square.take()
     }
     pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
-        self.en_passant_target_square = prev_en_passant;
         self.decrement_ply();
+        self.update_checkers();
+        self.en_passant_target_square = prev_en_passant;
     }
     #[inline]
     pub fn increment_ply(&mut self) {
