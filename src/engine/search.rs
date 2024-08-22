@@ -136,7 +136,10 @@ impl Engine {
             self.seen_positions.push(self.board.zobrist);
             self.depth_from_root += 1;
 
-            let (score, chosen_move) = self.negamax(-beta, -alpha, depth - 1, &mut line, killer_move);
+            let extension = self.board.in_check() as u8;
+
+            let (score, chosen_move) =
+                self.negamax(-beta, -alpha, depth - 1 + extension, &mut line, killer_move);
             let score = -score;
             killer_move = chosen_move;
 
