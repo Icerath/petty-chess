@@ -10,13 +10,17 @@ bitflags = "2.6.0"
 derive-try-from-primitive = "1.0.0"
 rand = "0.8.5"
 smallvec = "1.13.2"
-tracing = "0.1.40"
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.18", default-features = false, features = [
+tracing = { version = "0.1.40", optional = true }
+tracing-appender = { version = "0.2.3", optional = true }
+tracing-subscriber = { version = "0.3.18", default-features = false, optional = true, features = [
     "fmt",
     "smallvec",
     "std",
 ] }
+
+[features]
+default = ["tracing"]
+tracing = ["dep:tracing", "dep:tracing-appender", "dep:tracing-subscriber"]
 
 [profile.dev]
 opt-level = 3

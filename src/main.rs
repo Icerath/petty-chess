@@ -9,16 +9,20 @@ use petty_chess::{
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
+#[cfg(feature = "tracing")]
 use tracing::{debug, Level};
+#[cfg(feature = "tracing")]
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 fn main() {
+    #[cfg(feature = "tracing")]
     let writer = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_suffix("log")
         .build("./logs")
         .unwrap();
 
+    #[cfg(feature = "tracing")]
     tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
@@ -30,11 +34,13 @@ fn main() {
         if line.is_empty() {
             continue;
         }
+        #[cfg(feature = "tracing")]
         debug!("{line}");
 
         if let Some(message) = UciMessage::parse(line) {
             app.process_message(message);
         } else {
+            #[cfg(feature = "tracing")]
             tracing::warn!("Unknown command: '{line}'");
             eprintln!("Unknown command: '{line}'. Type help for more information.",);
         }
@@ -69,6 +75,7 @@ impl Application {
                 if let Some(board) = Board::from_fen(&fen) {
                     self.startpos_moves(board, moves);
                 } else {
+                    #[cfg(feature = "tracing")]
                     tracing::error!("Invalid fen position {fen}");
                 }
             }
@@ -107,11 +114,14 @@ impl Application {
         self.engine.seen_positions.push(self.engine.board.zobrist);
     }
     fn go(&mut self, command: GoCommand) {
+        #[cfg(feature = "tracing")]
         let start = Instant::now();
         self.set_time_available(command.time_control);
         let best_move = self.engine.search();
         self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
+        #[cfg(feature = "tracing")]
         tracing::info!("Time taken: {:?}", start.elapsed());
+        #[cfg(feature = "tracing")]
         tracing::info!("Num transpositions: {}", self.engine.transposition_table.num_hits);
     }
     fn go_perft(&mut self, depth: u8) {

@@ -52,6 +52,7 @@ impl Engine {
                 pv: Some(self.pv.clone()),
                 ..Info::default()
             };
+            #[cfg(feature = "tracing")]
             tracing::info!("{info}");
             println!("{}", UciResponse::Info(Box::new(info)));
 
