@@ -1,5 +1,7 @@
 use crate::{core::magic::Magic, prelude::*};
 
+const ROOK_SAME_FILE_BONUS: i32 = 20;
+
 impl Engine {
     pub fn evaluate(&mut self) -> i32 {
         self.raw_evaluation() * self.board.active_side.positive()
@@ -96,7 +98,7 @@ impl Engine {
             if let (Some(rook_a), Some(rook_b)) = (friendly[Rook].bitscan(), friendly[Rook].rbitscan()) {
                 let rook_attacks = Magic::get().rook_attacks(rook_a, self.board.all_pieces());
                 if rook_attacks.contains(rook_b) {
-                    total += 20;
+                    total += 20 + (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
                 }
             }
             // reward bishop pair
