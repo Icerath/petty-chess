@@ -146,14 +146,14 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     fn gen_pawn_moves(&mut self, from: Square) {
         let forward = self.board.active_side.forward();
 
-        let can_promote = (self.board.white_to_play() && from.rank().0 == 6)
-            || (self.board.black_to_play() && from.rank().0 == 1);
+        let can_promote = (self.board.active_side == White && from.rank().0 == 6)
+            || (self.board.active_side == Black && from.rank().0 == 1);
 
         if !G::CAPTURES_ONLY {
             let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
             if !self.board.is_piece_at(to) {
-                let can_double_push = (self.board.white_to_play() && from.rank().0 == 1)
-                    || (self.board.black_to_play() && from.rank().0 == 6);
+                let can_double_push = (self.board.active_side == White && from.rank().0 == 1)
+                    || (self.board.active_side == Black && from.rank().0 == 6);
 
                 if !can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::Quiet));
@@ -215,7 +215,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         if G::CAPTURES_ONLY || !self.board.checkers.is_empty() {
             return;
         }
-        if self.board.white_to_play() {
+        if self.board.active_side == White {
             if self.board.can_castle.contains(CanCastle::WHITE_KING_SIDE)
                 && !self.board.is_piece_at(Square::F1)
                 && !self.board.is_piece_at(Square::G1)

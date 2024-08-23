@@ -67,24 +67,8 @@ impl Board {
         }
 
         buf.push(' ');
-        buf.push(if self.white_to_play() { 'w' } else { 'b' });
-
-        buf.push(' ');
-        if self.can_castle.contains(CanCastle::WHITE_KING_SIDE) {
-            buf.push('K');
-        }
-        if self.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE) {
-            buf.push('Q');
-        }
-        if self.can_castle.contains(CanCastle::BLACK_KING_SIDE) {
-            buf.push('k');
-        }
-        if self.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE) {
-            buf.push('q');
-        }
-        if self.can_castle.is_empty() {
-            buf.push('-');
-        }
+        buf.push(self.active_side.symbol());
+        write!(buf, " {}", self.can_castle).expect("Writing to a string should not fail");
 
         buf.push(' ');
         match self.en_passant_target_square {
@@ -92,7 +76,8 @@ impl Board {
             _ => buf.push('-'),
         }
 
-        let _ = write!(buf, " {} {}", self.halfmove_clock, self.fullmove_counter);
+        write!(buf, " {} {}", self.halfmove_clock, self.fullmove_counter)
+            .expect("Writing to a string should not fail");
     }
     #[must_use]
     pub fn to_fen(&self) -> String {

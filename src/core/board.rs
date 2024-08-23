@@ -133,7 +133,7 @@ impl Board {
     }
     #[inline]
     pub fn increment_ply(&mut self) {
-        if self.black_to_play() {
+        if self.active_side == Black {
             self.fullmove_counter += 1;
         }
         self.halfmove_clock += 1;
@@ -143,19 +143,9 @@ impl Board {
     pub fn decrement_ply(&mut self) {
         self.swap_side();
         self.halfmove_clock -= 1;
-        if self.black_to_play() {
+        if self.active_side == Black {
             self.fullmove_counter -= 1;
         }
-    }
-    #[inline]
-    #[must_use]
-    pub fn white_to_play(&self) -> bool {
-        self.active_side.is_white()
-    }
-    #[inline]
-    #[must_use]
-    pub fn black_to_play(&self) -> bool {
-        self.active_side.is_black()
     }
     #[must_use]
     #[inline]

@@ -1,3 +1,5 @@
+use std::fmt;
+
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct CanCastle: u8 {
@@ -8,6 +10,27 @@ bitflags::bitflags! {
 
         const BOTH_WHITE = Self::WHITE_KING_SIDE.bits() | Self::WHITE_QUEEN_SIDE.bits();
         const BOTH_BLACK = Self::BLACK_KING_SIDE.bits() | Self::BLACK_QUEEN_SIDE.bits();
+    }
+}
+
+impl fmt::Display for CanCastle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            return write!(f, "-");
+        }
+        if self.contains(CanCastle::WHITE_KING_SIDE) {
+            write!(f, "K")?;
+        }
+        if self.contains(CanCastle::WHITE_QUEEN_SIDE) {
+            write!(f, "Q")?;
+        }
+        if self.contains(CanCastle::BLACK_KING_SIDE) {
+            write!(f, "k")?;
+        }
+        if self.contains(CanCastle::BLACK_QUEEN_SIDE) {
+            write!(f, "q")?;
+        }
+        Ok(())
     }
 }
 

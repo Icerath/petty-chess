@@ -136,7 +136,7 @@ impl Application {
             TimeControl::Ponder => self.engine.time_available = Duration::MAX,
             TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
                 let (total, incr) =
-                    if self.engine.board.white_to_play() { (wtime, wincr) } else { (btime, bincr) };
+                    if self.engine.board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
                 let estimated_total_moves = i32::from(30.max(self.engine.board.fullmove_counter + 10));
                 let moves_to_end = estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
                 let time_per_move = total.div_f32(moves_to_end as f32);

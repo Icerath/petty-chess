@@ -35,6 +35,14 @@ impl Side {
             Self::White => 1,
         }
     }
+    #[must_use]
+    #[inline]
+    pub const fn symbol(self) -> char {
+        match self {
+            Self::White => 'w',
+            Self::Black => 'b',
+        }
+    }
 }
 
 #[rustfmt::skip]
