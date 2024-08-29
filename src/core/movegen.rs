@@ -4,8 +4,8 @@ use super::magic::Magic;
 use crate::prelude::*;
 pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
 pub const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
-const KING_MOVES: [Bitboard; 64] = compute_king_moves();
-const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
+pub const KING_MOVES: [Bitboard; 64] = compute_king_moves();
+pub const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
 const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
 pub struct CapturesOnly;

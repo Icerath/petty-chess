@@ -1,4 +1,4 @@
-use crate::{core::magic::Magic, prelude::*};
+use crate::prelude::*;
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 
@@ -96,7 +96,7 @@ impl Engine {
             });
             // reward rooks able to see eachother
             if let (Some(rook_a), Some(rook_b)) = (friendly[Rook].bitscan(), friendly[Rook].rbitscan()) {
-                let rook_attacks = Magic::get().rook_attacks(rook_a, self.board.all_pieces());
+                let rook_attacks = self.magic.rook_attacks(rook_a, self.board.all_pieces());
                 if rook_attacks.contains(rook_b) {
                     total += 20 + (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
                 }
@@ -130,8 +130,8 @@ impl Engine {
                 final_total += mop_up_score * phase.endgame();
             }
         }
-
-        final_total
+        let mobility_score = self.raw_mobility_eval();
+        final_total + mobility_score
     }
     #[inline]
     fn has_bishop_pair(&self, side: Side) -> bool {
