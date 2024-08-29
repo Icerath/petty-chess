@@ -36,7 +36,7 @@ impl Engine {
             // punish double pawns
             for file in 0..8 {
                 let pawns_in_file = (friendly[Pawn] & (File(file).mask())).count() as i32;
-                total -= (pawns_in_file - 1).max(0) * 20;
+                total -= (pawns_in_file - 1).max(0) * 25;
             }
             // reward non-isolated pawns
             friendly[Pawn].for_each(|sq| {
@@ -47,11 +47,11 @@ impl Engine {
                 if !(left_open && right_open) {
                     let distance = file.0.abs_diff(4).min(file.0.abs_diff(3));
                     total += match distance {
-                        0 => 20,
-                        1 => 15,
-                        2 => 10,
-                        3 => 5,
-                        _ => 0,
+                        0 => 25,
+                        1 => 23,
+                        2 => 18,
+                        3 => 15,
+                        _ => unreachable!(),
                     };
                 }
             });
