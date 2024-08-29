@@ -76,8 +76,8 @@ impl Bitboard {
     }
     #[inline]
     #[must_use]
-    pub fn count(self) -> u32 {
-        self.0.count_ones()
+    pub fn count(self) -> u8 {
+        self.0.count_ones() as u8
     }
     #[inline]
     #[must_use]
