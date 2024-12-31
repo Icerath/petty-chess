@@ -1,5 +1,8 @@
 use core::fmt;
-use std::ops::{Index, IndexMut};
+use std::{
+    ops::{Index, IndexMut},
+    simd::u64x8,
+};
 
 use crate::prelude::*;
 
@@ -9,8 +12,7 @@ pub struct Board {
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Square>,
     pub zobrist: Zobrist,
-    pub piece_bitboards: Pieces,
-    pub side_pieces: SidePieces,
+    pub pieces: u64x8,
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
     pub checkers: Bitboard,
@@ -28,8 +30,7 @@ impl Board {
         halfmove_clock: 0,
         fullmove_counter: 1,
         zobrist: Zobrist::DEFAULT,
-        piece_bitboards: Pieces([Bitboard::EMPTY; 6]),
-        side_pieces: SidePieces([Bitboard::EMPTY; 2]),
+        pieces: u64x8::from_array([0; 8]),
         checkers: Bitboard::EMPTY,
     };
     pub fn swap_side(&mut self) {
@@ -150,7 +151,8 @@ impl Board {
     #[must_use]
     #[inline]
     pub fn side_bitboards(&self, side: Side) -> Pieces {
-        self.piece_bitboards.map(|bitboard| bitboard & self[side])
+        let x: [u64; 6] = self.pieces[..6].try_into().unwrap();
+        Pieces(x.map(|bitboard| Bitboard(bitboard) & self[side]))
     }
     #[must_use]
     #[inline]
@@ -188,7 +190,7 @@ impl Board {
     #[must_use]
     #[inline]
     pub fn get(&self, piece: Piece) -> Bitboard {
-        self.piece_bitboards[piece.kind()] & self.side_pieces[piece.side()]
+        self[piece.kind()] & self[piece.side()]
     }
     #[inline]
     pub fn swap(&mut self, lhs: Square, rhs: Square) {
@@ -255,9 +257,6 @@ impl Pieces {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct SidePieces([Bitboard; 2]);
-
 impl Index<PieceKind> for Pieces {
     type Output = Bitboard;
     fn index(&self, kind: PieceKind) -> &Self::Output {
@@ -270,42 +269,28 @@ impl IndexMut<PieceKind> for Pieces {
         &mut self.0[kind as usize]
     }
 }
-
-impl Index<Side> for SidePieces {
-    type Output = Bitboard;
-    fn index(&self, side: Side) -> &Self::Output {
-        &self.0[side as usize]
-    }
-}
-
-impl IndexMut<Side> for SidePieces {
-    fn index_mut(&mut self, side: Side) -> &mut Self::Output {
-        &mut self.0[side as usize]
-    }
-}
-
 impl Index<PieceKind> for Board {
     type Output = Bitboard;
-    fn index(&self, index: PieceKind) -> &Self::Output {
-        &self.piece_bitboards[index]
+    fn index(&self, kind: PieceKind) -> &Self::Output {
+        unsafe { &*(&raw const self.pieces[kind as usize]).cast::<Bitboard>() }
     }
 }
 
 impl IndexMut<PieceKind> for Board {
     fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
-        &mut self.piece_bitboards[kind]
+        unsafe { &mut *(&raw mut self.pieces[kind as usize]).cast::<Bitboard>() }
     }
 }
 
 impl Index<Side> for Board {
     type Output = Bitboard;
     fn index(&self, side: Side) -> &Self::Output {
-        &self.side_pieces[side]
+        unsafe { &*(&raw const self.pieces[side as usize + 6]).cast::<Bitboard>() }
     }
 }
 
 impl IndexMut<Side> for Board {
     fn index_mut(&mut self, side: Side) -> &mut Self::Output {
-        &mut self.side_pieces[side]
+        unsafe { &mut *(&raw mut self.pieces[side as usize + 6]).cast::<Bitboard>() }
     }
 }
