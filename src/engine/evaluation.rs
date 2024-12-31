@@ -24,18 +24,19 @@ impl Engine {
             for pawns in [friendly[Pawn], enemy[Pawn]] {
                 const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
                 let file = king.file();
-                let penalty = PENALTIES[file.0 as usize];
+                let penalty = PENALTIES[usize::from(file)];
 
-                let left_open = file.0 != 0 && (pawns & File(file.0 - 1).mask()).is_empty();
+                let left_open = file != File::A && (pawns & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
                 let middle_open = (pawns & file.mask()).is_empty();
-                let right_open = file.0 != 7 && (pawns & (File(file.0 + 1).mask())).is_empty();
+                let right_open =
+                    file != File::H && (pawns & (unsafe { file.add_unchecked(1) }.mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
                 total -= (num_open_files * penalty) * phase.earlygame();
             }
             // punish double pawns
-            for file in 0..8 {
-                let pawns_in_file = (friendly[Pawn] & (File(file).mask())).count() as i32;
+            for file in File::ALL {
+                let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
                 total -= (pawns_in_file - 1).max(0) * 25;
             }
             // reward non-isolated pawns
@@ -45,8 +46,7 @@ impl Engine {
                 let right_open = (friendly[Pawn] & (file + 1).mask()).is_empty();
 
                 if !(left_open && right_open) {
-                    let distance = file.0.abs_diff(4).min(file.0.abs_diff(3));
-                    total += match distance {
+                    total += match file.distance_from_center() {
                         0 => 25,
                         1 => 23,
                         2 => 18,
@@ -61,15 +61,15 @@ impl Engine {
                 let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
                 if is_passed_pawn {
                     let offset = match side {
-                        Side::White => sq.rank().0 as usize,
-                        Side::Black => 7 - sq.rank().0 as usize,
+                        Side::White => usize::from(sq.rank()),
+                        Side::Black => 7 - usize::from(sq.rank()),
                     };
                     total += BONUSES[offset];
                 }
             });
             // reward outposts
             (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-                if sq.rank().relative_to(side).0 < 4 {
+                if usize::from(sq.rank().relative_to(side)) < 4 {
                     return;
                 }
                 let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
@@ -83,8 +83,8 @@ impl Engine {
                 const BONUSES: [[i32; 2]; 8] =
                     [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
 
-                let dif_rank = sq.rank().0.abs_diff(king.rank().0).saturating_sub(1);
-                total += BONUSES[sq.file().0 as usize].get(dif_rank as usize).unwrap_or(&0);
+                let dif_rank = u8::from(sq.rank()).abs_diff(u8::from(king.rank())).saturating_sub(1);
+                total += BONUSES[usize::from(sq.file())].get(dif_rank as usize).unwrap_or(&0);
             });
             // reward rooks on an open file
             friendly[Rook].for_each(|sq| {

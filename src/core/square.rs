@@ -1,5 +1,6 @@
 use std::{
     fmt,
+    hint::assert_unchecked,
     ops::{Add, Index, IndexMut, Sub},
     str::FromStr,
 };
@@ -127,6 +128,49 @@ pub struct File(pub u8);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Rank(pub u8);
 
+macro_rules! impl_ {
+    ($ty: ty) => {
+        impl From<$ty> for usize {
+            #[inline(always)]
+            fn from(int: $ty) -> Self {
+                let out = int.0.into();
+                unsafe { assert_unchecked(out < 8) };
+                out
+            }
+        }
+        impl From<$ty> for u8 {
+            fn from(int: $ty) -> Self {
+                let out = int.0.into();
+                unsafe { assert_unchecked(out < 8) };
+                out
+            }
+        }
+        impl $ty {
+            #[must_use]
+            pub unsafe fn new_int_unchecked(int: u8) -> Self {
+                Self(int)
+            }
+            #[must_use]
+            pub unsafe fn add_unchecked(self, int: u8) -> Self {
+                Self(self.0 + int)
+            }
+            #[must_use]
+            pub unsafe fn sub_unchecked(self, int: u8) -> Self {
+                Self(self.0 - int)
+            }
+            #[inline]
+            #[must_use]
+            pub fn distance_from_center(self) -> u8 {
+                const OUTPUTS: [u8; 8] = [3, 2, 1, 0, 0, 1, 2, 3];
+                OUTPUTS[usize::from(self)]
+            }
+        }
+    };
+}
+
+impl_!(Rank);
+impl_!(File);
+
 impl Rank {
     #[must_use]
     #[inline]
@@ -142,6 +186,20 @@ impl Rank {
             Side::Black => Self(7 - self.0),
         }
     }
+}
+
+macro_rules! define_file_consts {
+    ($name: ident = $num: literal) => {
+        pub const $name: Self = Self($num);
+    };
+    ($($name: ident $num: literal),+) => {
+        $(define_file_consts!($name = $num);)+
+    };
+}
+
+impl File {
+    pub const ALL: [Self; 8] = [Self::A, Self::B, Self::C, Self::D, Self::E, Self::F, Self::G, Self::H];
+    define_file_consts!(A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7);
 }
 
 impl<T> Index<Square> for [T] {
