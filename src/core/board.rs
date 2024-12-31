@@ -204,12 +204,6 @@ impl Board {
         }
     }
     #[inline]
-    pub fn for_each_piece(&self, mut f: impl FnMut(Square, Piece)) {
-        for piece in Piece::ALL {
-            self.get(piece).for_each(|sq| f(sq, piece));
-        }
-    }
-    #[inline]
     #[must_use]
     pub fn is_piece_at(&self, sq: Square) -> bool {
         self.all_pieces().contains(sq)

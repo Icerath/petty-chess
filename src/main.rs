@@ -187,5 +187,6 @@ fn perft(board: &mut Board, depth: u8) -> u64 {
         board.unmake_move(unmake);
         eprintln!("{mov}: {count}");
     }
+    println!("{}", table.capacity());
     total
 }

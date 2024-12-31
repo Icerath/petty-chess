@@ -36,9 +36,9 @@ impl Square {
         const FLIPPED: [u8; 64] = [
             56, 57, 58, 59, 60, 61, 62, 63,
             48, 49, 50, 51, 52, 53, 54, 55,
-            40, 41, 42, 43, 44, 45, 46, 47, 
+            40, 41, 42, 43, 44, 45, 46, 47,
             32, 33, 34, 35, 36, 37, 38, 39,
-            24, 25, 26, 27, 28, 29, 30, 31, 
+            24, 25, 26, 27, 28, 29, 30, 31,
             16, 17, 18, 19, 20, 21, 22, 23,
              8,  9, 10, 11, 12, 13, 14, 15,
              0,  1,  2,  3,  4,  5,  6,  7,
@@ -247,6 +247,15 @@ impl FromStr for Square {
     }
 }
 
+macro_rules! define_consts {
+    ($name: ident = $num: literal) => {
+        pub const $name: Self = Self($num);
+    };
+    ($($name: ident $num: literal),+,) => {
+        $(define_consts!($name = $num);)+
+    };
+}
+
 impl Square {
     #[must_use]
     pub fn algebraic(self) -> &'static str {
@@ -264,77 +273,16 @@ impl Square {
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
     ];
 
-    pub const A1: Self = Self(0);
-    pub const B1: Self = Self(1);
-    pub const C1: Self = Self(2);
-    pub const D1: Self = Self(3);
-    pub const E1: Self = Self(4);
-    pub const F1: Self = Self(5);
-    pub const G1: Self = Self(6);
-    pub const H1: Self = Self(7);
-
-    pub const A2: Self = Self(8);
-    pub const B2: Self = Self(9);
-    pub const C2: Self = Self(10);
-    pub const D2: Self = Self(11);
-    pub const E2: Self = Self(12);
-    pub const F2: Self = Self(13);
-    pub const G2: Self = Self(14);
-    pub const H2: Self = Self(15);
-
-    pub const A3: Self = Self(16);
-    pub const B3: Self = Self(17);
-    pub const C3: Self = Self(18);
-    pub const D3: Self = Self(19);
-    pub const E3: Self = Self(20);
-    pub const F3: Self = Self(21);
-    pub const G3: Self = Self(22);
-    pub const H3: Self = Self(23);
-
-    pub const A4: Self = Self(24);
-    pub const B4: Self = Self(25);
-    pub const C4: Self = Self(26);
-    pub const D4: Self = Self(27);
-    pub const E4: Self = Self(28);
-    pub const F4: Self = Self(29);
-    pub const G4: Self = Self(30);
-    pub const H4: Self = Self(31);
-
-    pub const A5: Self = Self(32);
-    pub const B5: Self = Self(33);
-    pub const C5: Self = Self(34);
-    pub const D5: Self = Self(35);
-    pub const E5: Self = Self(36);
-    pub const F5: Self = Self(37);
-    pub const G5: Self = Self(38);
-    pub const H5: Self = Self(39);
-
-    pub const A6: Self = Self(40);
-    pub const B6: Self = Self(41);
-    pub const C6: Self = Self(42);
-    pub const D6: Self = Self(43);
-    pub const E6: Self = Self(44);
-    pub const F6: Self = Self(45);
-    pub const G6: Self = Self(46);
-    pub const H6: Self = Self(47);
-
-    pub const A7: Self = Self(48);
-    pub const B7: Self = Self(49);
-    pub const C7: Self = Self(50);
-    pub const D7: Self = Self(51);
-    pub const E7: Self = Self(52);
-    pub const F7: Self = Self(53);
-    pub const G7: Self = Self(54);
-    pub const H7: Self = Self(55);
-
-    pub const A8: Self = Self(56);
-    pub const B8: Self = Self(57);
-    pub const C8: Self = Self(58);
-    pub const D8: Self = Self(59);
-    pub const E8: Self = Self(60);
-    pub const F8: Self = Self(61);
-    pub const G8: Self = Self(62);
-    pub const H8: Self = Self(63);
+    define_consts!(
+        A1  0, B1  1, C1  2, D1  3, E1  4, F1  5, G1  6, H1  7,
+        A2  8, B2  9, C2 10, D2 11, E2 12, F2 13, G2 14, H2 15,
+        A3 16, B3 17, C3 18, D3 19, E3 20, F3 21, G3 22, H3 23,
+        A4 24, B4 25, C4 26, D4 27, E4 28, F4 29, G4 30, H4 31,
+        A5 32, B5 33, C5 34, D5 35, E5 36, F5 37, G5 38, H5 39,
+        A6 40, B6 41, C6 42, D6 43, E6 44, F6 45, G6 46, H6 47,
+        A7 48, B7 49, C7 50, D7 51, E7 52, F7 53, G7 54, H7 55,
+        A8 56, B8 57, C8 58, D8 59, E8 60, F8 61, G8 62, H8 63,
+    );
 }
 
 macro_rules! impl_try_from {
@@ -382,7 +330,6 @@ fn test_manhattan_distance() {
     assert_eq!(Square::A1.manhattan_distance(Square::H8), 14);
     assert_eq!(Square::E2.manhattan_distance(Square::E2), 0);
 }
-
 
 #[test]
 fn test_square_flip() {

@@ -20,6 +20,9 @@ pub enum Nodetype {
 }
 
 impl TranspositionTable {
+    pub fn reserve(&mut self, additional: usize) {
+        self.inner.reserve(additional);
+    }
     #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
