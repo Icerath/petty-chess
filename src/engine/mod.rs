@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 pub use phase::Phase;
 use transposition::TranspositionTable;
 
-use crate::{core::magic::Magic, prelude::*};
+use crate::prelude::*;
 
 pub struct Engine {
     pub board: Board,
@@ -26,7 +26,6 @@ pub struct Engine {
     pub force_cancelled: bool,
     pub transposition_table: TranspositionTable,
     pub only_pv_nodes: bool,
-    pub magic: &'static Magic,
 }
 
 impl Engine {
@@ -45,7 +44,6 @@ impl Engine {
             force_cancelled: false,
             transposition_table: TranspositionTable::default(),
             only_pv_nodes: false,
-            magic: Magic::get(),
         }
     }
     pub(crate) fn is_cancelled(&mut self) -> bool {

@@ -15,6 +15,22 @@ pub struct Magic {
 
 static MAGIC: OnceLock<Magic> = OnceLock::new();
 
+#[must_use]
+#[inline]
+pub fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    Magic::get().rook_attacks(sq, occupancy)
+}
+#[must_use]
+#[inline]
+pub fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    Magic::get().bishop_attacks(sq, occupancy)
+}
+#[must_use]
+#[inline]
+pub fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    Magic::get().queen_attacks(sq, occupancy)
+}
+
 impl Magic {
     #[inline]
     pub fn get() -> &'static Magic {

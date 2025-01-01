@@ -1,10 +1,13 @@
 use movegen::KNIGHT_MOVES;
 
-use crate::{core::magic::Magic, prelude::*};
+use crate::{
+    core::magic::{bishop_attacks, queen_attacks, rook_attacks},
+    prelude::*,
+};
 
 const MOBILITY_SCORE_MULTIPLIER: f32 = 2.0;
 
-pub fn raw_mobility_eval(board: &Board, magic: &Magic) -> i32 {
+pub fn raw_mobility_eval(board: &Board) -> i32 {
     let occupancy = board.all_pieces();
     let mut final_total = 0;
     for side in [White, Black] {
@@ -14,16 +17,16 @@ pub fn raw_mobility_eval(board: &Board, magic: &Magic) -> i32 {
             total += knight_score((KNIGHT_MOVES[sq]).count());
         });
         board.get(side + Bishop).for_each(|sq| {
-            total += bishop_score((magic.bishop_attacks(sq, occupancy)).count());
+            total += bishop_score((bishop_attacks(sq, occupancy)).count());
         });
         board.get(side + Rook).for_each(|sq| {
-            total += rook_score((magic.rook_attacks(sq, occupancy)).count());
+            total += rook_score((rook_attacks(sq, occupancy)).count());
         });
         board.get(side + Rook).for_each(|sq| {
-            total += rook_score((magic.rook_attacks(sq, occupancy)).count());
+            total += rook_score((rook_attacks(sq, occupancy)).count());
         });
         board.get(side + Queen).for_each(|sq| {
-            total += queen_score((magic.queen_attacks(sq, occupancy)).count());
+            total += queen_score((queen_attacks(sq, occupancy)).count());
         });
         final_total += total * side.positive();
     }
@@ -42,16 +45,16 @@ impl Engine {
                 total += knight_score((KNIGHT_MOVES[sq]).count());
             });
             self.board.get(side + Bishop).for_each(|sq| {
-                total += bishop_score((self.magic.bishop_attacks(sq, occupancy)).count());
+                total += bishop_score((bishop_attacks(sq, occupancy)).count());
             });
             self.board.get(side + Rook).for_each(|sq| {
-                total += rook_score((self.magic.rook_attacks(sq, occupancy)).count());
+                total += rook_score((rook_attacks(sq, occupancy)).count());
             });
             self.board.get(side + Rook).for_each(|sq| {
-                total += rook_score((self.magic.rook_attacks(sq, occupancy)).count());
+                total += rook_score((rook_attacks(sq, occupancy)).count());
             });
             self.board.get(side + Queen).for_each(|sq| {
-                total += queen_score((self.magic.queen_attacks(sq, occupancy)).count());
+                total += queen_score((queen_attacks(sq, occupancy)).count());
             });
             final_total += total * side.positive();
         }

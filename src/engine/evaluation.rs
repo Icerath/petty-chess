@@ -1,5 +1,5 @@
 use super::{mobility::raw_mobility_eval, phase::phase};
-use crate::{core::magic::Magic, prelude::*};
+use crate::{core::magic::rook_attacks, prelude::*};
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 
@@ -7,7 +7,6 @@ const ROOK_SAME_FILE_BONUS: i32 = 20;
 #[expect(clippy::too_many_lines)]
 pub fn raw_evaluation(board: &Board) -> i32 {
     let phase = phase(board);
-    let magic = Magic::get();
     if !sufficient_material_to_force_checkmate(board) {
         return 0;
     }
@@ -89,7 +88,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
             let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
 
-            let rook_attacks = magic.rook_attacks(rook_a, board.all_pieces());
+            let rook_attacks = rook_attacks(rook_a, board.all_pieces());
             if rook_attacks.contains(rook_b) {
                 total += 20;
                 total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
@@ -125,7 +124,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             final_total += mop_up_score * phase.endgame();
         }
     }
-    let mobility_score = raw_mobility_eval(board, magic);
+    let mobility_score = raw_mobility_eval(board);
     final_total + mobility_score
 }
 
