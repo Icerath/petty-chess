@@ -27,7 +27,6 @@ pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
     pub queen_knight_promote_only: bool,
-    magic: &'static Magic,
     ty: PhantomData<G>,
 }
 
@@ -55,13 +54,7 @@ impl Board {
 impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
-        Self {
-            moves: Moves::default(),
-            board,
-            queen_knight_promote_only: true,
-            magic: Magic::get(),
-            ty: PhantomData,
-        }
+        Self { moves: Moves::default(), board, queen_knight_promote_only: true, ty: PhantomData }
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
@@ -81,12 +74,13 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         }
         pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
         pieces[Knight].for_each(|from| self.push_squares(from, KNIGHT_MOVES[from]));
-        pieces[Bishop]
-            .for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
+        pieces[Bishop].for_each(|from| {
+            self.push_squares(from, Magic::get().bishop_attacks(from, all_pieces));
+        });
         pieces[Rook]
-            .for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
+            .for_each(|from| self.push_squares(from, Magic::get().rook_attacks(from, all_pieces)));
         pieces[Queen]
-            .for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
+            .for_each(|from| self.push_squares(from, Magic::get().queen_attacks(from, all_pieces)));
 
         std::mem::take(&mut self.moves)
     }
@@ -122,11 +116,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
         enemy_pieces[Bishop]
-            .for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
+            .for_each(|from| attacked_squares |= Magic::get().bishop_attacks(from, all_pieces));
         enemy_pieces[Rook]
-            .for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
+            .for_each(|from| attacked_squares |= Magic::get().rook_attacks(from, all_pieces));
         enemy_pieces[Queen]
-            .for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
+            .for_each(|from| attacked_squares |= Magic::get().queen_attacks(from, all_pieces));
         if let Some(king) = self.board.inactive_king() {
             attacked_squares |= KING_MOVES[king];
         }
@@ -265,8 +259,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let Some(king) = self.board.get_king_square(side) else { return bb };
         bb |= ATTACK_PAWN_MOVES[side as usize][king] & self.board[Pawn];
         bb |= KNIGHT_MOVES[king] & self.board[Knight];
-        bb |= self.magic.bishop_attacks(king, occupancy) & (self.board[Bishop] | self.board[Queen]);
-        bb |= self.magic.rook_attacks(king, occupancy) & (self.board[Rook] | self.board[Queen]);
+        bb |=
+            Magic::get().bishop_attacks(king, occupancy) & (self.board[Bishop] | self.board[Queen]);
+        bb |= Magic::get().rook_attacks(king, occupancy) & (self.board[Rook] | self.board[Queen]);
         bb |= KING_MOVES[king] & (self.board[King]);
 
         bb & self.board[!side]
