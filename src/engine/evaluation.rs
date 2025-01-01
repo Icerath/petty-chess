@@ -42,19 +42,8 @@ impl Engine {
             }
             // reward non-isolated pawns
             friendly[Pawn].for_each(|sq| {
-                let file = sq.file();
-                let left_open = (friendly[Pawn]
-                    & file
-                        .sub_int(1)
-                        .map_or(Bitboard::EMPTY, super::super::core::square::File::mask))
-                .is_empty();
-                let right_open = (friendly[Pawn] & {
-                    file.add_int(1).map_or(Bitboard::EMPTY, super::super::core::square::File::mask)
-                })
-                .is_empty();
-
-                if !(left_open && right_open) {
-                    total += match file.distance_from_center() {
+                if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
+                    total += match sq.file().distance_from_center() {
                         0 => 25,
                         1 => 23,
                         2 => 18,
