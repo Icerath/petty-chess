@@ -146,14 +146,14 @@ impl<T> Index<Square> for [T] {
     type Output = T;
     #[inline]
     fn index(&self, sq: Square) -> &Self::Output {
-        &self[usize::from(sq)]
+        &self[sq.usize()]
     }
 }
 
 impl<T> IndexMut<Square> for [T] {
     #[inline]
     fn index_mut(&mut self, sq: Square) -> &mut Self::Output {
-        &mut self[usize::from(sq)]
+        &mut self[sq.usize()]
     }
 }
 
