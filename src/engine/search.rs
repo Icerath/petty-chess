@@ -19,7 +19,7 @@ impl Engine {
 
         let mut best_move = self.board.gen_legal_moves().first().copied().unwrap_or(Move::NULL);
 
-        for depth in 1..=64 {
+        for depth in 1.. {
             if self.time_started.elapsed() > self.time_available / 2 {
                 break;
             }

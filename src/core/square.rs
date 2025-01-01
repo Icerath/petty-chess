@@ -7,6 +7,8 @@ use std::{
 use crate::prelude::*;
 
 bounded_int! { pub struct Square { 64 } }
+bounded_int! { pub struct Rank { 8 } }
+bounded_int! { pub struct File { 8 } }
 
 impl Square {
     #[must_use]
@@ -28,7 +30,7 @@ impl Square {
              8,  9, 10, 11, 12, 13, 14, 15,
              0,  1,  2,  3,  4,  5,  6,  7,
         ];
-        unsafe { Square::from_int_unchecked(FLIPPED[self]) }
+        unsafe { Self::from_int_unchecked(FLIPPED[self]) }
     }
     #[must_use]
     #[inline]
@@ -77,7 +79,6 @@ impl Square {
     }
     #[inline]
     #[must_use]
-    #[track_caller]
     pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
         let mut mask = file.adjacency_mask();
@@ -123,9 +124,6 @@ macro_rules! impl_file_rank {
         $(impl_file_rank!($ty);)+
     };
 }
-
-bounded_int! { pub struct Rank { 8 } }
-bounded_int! { pub struct File { 8 } }
 
 impl_file_rank!(File, Rank);
 

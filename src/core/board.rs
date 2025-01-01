@@ -62,7 +62,6 @@ impl Board {
     }
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
-
         let from_piece = self.get_square(mov.from()).unwrap();
 
         if let Some(sq) = self.en_passant_target_square {
