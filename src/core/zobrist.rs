@@ -35,10 +35,10 @@ impl fmt::Debug for Zobrist {
     }
 }
 
-#[allow(clippy::unreadable_literal)]
+#[expect(clippy::unreadable_literal)]
 static SIDE_KEY: u64 = 3988773030008317031;
 
-#[allow(clippy::unreadable_literal)]
+#[expect(clippy::unreadable_literal)]
 static CASTLE_KEYS: [u64; 16] = [
     4000891911605153678,
     2104839265066132248,
@@ -58,7 +58,7 @@ static CASTLE_KEYS: [u64; 16] = [
     17136652257074978461,
 ];
 
-#[allow(clippy::unreadable_literal)]
+#[expect(clippy::unreadable_literal)]
 static EN_PASSANT_KEYS: [u64; 64] = [
     1042276050105134611,
     6566006726995064568,
@@ -126,7 +126,7 @@ static EN_PASSANT_KEYS: [u64; 64] = [
     9992727740021666685,
 ];
 
-#[allow(clippy::unreadable_literal)]
+#[expect(clippy::unreadable_literal)]
 static PIECE_KEYS: [[u64; 64]; 12] = [
     [
         3224174009003844652,
