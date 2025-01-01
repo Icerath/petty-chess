@@ -12,8 +12,7 @@ impl Square {
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
-        assert!(file.0 < 8 && rank.0 < 8);
-        Self(file.0 + rank.0 * 8)
+        Self(file.u8() + rank.u8() * 8)
     }
     #[must_use]
     #[inline]
@@ -34,12 +33,12 @@ impl Square {
     #[must_use]
     #[inline]
     pub const fn file(self) -> File {
-        File(self.0 % 8)
+        File(self.u8() % 8)
     }
     #[must_use]
     #[inline]
     pub const fn rank(self) -> Rank {
-        Rank(self.0 / 8)
+        Rank(self.u8() / 8)
     }
     #[must_use]
     #[inline]
@@ -60,7 +59,7 @@ impl Square {
     #[must_use]
     #[inline]
     pub fn manhattan_distance(self, other: Self) -> u8 {
-        self.file().0.abs_diff(other.file().0) + self.rank().0.abs_diff(other.rank().0)
+        self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
     }
     #[must_use]
     #[inline]
@@ -84,8 +83,8 @@ impl Square {
         let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
             | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
         match side {
-            Side::White => mask.0 <<= (rank.0 + 1) * 8,
-            Side::Black => mask.0 >>= (8 - rank.0) * 8,
+            Side::White => mask.0 <<= (rank.u8() + 1) * 8,
+            Side::Black => mask.0 >>= (8 - rank.u8()) * 8,
         }
         mask
     }
@@ -96,8 +95,8 @@ impl Square {
         let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
             | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
         match side {
-            Side::White => mask.0 = mask.0.checked_shl((rank.0 as u32 + 1) * 8).unwrap_or_default(),
-            Side::Black => mask.0 = mask.0.checked_shr((8 - rank.0 as u32) * 8).unwrap_or_default(),
+            Side::White => mask.0 = mask.0.checked_shl((rank.u32() + 1) * 8).unwrap_or_default(),
+            Side::Black => mask.0 = mask.0.checked_shr((8 - rank.u32()) * 8).unwrap_or_default(),
         }
         mask
     }
@@ -117,7 +116,7 @@ macro_rules! impl_file_rank {
             pub fn relative_to(self, side: Side) -> Self {
                 match side {
                     Side::White => self,
-                    Side::Black => Self(7 - self.0),
+                    Side::Black => Self(7 - self.u8()),
                 }
             }
         }
