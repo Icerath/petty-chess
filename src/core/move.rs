@@ -16,12 +16,12 @@ impl Move {
     #[inline]
     #[must_use]
     pub fn from(self) -> Square {
-        unsafe { Square::new_int_unchecked((self.0 & 0b11_1111) as u8) }
+        unsafe { Square::from_int_unchecked((self.0 & 0b11_1111) as u8) }
     }
     #[must_use]
     #[inline]
     pub fn to(self) -> Square {
-        unsafe { Square::new_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
+        unsafe { Square::from_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
     }
     #[must_use]
     #[inline]

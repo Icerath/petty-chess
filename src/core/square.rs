@@ -1,36 +1,14 @@
 use std::{
     fmt,
-    hint::assert_unchecked,
     ops::{Index, IndexMut},
     str::FromStr,
 };
 
 use crate::prelude::*;
 
-#[derive(Default, Clone, Copy, PartialEq)]
-pub struct Square(u8);
+bounded_int! { pub struct Square { 64 } }
 
 impl Square {
-    #[must_use]
-    pub const fn new_int(int: u8) -> Option<Self> {
-        match int {
-            0..64 => Some(unsafe { Self::new_int_unchecked(int) }),
-            _ => None,
-        }
-    }
-    /// # Safety
-    /// int must be < 64
-    #[must_use]
-    #[inline]
-    pub const unsafe fn new_int_unchecked(int: u8) -> Self {
-        Self(int)
-    }
-    #[must_use]
-    #[inline]
-    pub const fn int(self) -> u8 {
-        unsafe { std::hint::assert_unchecked(self.0 < 64) };
-        self.0
-    }
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
@@ -51,7 +29,7 @@ impl Square {
              8,  9, 10, 11, 12, 13, 14, 15,
              0,  1,  2,  3,  4,  5,  6,  7,
         ];
-        unsafe { Square::new_int_unchecked(FLIPPED[self]) }
+        unsafe { Square::from_int_unchecked(FLIPPED[self]) }
     }
     #[must_use]
     #[inline]
@@ -101,25 +79,23 @@ impl Square {
     }
     #[inline]
     #[must_use]
-    /// # Safety
-    /// file must not be 0 or 7
-    pub unsafe fn passed_pawn_mask(self, side: Side) -> Bitboard {
+    #[track_caller]
+    pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.mask()
-            | unsafe { (file.add_unchecked(1)).mask() | (file.sub_unchecked(1)).mask() };
+        let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
+            | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
         match side {
             Side::White => mask.0 <<= (rank.0 + 1) * 8,
             Side::Black => mask.0 >>= (8 - rank.0) * 8,
         }
         mask
     }
-    /// # Safety
-    /// file must not be 0 or 7
     #[inline]
     #[must_use]
-    pub unsafe fn outpost_mask(self, side: Side) -> Bitboard {
+    pub fn outpost_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = unsafe { file.add_unchecked(1).mask() | (file.sub_unchecked(1)).mask() };
+        let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
+            | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
         match side {
             Side::White => mask.0 = mask.0.checked_shl((rank.0 as u32 + 1) * 8).unwrap_or_default(),
             Side::Black => mask.0 = mask.0.checked_shr((8 - rank.0 as u32) * 8).unwrap_or_default(),
@@ -128,40 +104,9 @@ impl Square {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct File(u8);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Rank(u8);
-
-macro_rules! impl_ {
+macro_rules! impl_file_rank {
     ($ty: ty) => {
         impl $ty {
-            #[must_use]
-            pub fn new(int: u8) -> Option<Self> {
-                match int {
-                    0..8 => Some(unsafe { Self::new_int_unchecked(int) }),
-                    _ => None,
-                }
-            }
-            #[must_use]
-            /// # Safety
-            /// int must be < 8
-            pub unsafe fn new_int_unchecked(int: u8) -> Self {
-                Self(int)
-            }
-            #[must_use]
-            /// # Safety
-            /// File.0 + int must be < 8
-            pub unsafe fn add_unchecked(self, int: u8) -> Self {
-                Self(self.0 + int)
-            }
-            /// # Safety
-            /// File.0 - int must not overflow
-            #[must_use]
-            pub unsafe fn sub_unchecked(self, int: u8) -> Self {
-                Self(self.0 - int)
-            }
             #[inline]
             #[must_use]
             pub fn distance_from_center(self) -> u8 {
@@ -169,41 +114,30 @@ macro_rules! impl_ {
                 OUTPUTS[self.usize()]
             }
             #[must_use]
-            pub const fn i8(self) -> i8 {
-                self.u8() as i8
+            #[inline]
+            pub fn checked_add(self, rhs: i8) -> Option<Self> {
+                let out = self.0 as i8 + rhs;
+                (0..8).contains(&out).then_some(Self(out as u8))
             }
             #[must_use]
-            pub const fn u8(self) -> u8 {
-                unsafe { assert_unchecked(self.0 < 8) };
-                self.0
-            }
-            #[must_use]
-            pub const fn usize(self) -> usize {
-                self.u8() as usize
+            #[inline]
+            pub fn relative_to(self, side: Side) -> Self {
+                match side {
+                    Side::White => self,
+                    Side::Black => Self(7 - self.0),
+                }
             }
         }
     };
+    ($($ty: ty),+) => {
+        $(impl_file_rank!($ty);)+
+    };
 }
 
-impl_!(Rank);
-impl_!(File);
+bounded_int! { pub struct Rank { 8 } }
+bounded_int! { pub struct File { 8 } }
 
-impl Rank {
-    #[must_use]
-    #[inline]
-    pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = self.0 as i8 + rhs;
-        (0..8).contains(&out).then_some(Self(out as u8))
-    }
-    #[must_use]
-    #[inline]
-    pub fn relative_to(self, side: Side) -> Self {
-        match side {
-            Side::White => self,
-            Side::Black => Self(7 - self.0),
-        }
-    }
-}
+impl_file_rank!(File, Rank);
 
 macro_rules! define_file_consts {
     ($name: ident = $num: literal) => {
@@ -238,12 +172,6 @@ impl<T> IndexMut<Square> for [T] {
 impl File {
     #[must_use]
     #[inline]
-    pub fn checked_add(self, rhs: i8) -> Option<Self> {
-        let out = self.0 as i8 + rhs;
-        (0..8).contains(&out).then_some(Self(out as u8))
-    }
-    #[must_use]
-    #[inline]
     // Produces a mask representing a file from 0..8
     // Produces an empty bitboard for File(-1) and File(8)
     // Oher file values are undefined behaviour
@@ -258,19 +186,19 @@ impl File {
             File(6).compute_mask(),
             File(7).compute_mask(),
         ];
-        FILES.get(usize::from(self.0)).copied().unwrap_or(Bitboard::EMPTY)
+        FILES[self.usize()]
     }
 
     const fn compute_mask(self) -> Bitboard {
         Bitboard(
-            (1 << self.0)
-                + (1 << (8 + self.0))
-                + (1 << (16 + self.0))
-                + (1 << (24 + self.0))
-                + (1 << (32 + self.0))
-                + (1 << (40 + self.0))
-                + (1 << (48 + self.0))
-                + (1 << (56 + self.0)),
+            (1 << self.u8())
+                + (1 << (8 + self.u8()))
+                + (1 << (16 + self.u8()))
+                + (1 << (24 + self.u8()))
+                + (1 << (32 + self.u8()))
+                + (1 << (40 + self.u8()))
+                + (1 << (48 + self.u8()))
+                + (1 << (56 + self.u8())),
         )
     }
 }
@@ -304,7 +232,7 @@ impl FromStr for Square {
         Self::SQUARES
             .iter()
             .position(|&sq| sq == input)
-            .map(|index| unsafe { Self::new_int_unchecked(index as u8) })
+            .map(|index| unsafe { Self::from_int_unchecked(index as u8) })
             .ok_or(InvalidSquare)
     }
 }
@@ -347,46 +275,6 @@ impl Square {
     );
 }
 
-macro_rules! impl_try_from {
-    ($($int:ident),*) => {
-        $( impl_try_from!(@single $int);)*
-    };
-
-    (@single $int: ident) => {
-        impl TryFrom<$int> for Square {
-            type Error = $int;
-            #[allow(clippy::cast_possible_truncation)]
-            #[allow(clippy::cast_sign_loss)]
-            #[inline]
-            fn try_from(value: $int) -> Result<Self, Self::Error> {
-                match value {
-                    0..81 => Ok(unsafe { Self::new_int_unchecked(value as u8) }),
-                    _ => Err(value),
-                }
-            }
-        }
-    };
-}
-
-macro_rules! impl_into {
-    ($($int:ident),*) => {
-        $( impl_into!(@single $int);)*
-    };
-    (@single $int: ident) => {
-        impl From<Square> for $int {
-            #[allow(clippy::cast_possible_wrap)]
-            #[must_use]
-            #[inline]
-            fn from(square: Square) -> $int {
-                square.int() as $int
-            }
-        }
-    };
-}
-
-impl_try_from!(u8, i8, u16, i16, u32, i32, usize);
-impl_into!(u8, i8, u16, i16, u32, i32, usize);
-
 #[test]
 fn test_manhattan_distance() {
     assert_eq!(Square::A1.manhattan_distance(Square::H8), 14);
@@ -396,6 +284,6 @@ fn test_manhattan_distance() {
 #[test]
 fn test_square_flip() {
     for sq in Square::all() {
-        assert_eq!(Square::new(Rank(7 - sq.rank().0), sq.file()), sq.flip());
+        assert_eq!(Square::new(Rank(7 - sq.rank().u8()), sq.file()), sq.flip());
     }
 }

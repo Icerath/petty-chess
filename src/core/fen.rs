@@ -143,7 +143,7 @@ fn parse_pieces(fen: &str) -> Option<Board> {
             _ => return None,
         };
         let side = if c.is_ascii_uppercase() { White } else { Black };
-        let sq = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
+        let sq = Square::new(Rank::from_int(rank).unwrap(), File::from_int(file).unwrap());
         board.insert_piece(sq, side + kind);
         file += 1;
     }

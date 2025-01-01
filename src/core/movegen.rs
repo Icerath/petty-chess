@@ -297,7 +297,7 @@ const fn compute_pawn_moves() -> [[Bitboard; 64]; 2] {
 
     let mut index = 0;
     while index < 64 {
-        let sq = unsafe { Square::new_int_unchecked(index as u8) };
+        let sq = Square::from_int(index as u8).unwrap();
 
         let num_up = sq.rank().i8();
         let num_down = 7 - sq.rank().i8();
@@ -333,7 +333,7 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let sq = unsafe { Square::new_int_unchecked(index as u8) };
+        let sq = unsafe { Square::from_int_unchecked(index as u8) };
 
         let num_up = 7 - sq.rank().i8();
         let num_down = sq.rank().i8();
@@ -372,7 +372,7 @@ const fn compute_king_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let sq = Square::new_int(index as u8).unwrap();
+        let sq = Square::from_int(index as u8).unwrap();
 
         let num_up = 7 - sq.rank().i8();
         let num_down = sq.rank().i8();
@@ -415,14 +415,14 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let sq = unsafe { Square::new_int_unchecked(index as u8) };
+        let sq = Square::from_int(index as u8).unwrap();
 
         let num_up = 7 - sq.rank().i8();
         let num_down = sq.rank().i8();
         let num_left = sq.file().i8();
         let num_right = 7 - sq.file().i8();
 
-        squares[sq.int() as usize] = [
+        squares[sq.usize()] = [
             num_up,
             num_down,
             num_left,

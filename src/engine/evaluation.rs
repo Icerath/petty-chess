@@ -26,11 +26,11 @@ impl Engine {
                 let file = king.file();
                 let penalty = PENALTIES[file.usize()];
 
-                let left_open =
-                    file != File::A && (pawns & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
+                let left_open = file != File::A
+                    && (pawns & unsafe { file.sub_int_unchecked(1) }.mask()).is_empty();
                 let middle_open = (pawns & file.mask()).is_empty();
                 let right_open = file != File::H
-                    && (pawns & (unsafe { file.add_unchecked(1) }.mask())).is_empty();
+                    && (pawns & (unsafe { file.add_int_unchecked(1) }.mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
                 total -= (num_open_files * penalty) * phase.earlygame();
@@ -43,10 +43,15 @@ impl Engine {
             // reward non-isolated pawns
             friendly[Pawn].for_each(|sq| {
                 let file = sq.file();
-                let left_open =
-                    (friendly[Pawn] & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
-                let right_open =
-                    (friendly[Pawn] & unsafe { file.add_unchecked(1) }.mask()).is_empty();
+                let left_open = (friendly[Pawn]
+                    & file
+                        .sub_int(1)
+                        .map_or(Bitboard::EMPTY, super::super::core::square::File::mask))
+                .is_empty();
+                let right_open = (friendly[Pawn] & {
+                    file.add_int(1).map_or(Bitboard::EMPTY, super::super::core::square::File::mask)
+                })
+                .is_empty();
 
                 if !(left_open && right_open) {
                     total += match file.distance_from_center() {
@@ -61,8 +66,7 @@ impl Engine {
             // reward passed pawns
             friendly[Pawn].for_each(|sq| {
                 const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
-                let is_passed_pawn =
-                    (unsafe { sq.passed_pawn_mask(side) } & enemy[Pawn]).is_empty();
+                let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
                 if is_passed_pawn {
                     let offset = sq.rank().relative_to(side).usize();
                     total += BONUSES[offset];
@@ -73,15 +77,15 @@ impl Engine {
                 if sq.rank().relative_to(side).u8() < 4 {
                     return;
                 }
-                let is_outpost = (unsafe { sq.outpost_mask(side) } & enemy[Pawn]).is_empty();
+                let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
                 if is_outpost {
                     total += 20;
                 }
             });
             // reward pawns close to king
             let kadj_pawns_mask = unsafe {
-                king.file().sub_unchecked(1).mask()
-                    | king.file().add_unchecked(1).mask()
+                king.file().sub_int_unchecked(1).mask()
+                    | king.file().add_int(1).map_or(Bitboard::EMPTY, File::mask)
                     | king.file().mask()
             };
             (friendly[Pawn] & kadj_pawns_mask).for_each(|sq| {

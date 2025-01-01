@@ -1,5 +1,7 @@
 pub mod bitboard;
 pub mod board;
+#[macro_use]
+pub mod bounded_int;
 pub mod can_castle;
 pub mod fen;
 pub mod magic;

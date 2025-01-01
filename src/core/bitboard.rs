@@ -13,16 +13,16 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     #[inline]
     pub fn insert(&mut self, sq: Square) {
-        self.0 |= 1 << sq.int();
+        self.0 |= 1 << sq.u8();
     }
     #[inline]
     pub fn remove(&mut self, sq: Square) {
-        self.0 &= !(1 << sq.int());
+        self.0 &= !(1 << sq.u8());
     }
     #[inline]
     #[must_use]
     pub fn contains(self, sq: Square) -> bool {
-        self.0 & (1 << sq.int()) > 0
+        self.0 & (1 << sq.u8()) > 0
     }
     #[inline]
     #[must_use]
@@ -37,7 +37,7 @@ impl Bitboard {
     /// # Safety
     /// bitboard must not be empty
     pub unsafe fn bitscan_unchecked(self) -> Square {
-        unsafe { Square::new_int_unchecked(self.0.trailing_zeros() as u8) }
+        unsafe { Square::from_int_unchecked(self.0.trailing_zeros() as u8) }
     }
     #[inline]
     pub fn bitscan_pop(&mut self) -> Option<Square> {
@@ -66,7 +66,7 @@ impl Bitboard {
     /// # Safety
     /// bitboard must not be empty
     pub unsafe fn rbitscan_unchecked(self) -> Square {
-        unsafe { Square::new_int_unchecked(self.0.leading_zeros() as u8) }
+        unsafe { Square::from_int_unchecked(self.0.leading_zeros() as u8) }
     }
     #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
@@ -133,13 +133,13 @@ impl BitXor<Square> for Bitboard {
     type Output = Bitboard;
     #[inline]
     fn bitxor(self, rhs: Square) -> Self::Output {
-        Self(self.0 ^ (1 << rhs.int()))
+        Self(self.0 ^ (1 << rhs.u8()))
     }
 }
 
 impl BitXorAssign<Square> for Bitboard {
     fn bitxor_assign(&mut self, rhs: Square) {
-        self.0 ^= 1 << rhs.int();
+        self.0 ^= 1 << rhs.u8();
     }
 }
 
@@ -163,7 +163,7 @@ impl fmt::Debug for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for rank in (0..8).rev() {
             for file in 0..8 {
-                let sq = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
+                let sq = Square::new(Rank::from_int(rank).unwrap(), File::from_int(file).unwrap());
                 write!(f, "{}", self.contains(sq) as u8)?;
             }
             writeln!(f)?;

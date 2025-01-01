@@ -161,7 +161,8 @@ impl Application {
             out.push_str("+---+---+---+---+---+---+---+---+\n|");
             for file in 0..8 {
                 out.push(' ');
-                let square = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
+                let square =
+                    Square::new(Rank::from_int(rank).unwrap(), File::from_int(file).unwrap());
                 let piece = self.engine.board.get_square(square);
                 out.push(piece.map_or(' ', Piece::symbol));
                 out.push_str(" |");
@@ -187,7 +188,7 @@ fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut moves = board.gen_legal_moves();
 
     let mut table = TranspositionTable::default();
-    moves.sort_by_key(|mov| mov.from().int() + mov.to().int());
+    moves.sort_by_key(|mov| mov.from().u8() + mov.to().u8());
 
     for mov in moves {
         let unmake = board.make_move(mov);
