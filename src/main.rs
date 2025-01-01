@@ -10,20 +10,21 @@ use petty_chess::{
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
 #[cfg(feature = "tracing")]
-use tracing::{debug, Level};
-#[cfg(feature = "tracing")]
-use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use {
+    tracing::{debug, Level},
+    tracing_appender::rolling::{RollingFileAppender, Rotation},
+};
 
 fn main() {
     #[cfg(feature = "tracing")]
-    let writer = RollingFileAppender::builder()
-        .rotation(Rotation::DAILY)
-        .filename_suffix("log")
-        .build("./logs")
-        .unwrap();
-
-    #[cfg(feature = "tracing")]
-    tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
+    {
+        let writer = RollingFileAppender::builder()
+            .rotation(Rotation::DAILY)
+            .filename_suffix("log")
+            .build("./logs")
+            .unwrap();
+        tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
+    }
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
     let mut app = Application::default();
