@@ -68,7 +68,9 @@ impl fmt::Display for UciResponse {
             }
             Self::Uciok => write!(f, "uciok"),
             Self::Readyok => write!(f, "readyok"),
-            Self::Bestmove { mov, ponder } => write!(f, "bestmove {mov} {}", Maybe("ponder", ponder)),
+            Self::Bestmove { mov, ponder } => {
+                write!(f, "bestmove {mov} {}", Maybe("ponder", ponder))
+            }
             Self::Copyprotection(req) => write!(f, "copyprotection {req}"),
             Self::Registration(req) => write!(f, "registration {req}"),
             Self::Info(info) => write!(f, "info{info}"),
@@ -92,7 +94,13 @@ impl fmt::Display for OptionType {
         match self {
             Self::Check { default } => write!(f, "check {}", Maybe("default", default)),
             Self::Spin { default, min, max } => {
-                write!(f, "spin {} {} {}", Maybe("min", min), Maybe("max", max), Maybe("default", default))
+                write!(
+                    f,
+                    "spin {} {} {}",
+                    Maybe("min", min),
+                    Maybe("max", max),
+                    Maybe("default", default)
+                )
             }
             Self::Combo { default, vars } => {
                 write!(f, "combo {} {}", Maybe("default", default), List(" ", vars))

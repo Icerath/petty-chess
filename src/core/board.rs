@@ -99,7 +99,9 @@ impl Board {
                 let pawn = !self.active_side + Pawn;
                 self.remove_piece(back, pawn);
             }
-            MoveFlags::QueenCastle if self.active_side == White => self.swap(Square::A1, Square::D1),
+            MoveFlags::QueenCastle if self.active_side == White => {
+                self.swap(Square::A1, Square::D1)
+            }
             MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
             MoveFlags::KingCastle if self.active_side == White => self.swap(Square::F1, Square::H1),
             MoveFlags::KingCastle => self.swap(Square::F8, Square::H8),
@@ -130,7 +132,8 @@ impl Board {
     pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
         self.decrement_ply();
         self.update_checkers();
-        self.en_passant_target_square = prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
+        self.en_passant_target_square =
+            prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
     }
     #[inline]
     pub fn increment_ply(&mut self) {

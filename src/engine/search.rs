@@ -25,7 +25,8 @@ impl Engine {
             }
             self.only_pv_nodes = true;
             let mut new_pv = Moves::new();
-            let score = self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
+            let score =
+                self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
             if self.is_cancelled() {
                 break;
             }
@@ -223,7 +224,8 @@ impl Engine {
 
         if !encountered_legal_move {
             let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
-            let legal_moves = movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
+            let legal_moves =
+                movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
             if !legal_moves {
                 return if self.board.in_check() { -Eval::MATE.0 } else { 0 };
             }

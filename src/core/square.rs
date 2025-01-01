@@ -198,7 +198,8 @@ macro_rules! define_file_consts {
 }
 
 impl File {
-    pub const ALL: [Self; 8] = [Self::A, Self::B, Self::C, Self::D, Self::E, Self::F, Self::G, Self::H];
+    pub const ALL: [Self; 8] =
+        [Self::A, Self::B, Self::C, Self::D, Self::E, Self::F, Self::G, Self::H];
     define_file_consts!(A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7);
 }
 

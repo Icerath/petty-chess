@@ -88,7 +88,10 @@ impl Application {
         }
     }
     fn respond_with_id(&self) {
-        self.respond(UciResponse::Id { name: "Petty Chess".into(), author: "Dorje Gilfillan".into() });
+        self.respond(UciResponse::Id {
+            name: "Petty Chess".into(),
+            author: "Dorje Gilfillan".into(),
+        });
         self.respond(UciResponse::Uciok);
     }
     fn respond(&self, response: UciResponse) {
@@ -100,7 +103,8 @@ impl Application {
         for mov in moves {
             let legal_moves = self.engine.board.gen_legal_moves();
             let Some(&mov) = legal_moves.iter().find(|m| {
-                (m.from(), m.to(), m.flags().promotion()) == (mov.from(), mov.to(), mov.flags().promotion())
+                (m.from(), m.to(), m.flags().promotion())
+                    == (mov.from(), mov.to(), mov.flags().promotion())
             }) else {
                 eprintln!("Invalid move: {mov}");
                 break;
@@ -135,10 +139,15 @@ impl Application {
             // TODO - ponder
             TimeControl::Ponder => self.engine.time_available = Duration::MAX,
             TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
-                let (total, incr) =
-                    if self.engine.board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
-                let estimated_total_moves = i32::from(30.max(self.engine.board.fullmove_counter + 10));
-                let moves_to_end = estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
+                let (total, incr) = if self.engine.board.active_side == White {
+                    (wtime, wincr)
+                } else {
+                    (btime, bincr)
+                };
+                let estimated_total_moves =
+                    i32::from(30.max(self.engine.board.fullmove_counter + 10));
+                let moves_to_end =
+                    estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
                 let time_per_move = total.div_f32(moves_to_end as f32);
                 self.engine.time_available = (time_per_move + incr).min(total);
             }

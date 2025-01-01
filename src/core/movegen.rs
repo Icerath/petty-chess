@@ -81,9 +81,12 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         }
         pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
         pieces[Knight].for_each(|from| self.push_squares(from, KNIGHT_MOVES[from]));
-        pieces[Bishop].for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
-        pieces[Rook].for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
-        pieces[Queen].for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
+        pieces[Bishop]
+            .for_each(|from| self.push_squares(from, self.magic.bishop_attacks(from, all_pieces)));
+        pieces[Rook]
+            .for_each(|from| self.push_squares(from, self.magic.rook_attacks(from, all_pieces)));
+        pieces[Queen]
+            .for_each(|from| self.push_squares(from, self.magic.queen_attacks(from, all_pieces)));
 
         std::mem::take(&mut self.moves)
     }
@@ -115,11 +118,15 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let enemy_pieces = self.board.enemy_bitboards();
         let all_pieces = self.board.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+        enemy_pieces[Pawn]
+            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
-        enemy_pieces[Bishop].for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
-        enemy_pieces[Rook].for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
-        enemy_pieces[Queen].for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
+        enemy_pieces[Bishop]
+            .for_each(|from| attacked_squares |= self.magic.bishop_attacks(from, all_pieces));
+        enemy_pieces[Rook]
+            .for_each(|from| attacked_squares |= self.magic.rook_attacks(from, all_pieces));
+        enemy_pieces[Queen]
+            .for_each(|from| attacked_squares |= self.magic.queen_attacks(from, all_pieces));
         if let Some(king) = self.board.inactive_king() {
             attacked_squares |= KING_MOVES[king];
         }
@@ -129,7 +136,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     pub(crate) fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
         let side = !self.board.active_side;
-        self.board.get(side + Pawn).for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+        self.board
+            .get(side + Pawn)
+            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         attacked_squares
     }
     #[inline]
@@ -152,7 +161,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         if !G::CAPTURES_ONLY {
             let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
             if !self.board.is_piece_at(to) {
-                let can_double_push = (self.board.active_side == White && u8::from(from.rank()) == 1)
+                let can_double_push = (self.board.active_side == White
+                    && u8::from(from.rank()) == 1)
                     || (self.board.active_side == Black && u8::from(from.rank()) == 6);
 
                 if !can_promote {
@@ -340,13 +350,17 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
 
         bitboard.0 |= if num_up >= 2 && num_left >= 1 { 1 << (index + up * 2 + left) } else { 0 };
         bitboard.0 |= if num_up >= 2 && num_right >= 1 { 1 << (index + up * 2 + right) } else { 0 };
-        bitboard.0 |= if num_down >= 2 && num_left >= 1 { 1 << (index + down * 2 + left) } else { 0 };
-        bitboard.0 |= if num_down >= 2 && num_right >= 1 { 1 << (index + down * 2 + right) } else { 0 };
+        bitboard.0 |=
+            if num_down >= 2 && num_left >= 1 { 1 << (index + down * 2 + left) } else { 0 };
+        bitboard.0 |=
+            if num_down >= 2 && num_right >= 1 { 1 << (index + down * 2 + right) } else { 0 };
 
         bitboard.0 |= if num_left >= 2 && num_up >= 1 { 1 << (index + up + left * 2) } else { 0 };
         bitboard.0 |= if num_right >= 2 && num_up >= 1 { 1 << (index + up + right * 2) } else { 0 };
-        bitboard.0 |= if num_left >= 2 && num_down >= 1 { 1 << (index + down + left * 2) } else { 0 };
-        bitboard.0 |= if num_right >= 2 && num_down >= 1 { 1 << (index + down + right * 2) } else { 0 };
+        bitboard.0 |=
+            if num_left >= 2 && num_down >= 1 { 1 << (index + down + left * 2) } else { 0 };
+        bitboard.0 |=
+            if num_right >= 2 && num_down >= 1 { 1 << (index + down + right * 2) } else { 0 };
 
         squares[index as usize] = bitboard;
         index += 1;

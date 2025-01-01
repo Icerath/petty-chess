@@ -77,6 +77,12 @@ pub fn phase(board: &Board) -> Phase {
 #[allow(clippy::float_cmp)]
 fn test_phase() {
     assert_eq!(phase(&Board::start_pos()).0, 1.0);
-    assert_eq!(phase(&Board::from_fen("4k3/4p1n1/p5pp/1p3p2/8/5P2/1QP3PP/4K3 w - -").unwrap()).0, 0.0);
-    assert_eq!(phase(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - -").unwrap()).0, 0.0);
+    assert_eq!(
+        phase(&Board::from_fen("4k3/4p1n1/p5pp/1p3p2/8/5P2/1QP3PP/4K3 w - -").unwrap()).0,
+        0.0
+    );
+    assert_eq!(
+        phase(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - -").unwrap()).0,
+        0.0
+    );
 }

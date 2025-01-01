@@ -101,7 +101,8 @@ impl Uci {
                         "movestogo" => moves_to_go = Some(next as u32),
                         _ => unreachable!(),
                     }
-                    command.time_control = TimeControl::TimeLeft { wtime, btime, wincr, bincr, moves_to_go }
+                    command.time_control =
+                        TimeControl::TimeLeft { wtime, btime, wincr, bincr, moves_to_go }
                 }
                 "searchmoves" => command.searchmoves = Some(tokens.moves()),
                 "mate" => command.mate = tokens.bump_spin().map(|i| i as u32).or(command.mate),
@@ -136,7 +137,8 @@ impl<'a> Lexer<'a> {
         if self.remaining.is_empty() {
             return None;
         }
-        let end = self.remaining.find(|c: char| !c.is_ascii_digit()).unwrap_or(self.remaining.len());
+        let end =
+            self.remaining.find(|c: char| !c.is_ascii_digit()).unwrap_or(self.remaining.len());
         let token = &self.remaining[..end];
         self.remaining = self.remaining[end..].trim();
         token.parse().ok()

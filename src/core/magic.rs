@@ -53,7 +53,9 @@ impl Magic {
     #[allow(unused)]
     fn preinit() -> Magic {
         Self {
-            rook_tables: std::array::from_fn(|i| Box::new(SquareTables::preinit(Square::try_from(i).unwrap()))),
+            rook_tables: std::array::from_fn(|i| {
+                Box::new(SquareTables::preinit(Square::try_from(i).unwrap()))
+            }),
             bishop_tables: std::array::from_fn(|i| {
                 Box::new(SquareTables::preinit(Square::try_from(i).unwrap()))
             }),
@@ -119,7 +121,8 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         for direction_index in start..end {
             for n in 1..NUM_SQUARES_TO_EDGE[sq][direction_index] {
                 let target_square =
-                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n).unwrap();
+                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n)
+                        .unwrap();
                 result.insert(target_square);
             }
         }
@@ -134,7 +137,8 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         for direction_index in start..end {
             for n in 1..=NUM_SQUARES_TO_EDGE[sq][direction_index] {
                 let target_square =
-                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n).unwrap();
+                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n)
+                        .unwrap();
                 result.insert(target_square);
                 if occupancy.contains(target_square) {
                     break;

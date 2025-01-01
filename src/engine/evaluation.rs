@@ -26,10 +26,11 @@ impl Engine {
                 let file = king.file();
                 let penalty = PENALTIES[usize::from(file)];
 
-                let left_open = file != File::A && (pawns & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
+                let left_open =
+                    file != File::A && (pawns & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
                 let middle_open = (pawns & file.mask()).is_empty();
-                let right_open =
-                    file != File::H && (pawns & (unsafe { file.add_unchecked(1) }.mask())).is_empty();
+                let right_open = file != File::H
+                    && (pawns & (unsafe { file.add_unchecked(1) }.mask())).is_empty();
 
                 let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
                 total -= (num_open_files * penalty) * phase.earlygame();
@@ -78,12 +79,14 @@ impl Engine {
                 }
             });
             // reward pawns close to king
-            let kadj_pawns_mask = (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
+            let kadj_pawns_mask =
+                (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
             (friendly[Pawn] & kadj_pawns_mask).for_each(|sq| {
                 const BONUSES: [[i32; 2]; 8] =
                     [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
 
-                let dif_rank = u8::from(sq.rank()).abs_diff(u8::from(king.rank())).saturating_sub(1);
+                let dif_rank =
+                    u8::from(sq.rank()).abs_diff(u8::from(king.rank())).saturating_sub(1);
                 total += BONUSES[usize::from(sq.file())].get(dif_rank as usize).unwrap_or(&0);
             });
             // reward rooks on an open file
@@ -95,7 +98,9 @@ impl Engine {
                 }
             });
             // reward rooks able to see eachother
-            if let (Some(rook_a), Some(rook_b)) = (friendly[Rook].bitscan(), friendly[Rook].rbitscan()) {
+            if let (Some(rook_a), Some(rook_b)) =
+                (friendly[Rook].bitscan(), friendly[Rook].rbitscan())
+            {
                 let rook_attacks = self.magic.rook_attacks(rook_a, self.board.all_pieces());
                 if rook_attacks.contains(rook_b) {
                     total += 20 + (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
@@ -125,7 +130,9 @@ impl Engine {
                 (self.board.active_king(), self.board.inactive_king())
             {
                 let md = active_king.manhattan_distance(inactive_king);
-                let cmd = self.board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance() as i32;
+                let cmd =
+                    self.board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance()
+                        as i32;
                 let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
                 final_total += mop_up_score * phase.endgame();
             }

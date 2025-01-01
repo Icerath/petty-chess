@@ -45,11 +45,14 @@ fn knight_score(num_moves: u8) -> i32 {
     ((num_moves as f32 / MAX_KNIGHT_MOVES as f32) * 15.0 * MOBILITY_SCORE_MULTIPLIER) as i32
 }
 fn bishop_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_BISHOP_MOVES as f32).min(1.0) * 15.0 * MOBILITY_SCORE_MULTIPLIER) as i32
+    ((num_moves as f32 / EXPECTED_BISHOP_MOVES as f32).min(1.0) * 15.0 * MOBILITY_SCORE_MULTIPLIER)
+        as i32
 }
 fn rook_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_ROOK_MOVES as f32).min(1.0) * 25.0 * MOBILITY_SCORE_MULTIPLIER) as i32
+    ((num_moves as f32 / EXPECTED_ROOK_MOVES as f32).min(1.0) * 25.0 * MOBILITY_SCORE_MULTIPLIER)
+        as i32
 }
 fn queen_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_QUEEN_MOVES as f32).min(1.0) * 45.0 * MOBILITY_SCORE_MULTIPLIER) as i32
+    ((num_moves as f32 / EXPECTED_QUEEN_MOVES as f32).min(1.0) * 45.0 * MOBILITY_SCORE_MULTIPLIER)
+        as i32
 }
