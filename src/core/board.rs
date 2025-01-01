@@ -42,7 +42,7 @@ impl Board {
     /// Inserts a piece into the board's bitboards.
     ///
     /// This will not remove other pieces from this square and
-    /// calling/ this when a piece is already present with produce an invalid zobrist hash
+    /// calling/ this when a piece is already present will produce an invalid zobrist hash
     pub fn insert_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()].insert(sq);
         self[piece.side()].insert(sq);
@@ -51,7 +51,7 @@ impl Board {
 
     /// removes a piece from the board's bitboards
     ///
-    /// calling this when a piece is not present with produce an invalid zobrist hash
+    /// calling this when a piece is not present will produce an invalid zobrist hash
     pub fn remove_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()].remove(sq);
         self[piece.side()].remove(sq);
