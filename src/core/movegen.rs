@@ -10,8 +10,6 @@ const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
 pub struct CapturesOnly;
 pub struct FullGen;
-pub struct LazyCapturesOnly;
-pub struct LazyFullGen;
 
 pub trait GenType {
     const CAPTURES_ONLY: bool;
