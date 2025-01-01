@@ -87,6 +87,12 @@ macro_rules! bounded_int {
 
                 }
             }
+            #[must_use]
+            #[inline]
+            pub fn add_int_signed(self, rhs: i8) -> Option<Self> {
+                let out = self.0 as i8 + rhs;
+                (0..8).contains(&out).then_some(Self(out as u8))
+            }
             #[track_caller]
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]

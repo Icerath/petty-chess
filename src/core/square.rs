@@ -44,13 +44,12 @@ impl Square {
     #[must_use]
     #[inline]
     pub fn add_rank(self, rank: i8) -> Option<Self> {
-        let rank = self.rank().checked_add(rank)?;
-        Some(Self::new(rank, self.file()))
+        Some(Self::new(self.rank().add_int_signed(rank)?, self.file()))
     }
     #[must_use]
     #[inline]
     pub fn add_file(self, file: i8) -> Option<Self> {
-        let file = self.file().checked_add(file)?;
+        let file = self.file().add_int_signed(file)?;
         Some(Self::new(self.rank(), file))
     }
     #[inline]
@@ -112,12 +111,6 @@ macro_rules! impl_file_rank {
             pub fn distance_from_center(self) -> u8 {
                 const OUTPUTS: [u8; 8] = [3, 2, 1, 0, 0, 1, 2, 3];
                 OUTPUTS[self.usize()]
-            }
-            #[must_use]
-            #[inline]
-            pub fn checked_add(self, rhs: i8) -> Option<Self> {
-                let out = self.0 as i8 + rhs;
-                (0..8).contains(&out).then_some(Self(out as u8))
             }
             #[must_use]
             #[inline]
