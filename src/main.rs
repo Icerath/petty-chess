@@ -5,7 +5,7 @@ use std::{
 };
 
 use petty_chess::{
-    engine::transposition::TranspositionTable,
+    engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
@@ -180,7 +180,7 @@ impl Application {
             print!(" {sq}");
         });
         println!();
-        println!("Direct Eval: {:?}", self.engine.raw_evaluation());
+        println!("Direct Eval: {:?}", raw_evaluation(&self.engine.board));
     }
 }
 

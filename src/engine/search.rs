@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use movegen::FullGen;
 
-use super::{transposition::Nodetype, Engine};
+use super::{evaluation::evaluate, transposition::Nodetype, Engine};
 use crate::{
     engine::score::Eval,
     prelude::*,
@@ -191,7 +191,7 @@ impl Engine {
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
         self.total_nodes += 1;
 
-        let eval = self.evaluate();
+        let eval = evaluate(&self.board);
         if eval >= beta {
             return beta;
         }

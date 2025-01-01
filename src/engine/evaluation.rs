@@ -1,161 +1,164 @@
-use crate::prelude::*;
+use super::{mobility::raw_mobility_eval, phase::phase};
+use crate::{core::magic::Magic, prelude::*};
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 
-impl Engine {
-    pub fn evaluate(&mut self) -> i32 {
-        self.raw_evaluation() * self.board.active_side.positive()
+#[must_use]
+#[expect(clippy::too_many_lines)]
+pub fn raw_evaluation(board: &Board) -> i32 {
+    let phase = phase(board);
+    let magic = Magic::get();
+    if !sufficient_material_to_force_checkmate(board) {
+        return 0;
     }
-    #[allow(clippy::too_many_lines)]
-    pub fn raw_evaluation(&mut self) -> i32 {
-        let phase = self.phase();
+    let mut final_total = 0;
 
-        if !self.sufficient_material_to_force_checkmate() {
-            return 0;
+    for side in [White, Black] {
+        let mut total = 0;
+        let Some(king) = board.get_king_square(side) else { continue };
+        let friendly = board.side_bitboards(side);
+        let enemy = board.side_bitboards(!side);
+        // punish kings next adjacent to open file
+        for pawns in [friendly[Pawn], enemy[Pawn]] {
+            const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
+            let file = king.file();
+            let penalty = PENALTIES[file.usize()];
+
+            let left_open =
+                file != File::A && (pawns & unsafe { file.sub_int_unchecked(1) }.mask()).is_empty();
+            let middle_open = (pawns & file.mask()).is_empty();
+            let right_open = file != File::H
+                && (pawns & (unsafe { file.add_int_unchecked(1) }.mask())).is_empty();
+
+            let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
+            total -= (num_open_files * penalty) * phase.earlygame();
         }
-        let mut final_total = 0;
-
-        for side in [White, Black] {
-            let mut total = 0;
-            let Some(king) = self.board.get_king_square(side) else { continue };
-            let friendly = self.board.side_bitboards(side);
-            let enemy = self.board.side_bitboards(!side);
-            // punish kings next adjacent to open file
-            for pawns in [friendly[Pawn], enemy[Pawn]] {
-                const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
-                let file = king.file();
-                let penalty = PENALTIES[file.usize()];
-
-                let left_open = file != File::A
-                    && (pawns & unsafe { file.sub_int_unchecked(1) }.mask()).is_empty();
-                let middle_open = (pawns & file.mask()).is_empty();
-                let right_open = file != File::H
-                    && (pawns & (unsafe { file.add_int_unchecked(1) }.mask())).is_empty();
-
-                let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-                total -= (num_open_files * penalty) * phase.earlygame();
-            }
-            // punish double pawns
-            for file in File::ALL {
-                let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
-                total -= (pawns_in_file - 1).max(0) * 25;
-            }
-            // reward non-isolated pawns
-            friendly[Pawn].for_each(|sq| {
-                if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
-                    total += match sq.file().distance_from_center() {
-                        0 => 25,
-                        1 => 23,
-                        2 => 18,
-                        3 => 15,
-                        _ => unreachable!(),
-                    };
-                }
-            });
-            // reward passed pawns
-            friendly[Pawn].for_each(|sq| {
-                const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
-                let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
-                if is_passed_pawn {
-                    let offset = sq.rank().relative_to(side).usize();
-                    total += BONUSES[offset];
-                }
-            });
-            // reward outposts
-            (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-                if sq.rank().relative_to(side).u8() < 4 {
-                    return;
-                }
-                let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
-                if is_outpost {
-                    total += 20;
-                }
-            });
-            // reward pawns close to king
-            (friendly[Pawn] & king.file().adjacency_mask()).for_each(|sq| {
-                const BONUSES: [[i32; 2]; 8] =
-                    [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
-
-                let dif_rank = sq.rank().u8().abs_diff(king.rank().u8()).saturating_sub(1);
-                total += BONUSES[sq.file().usize()].get(dif_rank as usize).unwrap_or(&0);
-            });
-            // reward rooks on an open file
-            friendly[Rook].for_each(|sq| {
-                if (self.board[Pawn] & sq.file().mask()).is_empty() {
-                    total += 20;
-                } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
-                    total += 10;
-                }
-            });
-            if friendly[Rook].count() >= 2 {
-                let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
-                let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
-
-                let rook_attacks = self.magic.rook_attacks(rook_a, self.board.all_pieces());
-                if rook_attacks.contains(rook_b) {
-                    total += 20;
-                    total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
-                }
-            }
-            // reward bishop pair
-            total += self.has_bishop_pair(side) as i32 * 50;
-            // material and piece square table values
-            for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
-                let piece = side + piecekind;
-                self.board
-                    .get(piece)
-                    .for_each(|square| total += abs_piece_value_at_square(square, piece, phase));
-            }
-            total += abs_piece_square_value(king, side + King, phase);
-
-            final_total += total * side.positive();
+        // punish double pawns
+        for file in File::ALL {
+            let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
+            total -= (pawns_in_file - 1).max(0) * 25;
         }
-        // mop up evaluation
-        let mop_up_side = match final_total {
-            100.. => Some(White),
-            ..=-100 => Some(Black),
-            _ => None,
-        };
-        if let Some(mop_up_side) = mop_up_side {
-            if let (Some(active_king), Some(inactive_king)) =
-                (self.board.active_king(), self.board.inactive_king())
-            {
-                let md = active_king.manhattan_distance(inactive_king);
-                let cmd =
-                    self.board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance()
-                        as i32;
-                let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
-                final_total += mop_up_score * phase.endgame();
+        // reward non-isolated pawns
+        friendly[Pawn].for_each(|sq| {
+            if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
+                total += match sq.file().distance_from_center() {
+                    0 => 25,
+                    1 => 23,
+                    2 => 18,
+                    3 => 15,
+                    _ => unreachable!(),
+                };
+            }
+        });
+        // reward passed pawns
+        friendly[Pawn].for_each(|sq| {
+            const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
+            let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
+            if is_passed_pawn {
+                let offset = sq.rank().relative_to(side).usize();
+                total += BONUSES[offset];
+            }
+        });
+        // reward outposts
+        (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
+            if sq.rank().relative_to(side).u8() < 4 {
+                return;
+            }
+            let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
+            if is_outpost {
+                total += 20;
+            }
+        });
+        // reward pawns close to king
+        (friendly[Pawn] & king.file().adjacency_mask()).for_each(|sq| {
+            const BONUSES: [[i32; 2]; 8] =
+                [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
+
+            let dif_rank = sq.rank().u8().abs_diff(king.rank().u8()).saturating_sub(1);
+            total += BONUSES[sq.file().usize()].get(dif_rank as usize).unwrap_or(&0);
+        });
+        // reward rooks on an open file
+        friendly[Rook].for_each(|sq| {
+            if (board[Pawn] & sq.file().mask()).is_empty() {
+                total += 20;
+            } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
+                total += 10;
+            }
+        });
+        if friendly[Rook].count() >= 2 {
+            let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
+            let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
+
+            let rook_attacks = magic.rook_attacks(rook_a, board.all_pieces());
+            if rook_attacks.contains(rook_b) {
+                total += 20;
+                total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
             }
         }
-        let mobility_score = self.raw_mobility_eval();
-        final_total + mobility_score
-    }
-    #[inline]
-    fn has_bishop_pair(&self, side: Side) -> bool {
-        // Ignoring underpromotion for now
-        self.board.get(side + Bishop).count() >= 2
-    }
-    #[inline]
-    #[must_use]
-    pub fn sufficient_material_to_force_checkmate(&self) -> bool {
-        let w = self.board.side_bitboards(White);
-        let b = self.board.side_bitboards(Black);
+        // reward bishop pair
+        total += has_bishop_pair(board, side) as i32 * 50;
+        // material and piece square table values
+        for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
+            let piece = side + piecekind;
+            board
+                .get(piece)
+                .for_each(|square| total += abs_piece_value_at_square(square, piece, phase));
+        }
+        total += abs_piece_square_value(king, side + King, phase);
 
-        !w[Queen].is_empty()
-            || !b[Queen].is_empty()
-            || !w[Rook].is_empty()
-            || !b[Rook].is_empty()
-            || !w[Pawn].is_empty()
-            || !b[Pawn].is_empty()
-            || self.has_bishop_pair(Side::White)
-            || self.has_bishop_pair(Side::Black)
-            || (!w[Bishop].is_empty() && !w[Knight].is_empty())
-            || (!b[Bishop].is_empty() && !b[Knight].is_empty())
-            || w[Knight].0 >= 3
-            || b[Knight].0 >= 3
+        final_total += total * side.positive();
     }
+    // mop up evaluation
+    let mop_up_side = match final_total {
+        100.. => Some(White),
+        ..=-100 => Some(Black),
+        _ => None,
+    };
+    if let Some(mop_up_side) = mop_up_side {
+        if let (Some(active_king), Some(inactive_king)) =
+            (board.active_king(), board.inactive_king())
+        {
+            let md = active_king.manhattan_distance(inactive_king);
+            let cmd =
+                board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance() as i32;
+            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
+            final_total += mop_up_score * phase.endgame();
+        }
+    }
+    let mobility_score = raw_mobility_eval(board, magic);
+    final_total + mobility_score
 }
+
+#[inline]
+fn has_bishop_pair(board: &Board, side: Side) -> bool {
+    // Ignoring underpromotion for now
+    board.get(side + Bishop).count() >= 2
+}
+
+#[must_use]
+pub fn evaluate(board: &Board) -> i32 {
+    raw_evaluation(board) * board.active_side.positive()
+}
+
+#[must_use]
+pub fn sufficient_material_to_force_checkmate(board: &Board) -> bool {
+    let w = board.side_bitboards(White);
+    let b = board.side_bitboards(Black);
+
+    !w[Queen].is_empty()
+        || !b[Queen].is_empty()
+        || !w[Rook].is_empty()
+        || !b[Rook].is_empty()
+        || !w[Pawn].is_empty()
+        || !b[Pawn].is_empty()
+        || has_bishop_pair(board, Side::White)
+        || has_bishop_pair(board, Side::Black)
+        || (!w[Bishop].is_empty() && !w[Knight].is_empty())
+        || (!b[Bishop].is_empty() && !b[Knight].is_empty())
+        || w[Knight].0 >= 3
+        || b[Knight].0 >= 3
+}
+
 #[inline]
 #[must_use]
 pub fn piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
@@ -334,4 +337,9 @@ mod square_tables {
       -27,-11,  4, 13, 14,  4, -5,-17,
       -53,-34,-21,-11,-28,-14,-24,-43
   ];
+}
+
+#[test]
+fn sanity_test() {
+    assert!(raw_evaluation(&Board::start_pos()) >= 0);
 }

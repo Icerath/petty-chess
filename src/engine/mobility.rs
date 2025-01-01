@@ -1,8 +1,34 @@
 use movegen::KNIGHT_MOVES;
 
-use crate::prelude::*;
+use crate::{core::magic::Magic, prelude::*};
 
 const MOBILITY_SCORE_MULTIPLIER: f32 = 2.0;
+
+pub fn raw_mobility_eval(board: &Board, magic: &Magic) -> i32 {
+    let occupancy = board.all_pieces();
+    let mut final_total = 0;
+    for side in [White, Black] {
+        let mut total = 0;
+        // Pawns: TODO
+        board.get(side + Knight).for_each(|sq| {
+            total += knight_score((KNIGHT_MOVES[sq]).count());
+        });
+        board.get(side + Bishop).for_each(|sq| {
+            total += bishop_score((magic.bishop_attacks(sq, occupancy)).count());
+        });
+        board.get(side + Rook).for_each(|sq| {
+            total += rook_score((magic.rook_attacks(sq, occupancy)).count());
+        });
+        board.get(side + Rook).for_each(|sq| {
+            total += rook_score((magic.rook_attacks(sq, occupancy)).count());
+        });
+        board.get(side + Queen).for_each(|sq| {
+            total += queen_score((magic.queen_attacks(sq, occupancy)).count());
+        });
+        final_total += total * side.positive();
+    }
+    final_total
+}
 
 impl Engine {
     #[must_use]
