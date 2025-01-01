@@ -80,8 +80,7 @@ impl Square {
     #[track_caller]
     pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
-            | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
+        let mut mask = file.adjacency_mask();
         match side {
             Side::White => mask.0 <<= (rank.u8() + 1) * 8,
             Side::Black => mask.0 >>= (8 - rank.u8()) * 8,
@@ -92,8 +91,7 @@ impl Square {
     #[must_use]
     pub fn outpost_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.add_int(1).map_or(Bitboard::EMPTY, File::mask)
-            | file.sub_int(1).map_or(Bitboard::EMPTY, File::mask);
+        let mut mask = file.adjacency_mask();
         match side {
             Side::White => mask.0 = mask.0.checked_shl((rank.u32() + 1) * 8).unwrap_or_default(),
             Side::Black => mask.0 = mask.0.checked_shr((8 - rank.u32()) * 8).unwrap_or_default(),
@@ -164,10 +162,16 @@ impl<T> IndexMut<Square> for [T] {
 impl File {
     #[must_use]
     #[inline]
+    pub fn adjacency_mask(self) -> Bitboard {
+        self.add_int(1).map_or(Bitboard::EMPTY, File::mask)
+            | self.sub_int(1).map_or(Bitboard::EMPTY, File::mask)
+    }
+    #[must_use]
+    #[inline]
     // Produces a mask representing a file from 0..8
     // Produces an empty bitboard for File(-1) and File(8)
     // Oher file values are undefined behaviour
-    pub fn mask(self) -> Bitboard {
+    pub const fn mask(self) -> Bitboard {
         const FILES: [Bitboard; 8] = [
             File(0).compute_mask(),
             File(1).compute_mask(),

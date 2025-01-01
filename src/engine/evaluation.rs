@@ -83,12 +83,7 @@ impl Engine {
                 }
             });
             // reward pawns close to king
-            let kadj_pawns_mask = unsafe {
-                king.file().sub_int_unchecked(1).mask()
-                    | king.file().add_int(1).map_or(Bitboard::EMPTY, File::mask)
-                    | king.file().mask()
-            };
-            (friendly[Pawn] & kadj_pawns_mask).for_each(|sq| {
+            (friendly[Pawn] & king.file().adjacency_mask()).for_each(|sq| {
                 const BONUSES: [[i32; 2]; 8] =
                     [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
 
