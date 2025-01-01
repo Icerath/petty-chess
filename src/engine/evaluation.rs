@@ -93,7 +93,8 @@ impl Engine {
 
                 let rook_attacks = self.magic.rook_attacks(rook_a, self.board.all_pieces());
                 if rook_attacks.contains(rook_b) {
-                    total += 20 + (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
+                    total += 20;
+                    total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
                 }
             }
             // reward bishop pair
