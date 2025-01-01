@@ -87,10 +87,10 @@ impl Engine {
                     total += 10;
                 }
             });
-            // reward rooks able to see eachother
-            if let (Some(rook_a), Some(rook_b)) =
-                (friendly[Rook].bitscan(), friendly[Rook].rbitscan())
-            {
+            if friendly[Rook].count() >= 2 {
+                let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
+                let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
+
                 let rook_attacks = self.magic.rook_attacks(rook_a, self.board.all_pieces());
                 if rook_attacks.contains(rook_b) {
                     total += 20 + (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
