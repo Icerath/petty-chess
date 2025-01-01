@@ -36,25 +36,30 @@ impl Magic {
     pub fn get() -> &'static Magic {
         MAGIC.get_or_init(Self::preinit)
     }
+
     #[inline]
     pub fn get_init() -> &'static Magic {
         MAGIC.get_or_init(Self::init)
     }
+
     #[must_use]
     #[inline]
     pub fn rook_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.rook_tables[sq].get_attacks(occupancy)
     }
+
     #[must_use]
     #[inline]
     pub fn bishop_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.bishop_tables[sq].get_attacks(occupancy)
     }
+
     #[must_use]
     #[inline]
     pub fn queen_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.bishop_tables[sq].get_attacks(occupancy) | self.rook_tables[sq].get_attacks(occupancy)
     }
+
     #[allow(unused)]
     fn init() -> Magic {
         Self {
@@ -66,6 +71,7 @@ impl Magic {
             }),
         }
     }
+
     #[allow(unused)]
     fn preinit() -> Magic {
         Self {
@@ -122,12 +128,14 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         }
         Err(())
     }
+
     #[inline]
     fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
         occupancy.0 &= self.mask;
         let index = (occupancy.0.wrapping_mul(self.magic) >> self.shift) as usize;
         Bitboard(self.attacks[index])
     }
+
     #[allow(clippy::needless_range_loop)]
     fn mask(sq: Square) -> u64 {
         let mut result = Bitboard(0);
@@ -144,6 +152,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         }
         result.0
     }
+
     #[allow(clippy::needless_range_loop)]
     fn attacks(sq: Square, occupancy: Bitboard) -> u64 {
         let mut result = Bitboard(0);

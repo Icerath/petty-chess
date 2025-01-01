@@ -10,13 +10,13 @@ pub struct Eval(pub i32);
 impl Eval {
     pub const INFINITY: Self = Self(i32::MAX - 1);
     pub const MATE: Self = Self(i32::MAX);
-
     const NEG_INF: Self = Self(-Self::INFINITY.0);
     const NEG_MATE: Self = Self(-Self::MATE.0);
 }
 
 impl Mul<f32> for Eval {
     type Output = Eval;
+
     fn mul(self, rhs: f32) -> Self::Output {
         Self((self.0 as f32 * rhs) as i32)
     }
@@ -24,6 +24,7 @@ impl Mul<f32> for Eval {
 
 impl Neg for Eval {
     type Output = Self;
+
     fn neg(self) -> Self::Output {
         Self(-self.0)
     }

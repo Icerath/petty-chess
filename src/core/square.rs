@@ -16,6 +16,7 @@ impl Square {
     pub const fn new(rank: Rank, file: File) -> Self {
         Self(file.u8() + rank.u8() * 8)
     }
+
     #[must_use]
     #[inline]
     pub fn flip(self) -> Self {
@@ -32,37 +33,44 @@ impl Square {
         ];
         unsafe { Self::from_int_unchecked(FLIPPED[self]) }
     }
+
     #[must_use]
     #[inline]
     pub const fn file(self) -> File {
         File(self.u8() % 8)
     }
+
     #[must_use]
     #[inline]
     pub const fn rank(self) -> Rank {
         Rank(self.u8() / 8)
     }
+
     #[must_use]
     #[inline]
     pub fn add_rank(self, rank: i8) -> Option<Self> {
         Some(Self::new(self.rank().add_int_signed(rank)?, self.file()))
     }
+
     #[must_use]
     #[inline]
     pub fn add_file(self, file: i8) -> Option<Self> {
         let file = self.file().add_int_signed(file)?;
         Some(Self::new(self.rank(), file))
     }
+
     #[inline]
     #[must_use]
     pub fn all() -> impl ExactSizeIterator<Item = Self> {
         (0..64).map(Self)
     }
+
     #[must_use]
     #[inline]
     pub fn manhattan_distance(self, other: Self) -> u8 {
         self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
     }
+
     #[must_use]
     #[inline]
     pub fn centre_manhattan_distance(self) -> u8 {
@@ -77,6 +85,7 @@ impl Square {
             3, 3, 3, 3, 3, 3, 3, 3, //
         ][self]
     }
+
     #[inline]
     #[must_use]
     pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
@@ -88,6 +97,7 @@ impl Square {
         }
         mask
     }
+
     #[inline]
     #[must_use]
     pub fn outpost_mask(self, side: Side) -> Bitboard {
@@ -139,11 +149,13 @@ macro_rules! define_file_consts {
 impl File {
     pub const ALL: [Self; 8] =
         [Self::A, Self::B, Self::C, Self::D, Self::E, Self::F, Self::G, Self::H];
+
     define_file_consts!(A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7);
 }
 
 impl<T> Index<Square> for [T] {
     type Output = T;
+
     #[inline]
     fn index(&self, sq: Square) -> &Self::Output {
         &self[sq.usize()]
@@ -164,6 +176,7 @@ impl File {
         self.add_int(1).map_or(Bitboard::EMPTY, File::mask)
             | self.sub_int(1).map_or(Bitboard::EMPTY, File::mask)
     }
+
     #[must_use]
     #[inline]
     // Produces a mask representing a file from 0..8
@@ -222,6 +235,7 @@ impl std::error::Error for InvalidSquare {}
 
 impl FromStr for Square {
     type Err = InvalidSquare;
+
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::SQUARES
             .iter()
@@ -241,10 +255,6 @@ macro_rules! define_consts {
 }
 
 impl Square {
-    #[must_use]
-    pub fn algebraic(self) -> &'static str {
-        Self::SQUARES[self]
-    }
     #[rustfmt::skip]
     pub const SQUARES: [&'static str; 64] = [
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
@@ -267,6 +277,11 @@ impl Square {
         A7 48, B7 49, C7 50, D7 51, E7 52, F7 53, G7 54, H7 55,
         A8 56, B8 57, C8 58, D8 59, E8 60, F8 61, G8 62, H8 63,
     );
+
+    #[must_use]
+    pub fn algebraic(self) -> &'static str {
+        Self::SQUARES[self]
+    }
 }
 
 #[test]

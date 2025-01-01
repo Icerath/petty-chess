@@ -46,6 +46,7 @@ impl Engine {
             only_pv_nodes: false,
         }
     }
+
     pub(crate) fn is_cancelled(&mut self) -> bool {
         self.time_started.elapsed() >= self.time_available || self.force_cancelled
     }

@@ -33,10 +33,12 @@ impl Board {
         pieces: u64x8::from_array([0; 8]),
         checkers: Bitboard::EMPTY,
     };
+
     pub fn swap_side(&mut self) {
         self.active_side = !self.active_side;
         self.zobrist.xor_side_to_move();
     }
+
     /// Inserts a piece into the board's bitboards.
     ///
     /// This will not remove other pieces from this square and
@@ -46,6 +48,7 @@ impl Board {
         self[piece.side()].insert(sq);
         self.zobrist.xor_piece(sq, piece);
     }
+
     /// removes a piece from the board's bitboards
     ///
     /// calling this when a piece is not present with produce an invalid zobrist hash
@@ -54,12 +57,14 @@ impl Board {
         self[piece.side()].remove(sq);
         self.zobrist.xor_piece(sq, piece);
     }
+
     /// inserts a piece at sq if it doesn't exist or removes it if it does exist.
     pub fn xor_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()] ^= sq;
         self[piece.side()] ^= sq;
         self.zobrist.xor_piece(sq, piece);
     }
+
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
         let from_piece = self.get_square(mov.from()).unwrap();
@@ -120,20 +125,24 @@ impl Board {
         self.update_checkers();
         unmake
     }
+
     pub fn unmake_move(&mut self, unmake: Unmake) {
         *self = unmake.board;
     }
+
     pub fn make_null_move(&mut self) -> Option<Square> {
         self.increment_ply();
         self.update_checkers();
         self.en_passant_target_square.take().inspect(|&sq| self.zobrist.xor_en_passant(sq))
     }
+
     pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
         self.decrement_ply();
         self.update_checkers();
         self.en_passant_target_square =
             prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
     }
+
     #[inline]
     pub fn increment_ply(&mut self) {
         if self.active_side == Black {
@@ -142,6 +151,7 @@ impl Board {
         self.halfmove_clock += 1;
         self.swap_side();
     }
+
     #[inline]
     pub fn decrement_ply(&mut self) {
         self.swap_side();
@@ -150,37 +160,44 @@ impl Board {
             self.fullmove_counter -= 1;
         }
     }
+
     #[must_use]
     #[inline]
     pub fn side_bitboards(&self, side: Side) -> Pieces {
         let x: [u64; 6] = self.pieces[..6].try_into().unwrap();
         Pieces(x.map(|bitboard| Bitboard(bitboard) & self[side]))
     }
+
     #[must_use]
     #[inline]
     pub fn friendly_bitboards(&self) -> Pieces {
         self.side_bitboards(self.active_side)
     }
+
     #[must_use]
     #[inline]
     pub fn enemy_bitboards(&self) -> Pieces {
         self.side_bitboards(!self.active_side)
     }
+
     #[must_use]
     #[inline]
     pub fn all_pieces(&self) -> Bitboard {
         self[White] | self[Black]
     }
+
     #[must_use]
     #[inline]
     pub fn get_king_square(&self, side: Side) -> Option<Square> {
         self.get(side + King).bitscan()
     }
+
     #[must_use]
     #[inline]
     pub fn active_king(&self) -> Option<Square> {
         self.get_king_square(self.active_side)
     }
+
     #[must_use]
     #[inline]
     pub fn inactive_king(&self) -> Option<Square> {
@@ -194,6 +211,7 @@ impl Board {
     pub fn get(&self, piece: Piece) -> Bitboard {
         self[piece.kind()] & self[piece.side()]
     }
+
     #[inline]
     pub fn swap(&mut self, lhs: Square, rhs: Square) {
         let lhs_piece = self.get_square(lhs);
@@ -207,16 +225,19 @@ impl Board {
             self.insert_piece(lhs, piece);
         }
     }
+
     #[inline]
     #[must_use]
     pub fn is_piece_at(&self, sq: Square) -> bool {
         self.all_pieces().contains(sq)
     }
+
     #[inline]
     #[must_use]
     pub fn is_side(&self, sq: Square, side: Side) -> bool {
         self[side].contains(sq)
     }
+
     #[inline]
     #[must_use]
     pub fn get_square(&self, square: Square) -> Option<Piece> {
@@ -224,11 +245,13 @@ impl Board {
         let kind = self.get_square_kind(square)?;
         Some(side + kind)
     }
+
     #[inline]
     #[must_use]
     pub fn get_square_kind(&self, square: Square) -> Option<PieceKind> {
         PieceKind::ALL.into_iter().find(|&kind| self[kind].contains(square))
     }
+
     #[inline]
     #[must_use]
     pub fn in_check(&self) -> bool {
@@ -261,6 +284,7 @@ impl Pieces {
 
 impl Index<PieceKind> for Pieces {
     type Output = Bitboard;
+
     fn index(&self, kind: PieceKind) -> &Self::Output {
         &self.0[kind as usize]
     }
@@ -273,6 +297,7 @@ impl IndexMut<PieceKind> for Pieces {
 }
 impl Index<PieceKind> for Board {
     type Output = Bitboard;
+
     fn index(&self, kind: PieceKind) -> &Self::Output {
         unsafe { &*(&raw const self.pieces[kind as usize]).cast::<Bitboard>() }
     }
@@ -286,6 +311,7 @@ impl IndexMut<PieceKind> for Board {
 
 impl Index<Side> for Board {
     type Output = Bitboard;
+
     fn index(&self, side: Side) -> &Self::Output {
         unsafe { &*(&raw const self.pieces[side as usize + 6]).cast::<Bitboard>() }
     }

@@ -15,18 +15,22 @@ impl Board {
     pub fn start_pos() -> Self {
         Self::from_fen(STARTING_FEN).expect("Starting FEN should be valid FEN")
     }
+
     #[must_use]
     pub fn kiwipete() -> Self {
         Self::from_fen(KIWIPETE).expect("Kiwipete should be valid FEN")
     }
+
     #[must_use]
     pub fn perft_position_3() -> Self {
         Self::from_fen(PERFT_POSITION_3).expect("Should be valid FEN")
     }
+
     #[must_use]
     pub fn perft_position_4() -> Self {
         Self::from_fen(PERFT_POSITION_4).expect("Should be valid FEN")
     }
+
     #[must_use]
     pub fn perft_position_5() -> Self {
         Self::from_fen(PERFT_POSITION_5).expect("Should be valid FEN")
@@ -81,12 +85,14 @@ impl Board {
         write!(buf, " {} {}", self.halfmove_clock, self.fullmove_counter)
             .expect("Writing to a string should not fail");
     }
+
     #[must_use]
     pub fn to_fen(&self) -> String {
         let mut builder = String::new();
         self.to_fen_into(&mut builder);
         builder
     }
+
     #[must_use]
     pub fn from_fen(fen: &str) -> Option<Board> {
         let mut fields = fen.split(' ');

@@ -23,18 +23,22 @@ impl TranspositionTable {
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
     }
+
     #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
+
     pub fn clear(&mut self) {
         self.inner.clear();
     }
+
     #[must_use]
     #[inline]
     pub fn get(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
         self.get_entry(board, alpha, beta, depth).map(|entry| entry.eval)
     }
+
     #[must_use]
     #[inline]
     pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
@@ -51,6 +55,7 @@ impl TranspositionTable {
         }
         None
     }
+
     #[inline]
     pub fn insert(
         &mut self,
@@ -87,9 +92,11 @@ impl Hasher for NoHasher {
     fn finish(&self) -> u64 {
         self.0
     }
+
     fn write(&mut self, _bytes: &[u8]) {
         unreachable!();
     }
+
     #[inline]
     fn write_u64(&mut self, i: u64) {
         self.0 = i;

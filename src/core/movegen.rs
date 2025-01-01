@@ -36,14 +36,17 @@ impl Board {
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
         MoveGenerator::<FullGen>::new(self).gen_pseudolegal_moves()
     }
+
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
         MoveGenerator::<FullGen>::new(self).gen_legal_moves()
     }
+
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
         MoveGenerator::<CapturesOnly>::new(self).gen_legal_moves()
     }
+
     #[must_use]
     pub fn gen_pseudolegal_capture_moves(&mut self) -> Moves {
         MoveGenerator::<CapturesOnly>::new(self).gen_pseudolegal_moves()
@@ -55,12 +58,14 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     pub fn new(board: &'a mut Board) -> Self {
         Self { moves: Moves::default(), board, ty: PhantomData }
     }
+
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
         let mut moves = self.gen_pseudolegal_moves();
         moves.retain(|&mut mov| self.is_legal(mov));
         moves
     }
+
     #[must_use]
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
         let pieces = self.board.friendly_bitboards();
@@ -79,6 +84,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
 
         std::mem::take(&mut self.moves)
     }
+
     #[must_use]
     #[inline]
     pub fn is_legal(&mut self, mov: Move) -> bool {
@@ -99,6 +105,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         self.board.unmake_move(unmake);
         checkers.is_empty()
     }
+
     // Generate attack map for enemy pieces
     #[inline]
     fn gen_attack_map(&self) -> Bitboard {
@@ -118,6 +125,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         }
         attacked_squares
     }
+
     #[inline]
     pub(crate) fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
@@ -127,6 +135,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
         attacked_squares
     }
+
     #[inline]
     fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
         squares &= !self.board[self.board.active_side];
@@ -138,6 +147,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         });
     }
+
     fn gen_pawn_moves(&mut self, from: Square) {
         let forward = self.board.active_side.forward();
 
@@ -199,6 +209,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
     }
+
     fn gen_king_moves(&mut self, from: Square) {
         self.push_squares(from, KING_MOVES[from]);
         if G::CAPTURES_ONLY || !self.board.checkers.is_empty() {
@@ -234,6 +245,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
     }
+
     #[inline]
     #[must_use]
     pub fn gen_checkers(&self, side: Side) -> Bitboard {

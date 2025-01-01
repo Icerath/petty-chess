@@ -8,21 +8,25 @@ pub struct Move(u16);
 
 impl Move {
     pub const NULL: Move = Self(0);
+
     #[must_use]
     #[inline]
     pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
         Self(from.u16() | to.u16() << 6 | (flags as u16) << 12)
     }
+
     #[inline]
     #[must_use]
     pub fn from(self) -> Square {
         unsafe { Square::from_int_unchecked((self.0 & 0b11_1111) as u8) }
     }
+
     #[must_use]
     #[inline]
     pub fn to(self) -> Square {
         unsafe { Square::from_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
     }
+
     #[must_use]
     #[inline]
     pub fn flags(self) -> MoveFlags {
@@ -55,6 +59,7 @@ impl fmt::Display for Move {
 
 impl FromStr for Move {
     type Err = ();
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let 4..=5 = s.len() else { return Err(()) };
 

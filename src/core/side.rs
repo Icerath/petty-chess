@@ -13,11 +13,13 @@ impl Side {
     pub fn is_black(self) -> bool {
         self == Self::Black
     }
+
     #[must_use]
     #[inline]
     pub fn is_white(self) -> bool {
         self == Self::White
     }
+
     #[must_use]
     #[inline]
     pub const fn forward(self) -> i8 {
@@ -26,6 +28,7 @@ impl Side {
             Self::White => 1,
         }
     }
+
     /// What is considered a beneficial score for this side
     #[inline]
     #[must_use]
@@ -35,6 +38,7 @@ impl Side {
             Self::White => 1,
         }
     }
+
     #[must_use]
     #[inline]
     pub const fn symbol(self) -> char {
@@ -62,6 +66,7 @@ impl From<Side> for bool {
 
 impl Not for Side {
     type Output = Side;
+
     #[inline]
     fn not(self) -> Self::Output {
         match self {

@@ -88,6 +88,7 @@ impl Application {
             Uci::Display => self.display(),
         }
     }
+
     fn respond_with_id(&self) {
         self.respond(UciResponse::Id {
             name: "Petty Chess".into(),
@@ -95,9 +96,11 @@ impl Application {
         });
         self.respond(UciResponse::Uciok);
     }
+
     fn respond(&self, response: UciResponse) {
         println!("{response}");
     }
+
     fn startpos_moves(&mut self, position: Board, moves: Moves) {
         self.engine.seen_positions = vec![position.zobrist];
         self.engine.board = position.clone();
@@ -118,6 +121,7 @@ impl Application {
         }
         self.engine.seen_positions.push(self.engine.board.zobrist);
     }
+
     fn go(&mut self, command: GoCommand) {
         #[cfg(feature = "tracing")]
         let start = Instant::now();
@@ -129,12 +133,14 @@ impl Application {
         #[cfg(feature = "tracing")]
         tracing::info!("Num transpositions: {}", self.engine.transposition_table.num_hits);
     }
+
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
         let total = perft(&mut self.engine.board, depth);
         eprintln!("\nTime taken: {:?}", start.elapsed());
         eprintln!("Nodes searched: {total}");
     }
+
     fn set_time_available(&mut self, time_control: TimeControl) {
         match time_control {
             // TODO - ponder
@@ -156,6 +162,7 @@ impl Application {
             TimeControl::Infinite => self.engine.time_available = Duration::MAX,
         }
     }
+
     fn display(&mut self) {
         let mut out = String::new();
         for rank in (0..8).rev() {

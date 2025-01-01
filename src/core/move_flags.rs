@@ -52,6 +52,7 @@ impl MoveFlags {
             _ => return None,
         })
     }
+
     #[must_use]
     #[inline]
     pub fn is_capture(self) -> bool {
@@ -92,6 +93,7 @@ impl From<Promotion> for PieceKind {
 
 impl FromStr for Promotion {
     type Err = ();
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s.trim() {
             "n" => Self::Knight,

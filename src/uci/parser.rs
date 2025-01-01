@@ -5,6 +5,7 @@ use crate::prelude::*;
 
 impl FromStr for Uci {
     type Err = ();
+
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::parse(input).ok_or(())
     }
@@ -68,6 +69,7 @@ impl Uci {
             };
         }
     }
+
     fn parse_go(tokens: &mut Lexer) -> GoCommand {
         let mut command = GoCommand {
             searchmoves: None,
@@ -124,6 +126,7 @@ impl<'a> Lexer<'a> {
     fn new(input: &'a str) -> Self {
         Self { remaining: input.trim() }
     }
+
     fn bump(&mut self) -> Option<String> {
         if self.remaining.is_empty() {
             return None;
@@ -133,6 +136,7 @@ impl<'a> Lexer<'a> {
         self.remaining = self.remaining[ws..].trim();
         Some(token.to_ascii_lowercase())
     }
+
     fn bump_spin(&mut self) -> Option<u64> {
         if self.remaining.is_empty() {
             return None;
@@ -143,6 +147,7 @@ impl<'a> Lexer<'a> {
         self.remaining = self.remaining[end..].trim();
         token.parse().ok()
     }
+
     fn moves(&mut self) -> Moves {
         let mut moves = Moves::new();
         loop {
@@ -152,9 +157,11 @@ impl<'a> Lexer<'a> {
         }
         moves
     }
+
     fn peek(&self) -> Option<String> {
         self.clone().bump()
     }
+
     fn fen(&mut self) -> Option<&'a str> {
         let start = self.remaining;
 

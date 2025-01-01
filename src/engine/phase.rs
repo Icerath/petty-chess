@@ -17,6 +17,7 @@ impl Phase {
     pub fn earlygame(self) -> Earlygame {
         Earlygame(self.0)
     }
+
     #[inline]
     #[must_use]
     pub fn endgame(self) -> Endgame {
@@ -26,6 +27,7 @@ impl Phase {
 
 impl Mul<i32> for Earlygame {
     type Output = i32;
+
     #[inline]
     fn mul(self, rhs: i32) -> Self::Output {
         (self.0 * rhs as f32) as i32
@@ -34,6 +36,7 @@ impl Mul<i32> for Earlygame {
 
 impl Mul<Earlygame> for i32 {
     type Output = i32;
+
     #[inline]
     fn mul(self, rhs: Earlygame) -> Self::Output {
         (rhs.0 * self as f32) as i32
@@ -42,6 +45,7 @@ impl Mul<Earlygame> for i32 {
 
 impl Mul<i32> for Endgame {
     type Output = i32;
+
     #[inline]
     fn mul(self, rhs: i32) -> Self::Output {
         (self.0 * rhs as f32) as i32
@@ -50,6 +54,7 @@ impl Mul<i32> for Endgame {
 
 impl Mul<Endgame> for i32 {
     type Output = i32;
+
     #[inline]
     fn mul(self, rhs: Endgame) -> Self::Output {
         (rhs.0 * self as f32) as i32

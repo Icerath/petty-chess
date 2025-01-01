@@ -55,16 +55,19 @@ impl Piece {
         BlackKing,
         WhiteKing,
     ];
+
     #[must_use]
     #[inline]
     pub fn new(kind: PieceKind, side: Side) -> Self {
         Self::try_from(kind as u8 * 2 + side as u8).unwrap()
     }
+
     #[must_use]
     #[inline]
     pub fn kind(self) -> PieceKind {
         PieceKind::try_from(self as u8 / 2).unwrap()
     }
+
     #[must_use]
     #[inline]
     pub fn side(self) -> Side {
@@ -89,11 +92,13 @@ impl Piece {
         };
         symbol
     }
+
     #[must_use]
     #[inline]
     pub fn is_white(self) -> bool {
         self.side().is_white()
     }
+
     #[must_use]
     #[inline]
     pub fn is_black(self) -> bool {
@@ -103,6 +108,7 @@ impl Piece {
 
 impl Add<Side> for PieceKind {
     type Output = Piece;
+
     #[inline]
     fn add(self, side: Side) -> Self::Output {
         Piece::new(self, side)
@@ -111,6 +117,7 @@ impl Add<Side> for PieceKind {
 
 impl Add<PieceKind> for Side {
     type Output = Piece;
+
     #[inline]
     fn add(self, kind: PieceKind) -> Self::Output {
         Piece::new(kind, self)

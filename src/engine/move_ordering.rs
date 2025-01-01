@@ -18,6 +18,7 @@ impl Engine {
         let phase = self.phase();
         moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, phase, pawn_attacks));
     }
+
     fn move_order(
         &mut self,
         mov: Move,
