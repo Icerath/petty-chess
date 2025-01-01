@@ -163,7 +163,7 @@ impl fmt::Debug for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for rank in (0..8).rev() {
             for file in 0..8 {
-                let sq = Square::new(Rank(rank), File(file));
+                let sq = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
                 write!(f, "{}", self.contains(sq) as u8)?;
             }
             writeln!(f)?;

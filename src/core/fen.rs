@@ -37,19 +37,20 @@ impl Board {
         for sq in Square::all() {
             if let Some(piece) = self.get_square(sq.flip()) {
                 if let Some(prev) = prev {
-                    if let Some(dif @ 1..) = sq.file().0.checked_sub((prev.file().0 + 1) % 8) {
+                    if let Some(dif @ 1..) = sq.file().u8().checked_sub((prev.file().u8() + 1) % 8)
+                    {
                         buf.push((dif + b'0') as char);
                     }
-                } else if sq.file().0 != 0 {
-                    buf.push((sq.file().0 + b'0') as char);
+                } else if sq.file().u8() != 0 {
+                    buf.push((sq.file().u8() + b'0') as char);
                 }
                 buf.push(piece.symbol());
                 prev = Some(sq);
             }
-            if sq != Square::H8 && sq.file().0 == 7 {
+            if sq != Square::H8 && sq.file().u8() == 7 {
                 if !self.is_piece_at(sq.flip()) {
                     if let Some(prev) = prev {
-                        if let dif @ 1.. = 8 - (prev.file().0 + 1) % 8 {
+                        if let dif @ 1.. = 8 - (prev.file().u8() + 1) % 8 {
                             buf.push((dif + b'0') as char);
                         }
                     } else {
@@ -62,7 +63,7 @@ impl Board {
         }
 
         if !self.is_piece_at(Square::H1) {
-            if let dif @ 1.. = 8 - (prev.unwrap().file().0 + 1) % 8 {
+            if let dif @ 1.. = 8 - (prev.unwrap().file().u8() + 1) % 8 {
                 buf.push((dif + b'0') as char);
             }
         }
@@ -142,7 +143,7 @@ fn parse_pieces(fen: &str) -> Option<Board> {
             _ => return None,
         };
         let side = if c.is_ascii_uppercase() { White } else { Black };
-        let sq = Square::new(Rank(rank), File(file));
+        let sq = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
         board.insert_piece(sq, side + kind);
         file += 1;
     }

@@ -24,7 +24,7 @@ impl Engine {
             for pawns in [friendly[Pawn], enemy[Pawn]] {
                 const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
                 let file = king.file();
-                let penalty = PENALTIES[usize::from(file)];
+                let penalty = PENALTIES[file.usize()];
 
                 let left_open =
                     file != File::A && (pawns & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
@@ -43,8 +43,10 @@ impl Engine {
             // reward non-isolated pawns
             friendly[Pawn].for_each(|sq| {
                 let file = sq.file();
-                let left_open = (friendly[Pawn] & (file - 1).mask()).is_empty();
-                let right_open = (friendly[Pawn] & (file + 1).mask()).is_empty();
+                let left_open =
+                    (friendly[Pawn] & unsafe { file.sub_unchecked(1) }.mask()).is_empty();
+                let right_open =
+                    (friendly[Pawn] & unsafe { file.add_unchecked(1) }.mask()).is_empty();
 
                 if !(left_open && right_open) {
                     total += match file.distance_from_center() {
@@ -59,35 +61,35 @@ impl Engine {
             // reward passed pawns
             friendly[Pawn].for_each(|sq| {
                 const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
-                let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
+                let is_passed_pawn =
+                    (unsafe { sq.passed_pawn_mask(side) } & enemy[Pawn]).is_empty();
                 if is_passed_pawn {
-                    let offset = match side {
-                        Side::White => usize::from(sq.rank()),
-                        Side::Black => 7 - usize::from(sq.rank()),
-                    };
+                    let offset = sq.rank().relative_to(side).usize();
                     total += BONUSES[offset];
                 }
             });
             // reward outposts
             (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-                if usize::from(sq.rank().relative_to(side)) < 4 {
+                if sq.rank().relative_to(side).u8() < 4 {
                     return;
                 }
-                let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
+                let is_outpost = (unsafe { sq.outpost_mask(side) } & enemy[Pawn]).is_empty();
                 if is_outpost {
                     total += 20;
                 }
             });
             // reward pawns close to king
-            let kadj_pawns_mask =
-                (king.file() - 1).mask() | (king.file() + 1).mask() | king.file().mask();
+            let kadj_pawns_mask = unsafe {
+                king.file().sub_unchecked(1).mask()
+                    | king.file().add_unchecked(1).mask()
+                    | king.file().mask()
+            };
             (friendly[Pawn] & kadj_pawns_mask).for_each(|sq| {
                 const BONUSES: [[i32; 2]; 8] =
                     [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
 
-                let dif_rank =
-                    u8::from(sq.rank()).abs_diff(u8::from(king.rank())).saturating_sub(1);
-                total += BONUSES[usize::from(sq.file())].get(dif_rank as usize).unwrap_or(&0);
+                let dif_rank = sq.rank().u8().abs_diff(king.rank().u8()).saturating_sub(1);
+                total += BONUSES[sq.file().usize()].get(dif_rank as usize).unwrap_or(&0);
             });
             // reward rooks on an open file
             friendly[Rook].for_each(|sq| {

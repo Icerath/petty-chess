@@ -155,15 +155,14 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     fn gen_pawn_moves(&mut self, from: Square) {
         let forward = self.board.active_side.forward();
 
-        let can_promote = (self.board.active_side == White && u8::from(from.rank()) == 6)
-            || (self.board.active_side == Black && u8::from(from.rank()) == 1);
+        let can_promote = (self.board.active_side == White && from.rank().u8() == 6)
+            || (self.board.active_side == Black && from.rank().u8() == 1);
 
         if !G::CAPTURES_ONLY {
             let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
             if !self.board.is_piece_at(to) {
-                let can_double_push = (self.board.active_side == White
-                    && u8::from(from.rank()) == 1)
-                    || (self.board.active_side == Black && u8::from(from.rank()) == 6);
+                let can_double_push = (self.board.active_side == White && from.rank().u8() == 1)
+                    || (self.board.active_side == Black && from.rank().u8() == 6);
 
                 if !can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::Quiet));
@@ -213,8 +212,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(en_passant) = self.board.en_passant_target_square {
-            if ((en_passant.file().0 as i8 - from.file().0 as i8).abs()) <= 1
-                && from.rank().0 as i8 == (en_passant.rank().0 as i8 - forward)
+            if ((en_passant.file().i8() - from.file().i8()).abs()) <= 1
+                && from.rank().i8() == en_passant.rank().i8() - forward
             {
                 self.moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
             }
@@ -300,10 +299,10 @@ const fn compute_pawn_moves() -> [[Bitboard; 64]; 2] {
     while index < 64 {
         let sq = unsafe { Square::new_int_unchecked(index as u8) };
 
-        let num_up = sq.rank().0 as i8;
-        let num_down = 7 - sq.rank().0 as i8;
-        let num_left = sq.file().0 as i8;
-        let num_right = 7 - sq.file().0 as i8;
+        let num_up = sq.rank().i8();
+        let num_down = 7 - sq.rank().i8();
+        let num_left = sq.file().i8();
+        let num_right = 7 - sq.file().i8();
 
         let up = -8;
         let down = -up;
@@ -336,10 +335,10 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
     while index < 64 {
         let sq = unsafe { Square::new_int_unchecked(index as u8) };
 
-        let num_up = 7 - sq.rank().0 as i8;
-        let num_down = sq.rank().0 as i8;
-        let num_left = sq.file().0 as i8;
-        let num_right = 7 - sq.file().0 as i8;
+        let num_up = 7 - sq.rank().i8();
+        let num_down = sq.rank().i8();
+        let num_left = sq.file().i8();
+        let num_right = 7 - sq.file().i8();
 
         let mut bitboard = Bitboard(0);
 
@@ -373,12 +372,12 @@ const fn compute_king_moves() -> [Bitboard; 64] {
 
     let mut index = 0;
     while index < 64 {
-        let sq = unsafe { Square::new_int_unchecked(index as u8) };
+        let sq = Square::new_int(index as u8).unwrap();
 
-        let num_up = 7 - sq.rank().0;
-        let num_down = sq.rank().0;
-        let num_left = sq.file().0;
-        let num_right = 7 - sq.file().0;
+        let num_up = 7 - sq.rank().i8();
+        let num_down = sq.rank().i8();
+        let num_left = sq.file().i8();
+        let num_right = 7 - sq.file().i8();
 
         let mut bitboard = Bitboard(0);
 
@@ -418,10 +417,10 @@ const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
     while index < 64 {
         let sq = unsafe { Square::new_int_unchecked(index as u8) };
 
-        let num_up = 7 - sq.rank().0 as i8;
-        let num_down = sq.rank().0 as i8;
-        let num_left = sq.file().0 as i8;
-        let num_right = 7 - sq.file().0 as i8;
+        let num_up = 7 - sq.rank().i8();
+        let num_down = sq.rank().i8();
+        let num_left = sq.file().i8();
+        let num_right = 7 - sq.file().i8();
 
         squares[sq.int() as usize] = [
             num_up,

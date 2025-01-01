@@ -1,7 +1,7 @@
 use std::{
     fmt,
     hint::assert_unchecked,
-    ops::{Add, Index, IndexMut, Sub},
+    ops::{Index, IndexMut},
     str::FromStr,
 };
 
@@ -11,6 +11,13 @@ use crate::prelude::*;
 pub struct Square(u8);
 
 impl Square {
+    #[must_use]
+    pub const fn new_int(int: u8) -> Option<Self> {
+        match int {
+            0..64 => Some(unsafe { Self::new_int_unchecked(int) }),
+            _ => None,
+        }
+    }
     /// # Safety
     /// int must be < 64
     #[must_use]
@@ -94,26 +101,25 @@ impl Square {
     }
     #[inline]
     #[must_use]
-    /// # Panics
-    /// Panics on debug builds when file is 0 or 7.
-    /// Instead produces incorrect masks on release
-    pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
+    /// # Safety
+    /// file must not be 0 or 7
+    pub unsafe fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.mask() | (file + 1).mask() | (file - 1).mask();
+        let mut mask = file.mask()
+            | unsafe { (file.add_unchecked(1)).mask() | (file.sub_unchecked(1)).mask() };
         match side {
             Side::White => mask.0 <<= (rank.0 + 1) * 8,
             Side::Black => mask.0 >>= (8 - rank.0) * 8,
         }
         mask
     }
-    /// # Panics
-    /// Panics on debug builds when file is 0 or 7.
-    /// Instead produces incorrect masks on release
+    /// # Safety
+    /// file must not be 0 or 7
     #[inline]
     #[must_use]
-    pub fn outpost_mask(self, side: Side) -> Bitboard {
+    pub unsafe fn outpost_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = (file + 1).mask() | (file - 1).mask();
+        let mut mask = unsafe { file.add_unchecked(1).mask() | (file.sub_unchecked(1)).mask() };
         match side {
             Side::White => mask.0 = mask.0.checked_shl((rank.0 as u32 + 1) * 8).unwrap_or_default(),
             Side::Black => mask.0 = mask.0.checked_shr((8 - rank.0 as u32) * 8).unwrap_or_default(),
@@ -123,37 +129,35 @@ impl Square {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct File(pub u8);
+pub struct File(u8);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Rank(pub u8);
+pub struct Rank(u8);
 
 macro_rules! impl_ {
     ($ty: ty) => {
-        impl From<$ty> for usize {
-            #[inline(always)]
-            fn from(int: $ty) -> Self {
-                let out = int.0.into();
-                unsafe { assert_unchecked(out < 8) };
-                out
-            }
-        }
-        impl From<$ty> for u8 {
-            fn from(int: $ty) -> Self {
-                let out = int.0.into();
-                unsafe { assert_unchecked(out < 8) };
-                out
-            }
-        }
         impl $ty {
             #[must_use]
+            pub fn new(int: u8) -> Option<Self> {
+                match int {
+                    0..8 => Some(unsafe { Self::new_int_unchecked(int) }),
+                    _ => None,
+                }
+            }
+            #[must_use]
+            /// # Safety
+            /// int must be < 8
             pub unsafe fn new_int_unchecked(int: u8) -> Self {
                 Self(int)
             }
             #[must_use]
+            /// # Safety
+            /// File.0 + int must be < 8
             pub unsafe fn add_unchecked(self, int: u8) -> Self {
                 Self(self.0 + int)
             }
+            /// # Safety
+            /// File.0 - int must not overflow
             #[must_use]
             pub unsafe fn sub_unchecked(self, int: u8) -> Self {
                 Self(self.0 - int)
@@ -162,7 +166,20 @@ macro_rules! impl_ {
             #[must_use]
             pub fn distance_from_center(self) -> u8 {
                 const OUTPUTS: [u8; 8] = [3, 2, 1, 0, 0, 1, 2, 3];
-                OUTPUTS[usize::from(self)]
+                OUTPUTS[self.usize()]
+            }
+            #[must_use]
+            pub const fn i8(self) -> i8 {
+                self.u8() as i8
+            }
+            #[must_use]
+            pub const fn u8(self) -> u8 {
+                unsafe { assert_unchecked(self.0 < 8) };
+                self.0
+            }
+            #[must_use]
+            pub const fn usize(self) -> usize {
+                self.u8() as usize
             }
         }
     };
@@ -255,20 +272,6 @@ impl File {
                 + (1 << (48 + self.0))
                 + (1 << (56 + self.0)),
         )
-    }
-}
-
-impl Add<i8> for File {
-    type Output = Self;
-    fn add(self, rhs: i8) -> Self::Output {
-        Self(self.0.wrapping_add_signed(rhs))
-    }
-}
-
-impl Sub<i8> for File {
-    type Output = Self;
-    fn sub(self, rhs: i8) -> Self::Output {
-        Self(self.0.wrapping_add_signed(-rhs))
     }
 }
 

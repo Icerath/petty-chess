@@ -161,7 +161,7 @@ impl Application {
             out.push_str("+---+---+---+---+---+---+---+---+\n|");
             for file in 0..8 {
                 out.push(' ');
-                let square = Square::new(Rank(rank), File(file));
+                let square = Square::new(Rank::new(rank).unwrap(), File::new(file).unwrap());
                 let piece = self.engine.board.get_square(square);
                 out.push(piece.map_or(' ', Piece::symbol));
                 out.push_str(" |");

@@ -100,7 +100,7 @@ impl Board {
                 self.remove_piece(back, pawn);
             }
             MoveFlags::QueenCastle if self.active_side == White => {
-                self.swap(Square::A1, Square::D1)
+                self.swap(Square::A1, Square::D1);
             }
             MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
             MoveFlags::KingCastle if self.active_side == White => self.swap(Square::F1, Square::H1),
