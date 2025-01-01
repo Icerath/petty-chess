@@ -10,6 +10,8 @@ const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
 pub struct CapturesOnly;
 pub struct FullGen;
+pub struct LazyCapturesOnly;
+pub struct LazyFullGen;
 
 pub trait GenType {
     const CAPTURES_ONLY: bool;
@@ -26,7 +28,6 @@ impl GenType for FullGen {
 pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
     board: &'a mut Board,
-    pub queen_knight_promote_only: bool,
     ty: PhantomData<G>,
 }
 
@@ -37,9 +38,7 @@ impl Board {
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
-        let mut movegen = MoveGenerator::<FullGen>::new(self);
-        movegen.queen_knight_promote_only = false;
-        movegen.gen_legal_moves()
+        MoveGenerator::<FullGen>::new(self).gen_legal_moves()
     }
     #[must_use]
     pub fn gen_capture_moves(&mut self) -> Moves {
@@ -54,7 +53,7 @@ impl Board {
 impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
-        Self { moves: Moves::default(), board, queen_knight_promote_only: true, ty: PhantomData }
+        Self { moves: Moves::default(), board, ty: PhantomData }
     }
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
@@ -170,10 +169,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 } else if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
-                    if !self.queen_knight_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
-                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
-                    }
+                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
                 }
             }
         }
@@ -182,10 +179,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-                    if !self.queen_knight_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-                    }
+                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
                 } else {
                     self.moves.push(Move::new(from, to, MoveFlags::Capture));
                 }
@@ -196,10 +191,8 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-                    if !self.queen_knight_promote_only {
-                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-                    }
+                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
                 } else {
                     self.moves.push(Move::new(from, to, MoveFlags::Capture));
                 }
