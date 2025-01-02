@@ -137,6 +137,7 @@ impl Engine {
             self.depth_from_root -= 1;
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
+
             if self.is_cancelled() {
                 return (0, None);
             }
@@ -223,7 +224,7 @@ impl Engine {
         alpha
     }
 
-    pub fn should_null_move_heuristic(&self, depth: u8) -> bool {
+    fn should_null_move_heuristic(&self, depth: u8) -> bool {
         if self.depth_from_root < 3 || depth < 3 {
             return false;
         }
