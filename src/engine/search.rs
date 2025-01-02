@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{sync::atomic::Ordering, time::Instant};
 
 use movegen::FullGen;
 
@@ -14,15 +14,12 @@ impl Engine {
         self.time_started = Instant::now();
         self.total_nodes = 0;
         self.effective_nodes = 0;
-        self.force_cancelled = false;
+        self.kill.store(false, Ordering::Release);
         self.transposition_table.num_hits = 0;
 
         let mut best_move = self.board.gen_legal_moves().first().copied().unwrap_or(Move::NULL);
 
         for depth in 1.. {
-            if self.time_started.elapsed() > self.time_available / 2 {
-                break;
-            }
             self.only_pv_nodes = true;
             let mut new_pv = Moves::new();
             let score =

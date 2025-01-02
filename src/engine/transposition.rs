@@ -6,7 +6,7 @@ use std::{
 use super::score::Eval;
 use crate::prelude::*;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct TranspositionTable {
     inner: HashMap<Zobrist, Entry, BuildHasherDefault<NoHasher>>,
     pub num_hits: u64,
@@ -77,6 +77,7 @@ impl TranspositionTable {
     }
 }
 
+#[derive(Clone)]
 pub struct Entry {
     pub eval: i32,
     pub nodetype: Nodetype,

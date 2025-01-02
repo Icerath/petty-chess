@@ -1,6 +1,10 @@
 use std::{
     fmt::Write,
     io::BufRead as _,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
@@ -49,6 +53,7 @@ fn main() {
 }
 
 pub struct Application {
+    kill: Arc<AtomicBool>,
     engine: Engine,
     running: bool,
     debug: bool,
@@ -56,7 +61,8 @@ pub struct Application {
 
 impl Default for Application {
     fn default() -> Self {
-        Self { engine: Engine::new(Board::start_pos()), running: true, debug: false }
+        let engine = Engine::new(Board::start_pos());
+        Self { kill: engine.kill.clone(), engine, running: true, debug: false }
     }
 }
 
@@ -81,7 +87,7 @@ impl Application {
                 }
             }
             Uci::Go(command) => self.go(command),
-            Uci::Stop => self.engine.force_cancelled = true,
+            Uci::Stop => self.kill.store(true, Ordering::Relaxed),
             Uci::PonderHit => {}
             Uci::Quit => self.running = false,
             Uci::Perft { depth } => self.go_perft(depth.unwrap_or(1) as u8),
@@ -123,15 +129,25 @@ impl Application {
     }
 
     fn go(&mut self, command: GoCommand) {
+        self.kill.store(true, Ordering::Relaxed);
         #[cfg(feature = "tracing")]
         let start = Instant::now();
-        self.set_time_available(command.time_control);
-        let best_move = self.engine.search();
-        self.respond(UciResponse::Bestmove { mov: best_move, ponder: None });
-        #[cfg(feature = "tracing")]
-        tracing::info!("Time taken: {:?}", start.elapsed());
-        #[cfg(feature = "tracing")]
-        tracing::info!("Num transpositions: {}", self.engine.transposition_table.num_hits);
+        let time_available = self.set_time_available(command.time_control);
+        let mut engine = self.engine.clone();
+        self.kill = engine.kill.clone();
+        std::thread::spawn(move || {
+            let best_move = engine.search();
+            println!("{}", UciResponse::Bestmove { mov: best_move, ponder: None });
+            #[cfg(feature = "tracing")]
+            tracing::info!("Time taken: {:?}", start.elapsed());
+            #[cfg(feature = "tracing")]
+            tracing::info!("Num transpositions: {}", engine.transposition_table.num_hits);
+        });
+        let kill = self.kill.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(time_available);
+            kill.store(true, Ordering::Relaxed);
+        });
     }
 
     fn go_perft(&mut self, depth: u8) {
@@ -141,10 +157,10 @@ impl Application {
         eprintln!("Nodes searched: {total}");
     }
 
-    fn set_time_available(&mut self, time_control: TimeControl) {
+    fn set_time_available(&mut self, time_control: TimeControl) -> Duration {
         match time_control {
             // TODO - ponder
-            TimeControl::Ponder => self.engine.time_available = Duration::MAX,
+            TimeControl::Ponder => Duration::MAX,
             TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
                 let (total, incr) = if self.engine.board.active_side == White {
                     (wtime, wincr)
@@ -156,10 +172,10 @@ impl Application {
                 let moves_to_end =
                     estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
                 let time_per_move = total.div_f32(moves_to_end as f32);
-                self.engine.time_available = (time_per_move + incr).min(total);
+                (time_per_move + incr).min(total)
             }
-            TimeControl::MoveTime(time) => self.engine.time_available = time,
-            TimeControl::Infinite => self.engine.time_available = Duration::MAX,
+            TimeControl::MoveTime(time) => time,
+            TimeControl::Infinite => Duration::MAX,
         }
     }
 
