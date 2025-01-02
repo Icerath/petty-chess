@@ -90,17 +90,7 @@ impl Engine {
             self.total_nodes += 1;
         }
 
-        'null: {
-            if self.depth_from_root < 3 || depth < 3 {
-                break 'null;
-            }
-            // try avoid zugzwang issue
-            if self.phase().endgame().0 > 0.9 {
-                break 'null;
-            }
-            if self.board.in_check() {
-                break 'null;
-            }
+        if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
             let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new(), None).0;
@@ -231,5 +221,16 @@ impl Engine {
         }
 
         alpha
+    }
+
+    pub fn should_null_move_heuristic(&self, depth: u8) -> bool {
+        if self.depth_from_root < 3 || depth < 3 {
+            return false;
+        }
+        // try avoid zugzwang issue
+        if self.phase().endgame().0 > 0.9 {
+            return false;
+        }
+        !self.board.in_check()
     }
 }
