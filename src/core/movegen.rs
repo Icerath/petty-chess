@@ -60,7 +60,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
     pub fn gen_legal_moves(&mut self) -> Moves {
         let mut moves = self.gen_pseudolegal_moves();
-        moves.retain(|&mut mov| self.is_legal(mov));
+        moves.retain(|&mut mov| self.board.is_legal(mov));
         moves
     }
 
@@ -81,47 +81,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         pieces[Queen].for_each(|from| self.push_squares(from, queen_attacks(from, all_pieces)));
 
         std::mem::take(&mut self.moves)
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn is_legal(&mut self, mov: Move) -> bool {
-        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
-            let map = self.gen_attack_map();
-            let squares = match (self.board.active_side, mov.flags() == MoveFlags::KingCastle) {
-                (Side::White, true) => [Square::F1, Square::G1],
-                (Side::White, false) => [Square::C1, Square::D1],
-                (Side::Black, true) => [Square::F8, Square::G8],
-                (Side::Black, false) => [Square::C8, Square::D8],
-            };
-            if map.contains(squares[0]) || map.contains(squares[1]) {
-                return false;
-            }
-        }
-        let unmake = self.board.make_move(mov);
-        let checkers = self.gen_checkers(!self.board.active_side);
-        self.board.unmake_move(unmake);
-        checkers.is_empty()
-    }
-
-    // Generate attack map for enemy pieces
-    #[inline]
-    fn gen_attack_map(&self) -> Bitboard {
-        let mut attacked_squares = Bitboard(0);
-        let side = !self.board.active_side;
-        let enemy_pieces = self.board.enemy_bitboards();
-        let all_pieces = self.board.all_pieces();
-
-        enemy_pieces[Pawn]
-            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
-        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
-        enemy_pieces[Bishop].for_each(|from| attacked_squares |= bishop_attacks(from, all_pieces));
-        enemy_pieces[Rook].for_each(|from| attacked_squares |= rook_attacks(from, all_pieces));
-        enemy_pieces[Queen].for_each(|from| attacked_squares |= queen_attacks(from, all_pieces));
-        if let Some(king) = self.board.inactive_king() {
-            attacked_squares |= KING_MOVES[king];
-        }
-        attacked_squares
     }
 
     #[inline]
@@ -243,40 +202,68 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
     }
+}
+
+impl Board {
+    #[inline]
+    pub fn update_checkers(&mut self) {
+        self.checkers = self.gen_checkers(self.active_side);
+    }
 
     #[inline]
     #[must_use]
     pub fn gen_checkers(&self, side: Side) -> Bitboard {
-        if side == self.board.active_side {
-            return self.board.checkers;
-        }
         let mut bb = Bitboard::EMPTY;
-        let occupancy = self.board.all_pieces();
-        let Some(king) = self.board.get_king_square(side) else { return bb };
-        bb |= ATTACK_PAWN_MOVES[side as usize][king] & self.board[Pawn];
-        bb |= KNIGHT_MOVES[king] & self.board[Knight];
-        bb |= bishop_attacks(king, occupancy) & (self.board[Bishop] | self.board[Queen]);
-        bb |= rook_attacks(king, occupancy) & (self.board[Rook] | self.board[Queen]);
-        bb |= KING_MOVES[king] & (self.board[King]);
-
-        bb & self.board[!side]
-    }
-}
-
-impl Board {
-    pub fn update_checkers(&mut self) {
-        let side = self.active_side;
         let occupancy = self.all_pieces();
-        let Some(king) = self.get_king_square(side) else { return };
-        self.checkers = Bitboard::EMPTY;
+        let Some(king) = self.get_king_square(side) else { return bb };
+        bb |= ATTACK_PAWN_MOVES[side as usize][king] & self[Pawn];
+        bb |= KNIGHT_MOVES[king] & self[Knight];
+        bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
+        bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
+        bb |= KING_MOVES[king] & (self[King]);
 
-        self.checkers |= ATTACK_PAWN_MOVES[side as usize][king] & self[Pawn];
-        self.checkers |= KNIGHT_MOVES[king] & self[Knight];
-        self.checkers |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
-        self.checkers |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
-        self.checkers |= KING_MOVES[king] & (self[King]);
+        bb & self[!side]
+    }
 
-        self.checkers &= self[!side];
+    #[must_use]
+    #[inline]
+    pub fn is_legal(&mut self, mov: Move) -> bool {
+        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+            let map = self.gen_attack_map();
+            let squares = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {
+                (Side::White, true) => [Square::F1, Square::G1],
+                (Side::White, false) => [Square::C1, Square::D1],
+                (Side::Black, true) => [Square::F8, Square::G8],
+                (Side::Black, false) => [Square::C8, Square::D8],
+            };
+            if map.contains(squares[0]) || map.contains(squares[1]) {
+                return false;
+            }
+        }
+        let unmake = self.make_move(mov);
+        let checkers = self.gen_checkers(!self.active_side);
+        self.unmake_move(unmake);
+        checkers.is_empty()
+    }
+
+    // Generate attack map for enemy pieces
+    #[inline]
+    fn gen_attack_map(&self) -> Bitboard {
+        let mut attacked_squares = Bitboard(0);
+        let side = !self.active_side;
+        let enemy_pieces = self.enemy_bitboards();
+        let all_pieces = self.all_pieces();
+
+        enemy_pieces[Pawn]
+            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
+        enemy_pieces[Bishop].for_each(|from| attacked_squares |= bishop_attacks(from, all_pieces));
+        enemy_pieces[Rook].for_each(|from| attacked_squares |= rook_attacks(from, all_pieces));
+        enemy_pieces[Queen].for_each(|from| attacked_squares |= queen_attacks(from, all_pieces));
+        if let Some(king) = self.inactive_king() {
+            attacked_squares |= KING_MOVES[king];
+        }
+        attacked_squares
     }
 }
 

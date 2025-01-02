@@ -118,7 +118,7 @@ impl Engine {
         let curr_nodes = self.total_nodes;
         let mut killer_move = None;
         for mov in moves {
-            if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
+            if !self.board.is_legal(mov) {
                 continue;
             }
             let mut line = Moves::new();
@@ -192,7 +192,7 @@ impl Engine {
 
         let mut encountered_legal_move = false;
         for mov in moves {
-            if !MoveGenerator::<FullGen>::new(&mut self.board).is_legal(mov) {
+            if !self.board.is_legal(mov) {
                 continue;
             }
             encountered_legal_move = true;
@@ -215,7 +215,7 @@ impl Engine {
         if !encountered_legal_move {
             let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
             let legal_moves =
-                movegen.gen_pseudolegal_moves().iter().any(|&mov| movegen.is_legal(mov));
+                movegen.gen_pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
             if !legal_moves {
                 return if self.board.in_check() { -Eval::MATE.0 } else { 0 };
             }
