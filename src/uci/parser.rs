@@ -148,8 +148,8 @@ impl<'a> Lexer<'a> {
         token.parse().ok()
     }
 
-    fn moves(&mut self) -> Moves {
-        let mut moves = Moves::new();
+    fn moves(&mut self) -> Vec<Move> {
+        let mut moves = vec![];
         loop {
             let Some(token) = self.bump() else { break };
             let Ok(mov) = token.parse() else { continue };
@@ -184,11 +184,11 @@ impl<'a> Lexer<'a> {
 fn test_uci_parsing() {
     assert_eq!(
         "asdhasud    poSition   StarTpos 123124  213y1279asdzxc".parse(),
-        Ok(Uci::Position { fen: fen::STARTING_FEN.into(), moves: Moves::new() })
+        Ok(Uci::Position { fen: fen::STARTING_FEN.into(), moves: vec![] })
     );
     assert_eq!(
         "position fen 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -".parse(),
-        Ok(Uci::Position { fen: fen::PERFT_POSITION_3.into(), moves: Moves::new() })
+        Ok(Uci::Position { fen: fen::PERFT_POSITION_3.into(), moves: vec![] })
     );
 
     assert_eq!("hgfgfas debug on garbage".parse(), Ok(Uci::Debug(true)));
@@ -212,13 +212,10 @@ fn test_uci_parsing() {
     assert_eq!(
         "go depth searchmoves e2e4q e7e5".parse(),
         Ok(Uci::Go(GoCommand {
-            searchmoves: Some(
-                vec![
-                    Move::new(Square::E2, Square::E4, MoveFlags::QueenPromotion),
-                    Move::new(Square::E7, Square::E5, MoveFlags::Quiet)
-                ]
-                .into()
-            ),
+            searchmoves: Some(vec![
+                Move::new(Square::E2, Square::E4, MoveFlags::QueenPromotion),
+                Move::new(Square::E7, Square::E5, MoveFlags::Quiet)
+            ]),
             ..GoCommand::default()
         }))
     );

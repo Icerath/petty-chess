@@ -25,7 +25,7 @@ pub struct Engine {
     pub board: Board,
     pub seen_positions: Vec<Zobrist>,
     pub kill: Arc<AtomicBool>,
-    pub pv: Moves,
+    pub pv: Vec<Move>,
     pub depth_from_root: u16,
     pub time_started: Instant,
     pub depth_reached: u8,
@@ -41,7 +41,7 @@ impl Engine {
         Self {
             kill: Arc::default(),
             board,
-            pv: Moves::new(),
+            pv: vec![],
             depth_from_root: 0,
             seen_positions: vec![],
             time_started: Instant::now(),

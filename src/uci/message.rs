@@ -10,7 +10,7 @@ pub enum UciMessage {
     Setoption { id: String, value: Option<String> },
     Register(Registration),
     Ucinewgame,
-    Position { fen: String, moves: Moves },
+    Position { fen: String, moves: Vec<Move> },
     Go(GoCommand),
     Stop,
     PonderHit,
@@ -27,7 +27,7 @@ pub enum Registration {
 
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct GoCommand {
-    pub searchmoves: Option<Moves>,
+    pub searchmoves: Option<Vec<Move>>,
     pub time_control: TimeControl,
     pub depth: Option<u32>,
     pub nodes: Option<u64>,

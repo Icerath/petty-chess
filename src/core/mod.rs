@@ -8,6 +8,7 @@ pub mod magic;
 pub mod r#move;
 pub mod move_flags;
 pub mod movegen;
+pub mod moves;
 pub mod perft;
 pub mod piece;
 pub mod side;

@@ -21,7 +21,7 @@ impl Engine {
 
         for depth in 1.. {
             self.only_pv_nodes = true;
-            let mut new_pv = Moves::new();
+            let mut new_pv = Vec::new();
             let score =
                 self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
             if self.is_cancelled() {
@@ -71,7 +71,7 @@ impl Engine {
         mut alpha: i32,
         beta: i32,
         depth: u8,
-        pline: &mut Moves,
+        pline: &mut Vec<Move>,
         killer_move: Option<Move>,
     ) -> (i32, Option<Move>) {
         if self.depth_from_root != 0 && self.seen_position() {
@@ -93,7 +93,7 @@ impl Engine {
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
-            let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new(), None).0;
+            let score = -self.negamax(-beta, -alpha, depth - 3, &mut vec![], None).0;
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
@@ -121,7 +121,7 @@ impl Engine {
             if !self.board.is_legal(mov) {
                 continue;
             }
-            let mut line = Moves::new();
+            let mut line = vec![];
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
             self.seen_positions.push(self.board.zobrist);

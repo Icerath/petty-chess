@@ -18,6 +18,7 @@ pub mod prelude {
             magic::{bishop_attacks, queen_attacks, rook_attacks},
             move_flags::{Castle, MoveFlags, Promotion},
             movegen::{self, MoveGenerator, KNIGHT_MOVES},
+            moves::Moves,
             piece::{Piece, PieceKind},
             r#move::Move,
             side::Side,
@@ -26,6 +27,4 @@ pub mod prelude {
         },
         engine::{phase, Engine, Eval, Phase},
     };
-
-    pub type Moves = smallvec::SmallVec<[Move; 64]>;
 }

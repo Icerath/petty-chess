@@ -33,7 +33,7 @@ pub struct Info {
     pub seldepth: Option<u32>,
     pub time: Option<Duration>,
     pub nodes: Option<u64>,
-    pub pv: Option<Moves>,
+    pub pv: Option<Vec<Move>>,
     pub score: Option<Score>,
     pub currmove: Option<Move>,
     pub currmovnum: Option<u32>,
@@ -43,8 +43,8 @@ pub struct Info {
     pub sbhits: Option<u32>,
     pub cpu_load: Option<u32>,
     pub string: Option<String>,
-    pub refutation: Option<(Move, Moves)>,
-    pub currline: Option<(Option<u32>, Moves)>,
+    pub refutation: Option<(Move, Vec<Move>)>,
+    pub currline: Option<(Option<u32>, Vec<Move>)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

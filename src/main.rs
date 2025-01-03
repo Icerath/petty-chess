@@ -107,7 +107,7 @@ impl Application {
         println!("{response}");
     }
 
-    fn startpos_moves(&mut self, position: Board, moves: Moves) {
+    fn startpos_moves(&mut self, position: Board, moves: Vec<Move>) {
         self.engine.seen_positions = vec![position.zobrist];
         self.engine.board = position.clone();
         for mov in moves {
