@@ -5,6 +5,7 @@ use std::{
 
 use crate::prelude::*;
 
+#[repr(transparent)]
 #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Bitboard(pub u64);
 
@@ -101,6 +102,18 @@ impl Bitboard {
     #[must_use]
     pub fn contains_in_file(self, file: File) -> bool {
         (self & file.mask()).0 > 0
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_ref(int: &u64) -> &Self {
+        unsafe { &*std::ptr::from_ref(int).cast::<Self>() }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_mut(int: &mut u64) -> &mut Self {
+        unsafe { &mut *std::ptr::from_mut(int).cast::<Self>() }
     }
 }
 
