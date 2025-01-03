@@ -33,35 +33,6 @@ pub fn raw_mobility_eval(board: &Board) -> i32 {
     final_total
 }
 
-impl Engine {
-    #[must_use]
-    pub fn raw_mobility_eval(&self) -> i32 {
-        let occupancy = self.board.all_pieces();
-        let mut final_total = 0;
-        for side in [White, Black] {
-            let mut total = 0;
-            // Pawns: TODO
-            self.board.get(side + Knight).for_each(|sq| {
-                total += knight_score((KNIGHT_MOVES[sq]).count());
-            });
-            self.board.get(side + Bishop).for_each(|sq| {
-                total += bishop_score((bishop_attacks(sq, occupancy)).count());
-            });
-            self.board.get(side + Rook).for_each(|sq| {
-                total += rook_score((rook_attacks(sq, occupancy)).count());
-            });
-            self.board.get(side + Rook).for_each(|sq| {
-                total += rook_score((rook_attacks(sq, occupancy)).count());
-            });
-            self.board.get(side + Queen).for_each(|sq| {
-                total += queen_score((queen_attacks(sq, occupancy)).count());
-            });
-            final_total += total * side.positive();
-        }
-        final_total
-    }
-}
-
 const MAX_KNIGHT_MOVES: u8 = 8;
 // const MAX_BISHOP_MOVES: u8 = 13;
 const EXPECTED_BISHOP_MOVES: u8 = 10;
