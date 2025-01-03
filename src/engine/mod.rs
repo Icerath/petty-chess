@@ -14,7 +14,8 @@ use std::{
     time::Instant,
 };
 
-pub use phase::Phase;
+pub use phase::{phase, Phase};
+pub use score::Eval;
 use transposition::TranspositionTable;
 
 use crate::prelude::*;

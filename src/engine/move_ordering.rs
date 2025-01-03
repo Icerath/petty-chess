@@ -1,9 +1,6 @@
 use movegen::FullGen;
 
-use super::{
-    evaluation::{abs_piece_square_value, abs_piece_value},
-    phase::phase,
-};
+use super::evaluation::{abs_piece_square_value, abs_piece_value};
 use crate::prelude::*;
 
 const MVV_LVA: [[u8; 6]; 6] = [

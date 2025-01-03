@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use super::magic::{bishop_attacks, queen_attacks, rook_attacks};
 use crate::prelude::*;
 pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
 pub const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();

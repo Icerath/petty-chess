@@ -15,15 +15,16 @@ pub mod prelude {
             board::Board,
             can_castle::CanCastle,
             fen,
+            magic::{bishop_attacks, queen_attacks, rook_attacks},
             move_flags::{Castle, MoveFlags, Promotion},
-            movegen::{self, MoveGenerator},
+            movegen::{self, MoveGenerator, KNIGHT_MOVES},
             piece::{Piece, PieceKind},
             r#move::Move,
             side::Side,
             square::{File, Rank, Square},
             zobrist::Zobrist,
         },
-        engine::{Engine, Phase},
+        engine::{phase, Engine, Eval, Phase},
     };
 
     pub type Moves = smallvec::SmallVec<[Move; 64]>;

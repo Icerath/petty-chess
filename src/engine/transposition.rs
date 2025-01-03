@@ -3,7 +3,6 @@ use std::{
     hash::{BuildHasherDefault, Hasher},
 };
 
-use super::score::Eval;
 use crate::prelude::*;
 
 #[derive(Default, Clone)]

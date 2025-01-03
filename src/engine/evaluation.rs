@@ -1,5 +1,5 @@
-use super::{mobility::raw_mobility_eval, phase::phase};
-use crate::{core::magic::rook_attacks, prelude::*};
+use super::mobility::raw_mobility_eval;
+use crate::prelude::*;
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 

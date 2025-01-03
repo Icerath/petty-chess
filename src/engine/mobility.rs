@@ -1,9 +1,4 @@
-use movegen::KNIGHT_MOVES;
-
-use crate::{
-    core::magic::{bishop_attacks, queen_attacks, rook_attacks},
-    prelude::*,
-};
+use crate::prelude::*;
 
 const MOBILITY_SCORE_MULTIPLIER: f32 = 2.0;
 
