@@ -22,9 +22,6 @@ pub fn raw_mobility_eval(board: &Board) -> i32 {
         board.get(side + Rook).for_each(|sq| {
             total += rook_score((rook_attacks(sq, occupancy)).count());
         });
-        board.get(side + Rook).for_each(|sq| {
-            total += rook_score((rook_attacks(sq, occupancy)).count());
-        });
         board.get(side + Queen).for_each(|sq| {
             total += queen_score((queen_attacks(sq, occupancy)).count());
         });
