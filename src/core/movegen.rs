@@ -252,6 +252,7 @@ impl Board {
         let side = !self.active_side;
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
+        let king = self.inactive_king().unwrap();
 
         enemy_pieces[Pawn]
             .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
@@ -259,9 +260,7 @@ impl Board {
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| attacked_squares |= queen_attacks(from, all_pieces));
-        if let Some(king) = self.inactive_king() {
-            attacked_squares |= KING_MOVES[king];
-        }
+        attacked_squares |= KING_MOVES[king];
         attacked_squares
     }
 }
