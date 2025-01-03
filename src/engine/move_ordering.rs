@@ -15,8 +15,7 @@ const MVV_LVA: [[u8; 6]; 6] = [
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
-        let phase = self.phase();
-        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, phase, pawn_attacks));
+        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, self.phase(), pawn_attacks));
     }
 
     fn move_order(
