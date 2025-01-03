@@ -61,14 +61,6 @@ impl Mul<Endgame> for i32 {
     }
 }
 
-impl Engine {
-    #[inline]
-    #[must_use]
-    pub fn phase(&self) -> Phase {
-        phase(&self.board)
-    }
-}
-
 #[must_use]
 #[inline]
 pub fn phase(board: &Board) -> Phase {

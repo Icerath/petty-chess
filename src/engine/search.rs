@@ -2,7 +2,7 @@ use std::{sync::atomic::Ordering, time::Instant};
 
 use movegen::FullGen;
 
-use super::{evaluation::evaluate, transposition::Nodetype, Engine};
+use super::{evaluation::evaluate, phase::phase, transposition::Nodetype, Engine};
 use crate::{
     engine::score::Eval,
     prelude::*,
@@ -229,7 +229,7 @@ impl Engine {
             return false;
         }
         // try avoid zugzwang issue
-        if self.phase().endgame().0 > 0.9 {
+        if phase(&self.board).endgame().0 > 0.9 {
             return false;
         }
         !self.board.in_check()

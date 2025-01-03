@@ -1,6 +1,9 @@
 use movegen::FullGen;
 
-use super::evaluation::{abs_piece_square_value, abs_piece_value};
+use super::{
+    evaluation::{abs_piece_square_value, abs_piece_value},
+    phase::phase,
+};
 use crate::prelude::*;
 
 const MVV_LVA: [[u8; 6]; 6] = [
@@ -15,7 +18,9 @@ const MVV_LVA: [[u8; 6]; 6] = [
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
-        moves.sort_by_cached_key(|&mov| -self.move_order(mov, killer, self.phase(), pawn_attacks));
+        moves.sort_by_cached_key(|&mov| {
+            -self.move_order(mov, killer, phase(&self.board), pawn_attacks)
+        });
     }
 
     fn move_order(
