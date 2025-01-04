@@ -51,7 +51,7 @@ impl Piece {
 
     #[must_use]
     #[inline]
-    pub fn new(kind: PieceKind, side: Side) -> Self {
+    pub fn new(side: Side, kind: PieceKind) -> Self {
         Self::try_from(kind as u8 * 2 + side as u8).unwrap()
     }
 
@@ -104,7 +104,7 @@ impl Add<Side> for PieceKind {
 
     #[inline]
     fn add(self, side: Side) -> Self::Output {
-        Piece::new(self, side)
+        Piece::new(side, self)
     }
 }
 
@@ -113,7 +113,7 @@ impl Add<PieceKind> for Side {
 
     #[inline]
     fn add(self, kind: PieceKind) -> Self::Output {
-        Piece::new(kind, self)
+        Piece::new(self, kind)
     }
 }
 
@@ -134,7 +134,7 @@ fn test_piece_repr() {
 
     for kind in [P::Pawn, P::Knight, P::Bishop, P::Rook, P::Queen, P::King] {
         for side in [Side::White, Side::Black] {
-            let piece = Piece::new(kind, side);
+            let piece = Piece::new(side, kind);
             assert_eq!(piece.kind(), kind);
             assert_eq!(piece.side(), side);
         }
