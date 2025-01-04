@@ -30,7 +30,6 @@ impl Engine {
             self.pv = new_pv.into_iter().rev().collect();
             best_move = *self.pv.first().unwrap_or(&best_move);
             self.effective_nodes = self.total_nodes;
-            self.depth_reached = depth;
 
             let is_checkmate = score.abs() >= Eval::INFINITY.0;
 
