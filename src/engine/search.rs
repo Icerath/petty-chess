@@ -23,6 +23,7 @@ impl Engine {
             let mut new_pv = Vec::new();
             let score =
                 self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
+            self.total_nodes -= 1;
             if self.is_cancelled() {
                 break;
             }
@@ -83,9 +84,7 @@ impl Engine {
             self.only_pv_nodes = false;
             return (self.negamax_search_all_captures(alpha, beta), None);
         }
-        if self.depth_from_root > 0 {
-            self.total_nodes += 1;
-        }
+        self.total_nodes += 1;
 
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
