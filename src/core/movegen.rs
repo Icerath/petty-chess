@@ -111,31 +111,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let can_promote = (self.board.active_side == White && from.rank().u8() == 6)
             || (self.board.active_side == Black && from.rank().u8() == 1);
 
-        if !G::CAPTURES_ONLY {
-            let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
-            if !self.board.is_piece_at(to) {
-                let can_double_push = (self.board.active_side == White && from.rank().u8() == 1)
-                    || (self.board.active_side == Black && from.rank().u8() == 6);
-
-                if !can_promote {
-                    unsafe { self.moves.push(Move::new(from, to, MoveFlags::Quiet)) };
-                }
-
-                if can_double_push {
-                    let to = Square::try_from(i8::from(from) + forward * 16).unwrap();
-                    if !self.board.is_piece_at(to) {
-                        unsafe { self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush)) };
-                    }
-                } else if can_promote {
-                    unsafe {
-                        self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
-                        self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
-                        self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
-                        self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
-                    }
-                }
-            }
-        }
         if let Some(to) = Square::try_from(i8::from(from) + forward * 8).unwrap().add_file(1) {
             if self.board.is_side(to, !self.board.active_side) {
                 unsafe {
@@ -168,8 +143,33 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             if ((en_passant.file().i8() - from.file().i8()).abs()) <= 1
                 && from.rank().i8() == en_passant.rank().i8() - forward
             {
+                unsafe { self.moves.push(Move::new(from, en_passant, MoveFlags::EnPassant)) };
+            }
+        }
+
+        if G::CAPTURES_ONLY {
+            return;
+        }
+        let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
+        if !self.board.is_piece_at(to) {
+            let can_double_push = (self.board.active_side == White && from.rank().u8() == 1)
+                || (self.board.active_side == Black && from.rank().u8() == 6);
+
+            if !can_promote {
+                unsafe { self.moves.push(Move::new(from, to, MoveFlags::Quiet)) };
+            }
+
+            if can_double_push {
+                let to = Square::try_from(i8::from(from) + forward * 16).unwrap();
+                if !self.board.is_piece_at(to) {
+                    unsafe { self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush)) };
+                }
+            } else if can_promote {
                 unsafe {
-                    self.moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
+                    self.moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
+                    self.moves.push(Move::new(from, to, MoveFlags::RookPromotion));
                 }
             }
         }
@@ -185,36 +185,28 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 && !self.board.is_piece_at(Square::F1)
                 && !self.board.is_piece_at(Square::G1)
             {
-                unsafe {
-                    self.moves.push(Move::new(from, Square::G1, MoveFlags::KingCastle));
-                }
+                unsafe { self.moves.push(Move::new(from, Square::G1, MoveFlags::KingCastle)) };
             }
             if self.board.can_castle.contains(CanCastle::WHITE_QUEEN_SIDE)
                 && !self.board.is_piece_at(Square::C1)
                 && !self.board.is_piece_at(Square::D1)
                 && !self.board.is_piece_at(Square::B1)
             {
-                unsafe {
-                    self.moves.push(Move::new(from, Square::C1, MoveFlags::QueenCastle));
-                }
+                unsafe { self.moves.push(Move::new(from, Square::C1, MoveFlags::QueenCastle)) };
             }
         } else {
             if self.board.can_castle.contains(CanCastle::BLACK_KING_SIDE)
                 && !self.board.is_piece_at(Square::F8)
                 && !self.board.is_piece_at(Square::G8)
             {
-                unsafe {
-                    self.moves.push(Move::new(from, Square::G8, MoveFlags::KingCastle));
-                }
+                unsafe { self.moves.push(Move::new(from, Square::G8, MoveFlags::KingCastle)) };
             }
             if self.board.can_castle.contains(CanCastle::BLACK_QUEEN_SIDE)
                 && !self.board.is_piece_at(Square::B8)
                 && !self.board.is_piece_at(Square::C8)
                 && !self.board.is_piece_at(Square::D8)
             {
-                unsafe {
-                    self.moves.push(Move::new(from, Square::C8, MoveFlags::QueenCastle));
-                }
+                unsafe { self.moves.push(Move::new(from, Square::C8, MoveFlags::QueenCastle)) };
             }
         }
     }
