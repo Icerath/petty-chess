@@ -33,13 +33,6 @@ pub enum PieceKind {
     King,
 }
 
-impl Default for Piece {
-    #[inline]
-    fn default() -> Self {
-        Self::WhitePawn
-    }
-}
-
 impl Piece {
     pub const ALL: [Self; 12] = [
         BlackPawn,
