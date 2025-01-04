@@ -12,7 +12,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
     let mut final_total = 0;
 
     for side in [White, Black] {
-        let mut total = 0;
+        let [mut total, mut earlygame, mut endgame] = [0; 3];
         let king = board.get_king_square(side).unwrap();
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
@@ -29,7 +29,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 && (pawns & (unsafe { file.add_int_unchecked(1) }.mask())).is_empty();
 
             let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-            total -= (num_open_files * penalty) * phase.earlygame();
+            earlygame -= num_open_files * penalty;
         }
         // punish double pawns
         for file in File::ALL {
@@ -94,7 +94,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             }
         }
         total += has_bishop_pair(board, side) as i32 * 50;
-        total += material_values(board, side, phase) + square_table_values(board, side, phase);
+        let [mg, eg] = material_and_square_table_values(board, side);
+        earlygame += mg;
+        endgame += eg;
+        total += (mg + earlygame) * phase.earlygame();
+        total += (eg + endgame) * phase.endgame();
+
         final_total += total * side.positive();
     }
     // mop up evaluation
@@ -112,7 +117,15 @@ pub fn raw_evaluation(board: &Board) -> i32 {
     final_total + raw_mobility_eval(board)
 }
 
-fn material_values(board: &Board, side: Side, phase: Phase) -> i32 {
+#[inline]
+fn material_and_square_table_values(board: &Board, side: Side) -> [i32; 2] {
+    let [earlygame, endgame] = material_values(board, side);
+    let [earlygame2, endgame2] = square_table_values(board, side);
+    [earlygame + earlygame2, endgame + endgame2]
+}
+
+#[inline]
+fn material_values(board: &Board, side: Side) -> [i32; 2] {
     let mut mg = 0;
     let mut eg = 0;
     for piece in [Pawn, Knight, Bishop, Rook, Queen] {
@@ -120,10 +133,11 @@ fn material_values(board: &Board, side: Side, phase: Phase) -> i32 {
         mg += count * [82, 337, 365, 477, 1025, 0][piece as usize];
         eg += count * [94, 281, 297, 512, 936, 0][piece as usize];
     }
-    mg * phase.earlygame() + eg * phase.endgame()
+    [mg, eg]
 }
 
-fn square_table_values(board: &Board, side: Side, phase: Phase) -> i32 {
+#[inline]
+fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
     let mut mg = 0;
     let mut eg = 0;
     for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
@@ -138,7 +152,7 @@ fn square_table_values(board: &Board, side: Side, phase: Phase) -> i32 {
     let index = if side.is_white() { king_square.flip() } else { king_square };
     mg += square_tables::MG[King as usize][index.usize()];
     eg += square_tables::EG[King as usize][index.usize()];
-    mg * phase.earlygame() + eg * phase.endgame()
+    [mg, eg]
 }
 
 #[inline]
