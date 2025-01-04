@@ -93,12 +93,8 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
             }
         }
-        // reward bishop pair
         total += has_bishop_pair(board, side) as i32 * 50;
-        // material and piece square table values
-        total += material_values(board, side);
-        total += square_table_values(board, side);
-
+        total += material_values(board, side, phase) + square_table_values(board, side, phase);
         final_total += total * side.positive();
     }
     // mop up evaluation
@@ -116,23 +112,33 @@ pub fn raw_evaluation(board: &Board) -> i32 {
     final_total + raw_mobility_eval(board)
 }
 
-fn material_values(board: &Board, side: Side) -> i32 {
-    let phase = phase(board);
-    let mut total = 0;
-    for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
-        total += board.get(piecekind + side).count() as i32 * abs_piece_value(piecekind, phase);
+fn material_values(board: &Board, side: Side, phase: Phase) -> i32 {
+    let mut mg = 0;
+    let mut eg = 0;
+    for piece in [Pawn, Knight, Bishop, Rook, Queen] {
+        let count = board.get(piece + side).count() as i32;
+        mg += count * [82, 337, 365, 477, 1025, 0][piece as usize];
+        eg += count * [94, 281, 297, 512, 936, 0][piece as usize];
     }
-    total
+    mg * phase.earlygame() + eg * phase.endgame()
 }
 
-fn square_table_values(board: &Board, side: Side) -> i32 {
-    let phase = phase(board);
-    let mut total = 0;
+fn square_table_values(board: &Board, side: Side, phase: Phase) -> i32 {
+    let mut mg = 0;
+    let mut eg = 0;
     for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
         let piece = side + piecekind;
-        board.get(piece).for_each(|square| total += abs_piece_square_value(square, piece, phase));
+        board.get(piece).for_each(|sq| {
+            let index = if side.is_white() { sq.flip() } else { sq };
+            mg += square_tables::MG[piecekind as usize][index.usize()];
+            eg += square_tables::EG[piecekind as usize][index.usize()];
+        });
     }
-    total + abs_piece_square_value(board.get_king_square(side).unwrap(), side + King, phase)
+    let king_square = board.get_king_square(side).unwrap();
+    let index = if side.is_white() { king_square.flip() } else { king_square };
+    mg += square_tables::MG[King as usize][index.usize()];
+    eg += square_tables::EG[King as usize][index.usize()];
+    mg * phase.earlygame() + eg * phase.endgame()
 }
 
 #[inline]
