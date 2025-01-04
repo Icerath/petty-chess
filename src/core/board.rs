@@ -142,26 +142,18 @@ impl Board {
 
     pub(crate) fn make_move_no_update(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
-        let from_piece = self.get_square(mov.from()).unwrap();
+        let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
-        if let Some(piece) = self.get_square(mov.to()) {
-            self.remove_piece_no_zobrist(mov.to(), piece);
+        if let Some(piece) = self.get_square_kind(mov.to()) {
+            self.remove_piece_no_zobrist(mov.to(), !self.active_side + piece);
         }
         self.remove_piece_no_zobrist(mov.from(), from_piece);
         self.insert_piece_no_zobrist(mov.to(), from_piece);
 
-        match mov.flags() {
-            MoveFlags::EnPassant => {
-                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
-                let pawn = !self.active_side + Pawn;
-                self.remove_piece_no_zobrist(back, pawn);
-            }
-            flags if flags.promotion().is_some() => {
-                let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
-                self.remove_piece_no_zobrist(mov.to(), from_piece);
-                self.insert_piece_no_zobrist(mov.to(), piece);
-            }
-            _ => {}
+        if mov.flags() == MoveFlags::EnPassant {
+            let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
+            let pawn = !self.active_side + Pawn;
+            self.remove_piece_no_zobrist(back, pawn);
         }
         unmake
     }
