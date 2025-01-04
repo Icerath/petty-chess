@@ -16,25 +16,22 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let king = board.get_king_square(side).unwrap();
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
-        // punish kings next adjacent to open file
+        // punish kings adjacent to an open file
         for pawns in [friendly[Pawn], enemy[Pawn]] {
             const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
             let file = king.file();
-            let penalty = PENALTIES[file.usize()];
 
-            let left_open =
-                file != File::A && (pawns & unsafe { file.sub_int_unchecked(1) }.mask()).is_empty();
+            let left_open = file.sub_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
             let middle_open = (pawns & file.mask()).is_empty();
-            let right_open = file != File::H
-                && (pawns & (unsafe { file.add_int_unchecked(1) }.mask())).is_empty();
+            let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
 
             let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-            earlygame -= num_open_files * penalty;
+            earlygame -= num_open_files * PENALTIES[file.usize()];
         }
         // punish double pawns
         for file in File::ALL {
             let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
-            total -= (pawns_in_file - 1).max(0) * 25;
+            total -= pawns_in_file.saturating_sub(1) * 25;
         }
         // reward non-isolated pawns
         friendly[Pawn].for_each(|sq| {
