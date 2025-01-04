@@ -96,13 +96,8 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         // reward bishop pair
         total += has_bishop_pair(board, side) as i32 * 50;
         // material and piece square table values
-        for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
-            let piece = side + piecekind;
-            board
-                .get(piece)
-                .for_each(|square| total += abs_piece_value_at_square(square, piece, phase));
-        }
-        total += abs_piece_square_value(king, side + King, phase);
+        total += material_values(board, side);
+        total += square_table_values(board, side);
 
         final_total += total * side.positive();
     }
@@ -119,6 +114,25 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         final_total += mop_up_score * phase.endgame();
     }
     final_total + raw_mobility_eval(board)
+}
+
+fn material_values(board: &Board, side: Side) -> i32 {
+    let phase = phase(board);
+    let mut total = 0;
+    for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
+        total += board.get(piecekind + side).count() as i32 * abs_piece_value(piecekind, phase);
+    }
+    total
+}
+
+fn square_table_values(board: &Board, side: Side) -> i32 {
+    let phase = phase(board);
+    let mut total = 0;
+    for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
+        let piece = side + piecekind;
+        board.get(piece).for_each(|square| total += abs_piece_square_value(square, piece, phase));
+    }
+    total + abs_piece_square_value(board.get_king_square(side).unwrap(), side + King, phase)
 }
 
 #[inline]
