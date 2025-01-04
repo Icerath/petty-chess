@@ -157,34 +157,17 @@ impl Board {
         self.insert_piece_no_zobrist(mov.to(), from_piece);
 
         match mov.flags() {
-            MoveFlags::Quiet | MoveFlags::Capture | MoveFlags::DoublePawnPush => {}
             MoveFlags::EnPassant => {
                 let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 let pawn = !self.active_side + Pawn;
                 self.remove_piece_no_zobrist(back, pawn);
-            }
-            MoveFlags::QueenCastle if self.active_side == White => {
-                self.remove_piece_no_zobrist(Square::A1, WhiteRook);
-                self.insert_piece_no_zobrist(Square::D1, WhiteRook);
-            }
-            MoveFlags::QueenCastle => {
-                self.remove_piece_no_zobrist(Square::A8, BlackRook);
-                self.insert_piece_no_zobrist(Square::D8, BlackRook);
-            }
-            MoveFlags::KingCastle if self.active_side == White => {
-                self.remove_piece_no_zobrist(Square::H1, WhiteRook);
-                self.insert_piece_no_zobrist(Square::F1, WhiteRook);
-            }
-            MoveFlags::KingCastle => {
-                self.remove_piece_no_zobrist(Square::H8, BlackRook);
-                self.insert_piece_no_zobrist(Square::F8, BlackRook);
             }
             flags if flags.promotion().is_some() => {
                 let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
                 self.remove_piece_no_zobrist(mov.to(), from_piece);
                 self.insert_piece_no_zobrist(mov.to(), piece);
             }
-            _ => unreachable!("{:?}", mov.flags()),
+            _ => {}
         }
         unmake
     }
@@ -286,20 +269,6 @@ impl Board {
         if let Some(piece) = rhs_piece {
             self.remove_piece(rhs, piece);
             self.insert_piece(lhs, piece);
-        }
-    }
-
-    #[inline]
-    pub fn swap_no_zobrist(&mut self, lhs: Square, rhs: Square) {
-        let lhs_piece = self.get_square(lhs);
-        let rhs_piece = self.get_square(rhs);
-        if let Some(piece) = lhs_piece {
-            self.remove_piece_no_zobrist(lhs, piece);
-            self.insert_piece_no_zobrist(rhs, piece);
-        }
-        if let Some(piece) = rhs_piece {
-            self.remove_piece_no_zobrist(rhs, piece);
-            self.insert_piece_no_zobrist(lhs, piece);
         }
     }
 
