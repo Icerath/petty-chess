@@ -181,6 +181,7 @@ impl Application {
     }
 
     fn display(&mut self) {
+        let board = &self.engine.board;
         let mut out = String::new();
         for rank in (0..8).rev() {
             out.push_str("+---+---+---+---+---+---+---+---+\n|");
@@ -188,7 +189,7 @@ impl Application {
                 out.push(' ');
                 let square =
                     Square::new(Rank::from_int(rank).unwrap(), File::from_int(file).unwrap());
-                let piece = self.engine.board.get_square(square);
+                let piece = board.get_square(square);
                 out.push(piece.map_or(' ', Piece::symbol));
                 out.push_str(" |");
             }
@@ -197,10 +198,10 @@ impl Application {
         out.push_str("+---+---+---+---+---+---+---+---+\n");
         out.push_str("  a   b   c   d   e   f   g   h  \n");
         println!("{out}");
-        println!("Fen: {}", self.engine.board.to_fen());
-        println!("Key: {:?}", self.engine.board.zobrist);
+        println!("Fen: {}", board.to_fen());
+        println!("Key: {:?}", board.zobrist);
         print!("Checkers: ");
-        self.engine.board.checkers.for_each(|sq| {
+        board.gen_checkers(board.active_side).for_each(|sq| {
             print!(" {sq}");
         });
         println!();

@@ -15,7 +15,6 @@ pub struct Board {
     pub pieces: u64x8,
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
-    pub checkers: Bitboard,
 }
 
 pub struct Unmake {
@@ -31,7 +30,6 @@ impl Board {
         fullmove_counter: 1,
         zobrist: Zobrist::DEFAULT,
         pieces: u64x8::from_array([0; 8]),
-        checkers: Bitboard::EMPTY,
     };
 
     pub fn swap_side(&mut self) {
@@ -142,7 +140,6 @@ impl Board {
             _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
-        self.update_checkers();
         unmake
     }
 
@@ -178,13 +175,11 @@ impl Board {
 
     pub fn make_null_move(&mut self) -> Option<Square> {
         self.increment_ply();
-        self.update_checkers();
         self.en_passant_target_square.take().inspect(|&sq| self.zobrist.xor_en_passant(sq))
     }
 
     pub fn unmake_null_move(&mut self, prev_en_passant: Option<Square>) {
         self.decrement_ply();
-        self.update_checkers();
         self.en_passant_target_square =
             prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
     }
@@ -301,7 +296,7 @@ impl Board {
     #[inline]
     #[must_use]
     pub fn in_check(&self) -> bool {
-        !self.checkers.is_empty()
+        !self.gen_checkers(self.active_side).is_empty()
     }
 }
 

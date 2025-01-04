@@ -67,10 +67,11 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     pub fn gen_pseudolegal_moves(&mut self) -> Moves {
         let pieces = self.board.friendly_bitboards();
         let all_pieces = self.board.all_pieces();
+        let checkers = self.board.gen_checkers(self.board.active_side);
         if let Some(king_pos) = self.board.active_king() {
-            self.gen_king_moves(king_pos);
+            self.gen_king_moves(king_pos, checkers);
         }
-        if self.board.checkers.count() >= 2 {
+        if checkers.count() >= 2 {
             return std::mem::take(&mut self.moves);
         }
         pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
@@ -174,9 +175,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         }
     }
 
-    fn gen_king_moves(&mut self, from: Square) {
+    fn gen_king_moves(&mut self, from: Square, checkers: Bitboard) {
         self.push_squares(from, KING_MOVES[from]);
-        if G::CAPTURES_ONLY || !self.board.checkers.is_empty() {
+        if G::CAPTURES_ONLY || !checkers.is_empty() {
             return;
         }
         if self.board.active_side == White {
@@ -220,11 +221,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
 }
 
 impl Board {
-    #[inline]
-    pub fn update_checkers(&mut self) {
-        self.checkers = self.gen_checkers(self.active_side);
-    }
-
     #[inline]
     #[must_use]
     pub fn gen_checkers(&self, side: Side) -> Bitboard {
