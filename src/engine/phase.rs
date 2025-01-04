@@ -8,12 +8,6 @@ const UPPER_FLOAT: f32 = UPPER as f32;
 #[derive(Debug, Clone, Copy)]
 pub struct Phase(i32);
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Earlygame(i32);
-
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Endgame(i32);
-
 impl Phase {
     #[must_use]
     #[inline]
@@ -28,54 +22,6 @@ impl Phase {
     }
 }
 
-impl Endgame {
-    pub fn as_float(self) -> f32 {
-        self.0 as f32 / UPPER_FLOAT
-    }
-}
-
-impl Earlygame {
-    pub fn as_float(self) -> f32 {
-        self.0 as f32 / UPPER_FLOAT
-    }
-}
-
-impl Mul<i32> for Earlygame {
-    type Output = i32;
-
-    #[inline]
-    fn mul(self, rhs: i32) -> Self::Output {
-        (self.0 * rhs) / UPPER
-    }
-}
-
-impl Mul<Earlygame> for i32 {
-    type Output = i32;
-
-    #[inline]
-    fn mul(self, rhs: Earlygame) -> Self::Output {
-        (self * rhs.0) / UPPER
-    }
-}
-
-impl Mul<i32> for Endgame {
-    type Output = i32;
-
-    #[inline]
-    fn mul(self, rhs: i32) -> Self::Output {
-        (self.0 * rhs) / UPPER
-    }
-}
-
-impl Mul<Endgame> for i32 {
-    type Output = i32;
-
-    #[inline]
-    fn mul(self, rhs: Endgame) -> Self::Output {
-        (self * rhs.0) / UPPER
-    }
-}
-
 #[must_use]
 #[inline]
 pub fn phase(board: &Board) -> Phase {
@@ -85,6 +31,41 @@ pub fn phase(board: &Board) -> Phase {
     sum += 4 * board[Queen].count() as i32;
     Phase(((sum as f32 / 18.0).clamp(0.0, 1.0) * UPPER_FLOAT) as i32)
 }
+
+macro_rules! impl_stage {
+    ($stage: ident) => {
+        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+        pub struct $stage(i32);
+
+        impl $stage {
+            pub fn as_float(self) -> f32 {
+                self.0 as f32 / UPPER_FLOAT
+            }
+        }
+
+        impl Mul<i32> for $stage {
+            type Output = i32;
+
+            #[inline]
+            fn mul(self, rhs: i32) -> Self::Output {
+                (self.0 * rhs) / UPPER
+            }
+        }
+
+        impl Mul<$stage> for i32 {
+            type Output = i32;
+
+            #[inline]
+            fn mul(self, rhs: $stage) -> Self::Output {
+                (self * rhs.0) / UPPER
+            }
+        }
+    };
+}
+
+impl_stage!(Earlygame);
+impl_stage!(Endgame);
+
 #[test]
 #[allow(clippy::float_cmp)]
 fn test_phase() {
