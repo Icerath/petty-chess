@@ -72,7 +72,7 @@ impl Board {
 
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
-        let from_piece = self.get_square(mov.from()).unwrap();
+        let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
         if let Some(sq) = self.en_passant_target_square {
             self.zobrist.xor_en_passant(sq);
