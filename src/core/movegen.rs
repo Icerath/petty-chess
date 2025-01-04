@@ -5,7 +5,7 @@ pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
 pub const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
 pub const KING_MOVES: [Bitboard; 64] = compute_king_moves();
 pub const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
-const ATTACK_PAWN_MOVES: [[Bitboard; 64]; 2] = compute_pawn_moves();
+pub const PAWN_ATTACKS: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
 pub struct CapturesOnly;
 pub struct FullGen;
@@ -89,7 +89,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let side = !self.board.active_side;
         self.board
             .get(side + Pawn)
-            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from.usize()]);
+            .for_each(|from| attacked_squares |= PAWN_ATTACKS[side as usize][from.usize()]);
         attacked_squares
     }
 
@@ -219,7 +219,7 @@ impl Board {
         let mut bb = Bitboard::EMPTY;
         let occupancy = self.all_pieces();
         let Some(king) = self.get_king_square(side) else { return bb };
-        bb |= ATTACK_PAWN_MOVES[side as usize][king.usize()] & self[Pawn];
+        bb |= PAWN_ATTACKS[side as usize][king.usize()] & self[Pawn];
         bb |= KNIGHT_MOVES[king.usize()] & self[Knight];
         bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
         bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
@@ -252,20 +252,19 @@ impl Board {
     // Generate attack map for enemy pieces
     #[inline]
     fn gen_attack_map(&self) -> Bitboard {
-        let mut attacked_squares = Bitboard(0);
+        let mut output = Bitboard(0);
         let side = !self.active_side;
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
         let king = self.inactive_king().unwrap();
 
-        enemy_pieces[Pawn]
-            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from.usize()]);
-        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from.usize()]);
-        enemy_pieces[Bishop].for_each(|from| attacked_squares |= bishop_attacks(from, all_pieces));
-        enemy_pieces[Rook].for_each(|from| attacked_squares |= rook_attacks(from, all_pieces));
-        enemy_pieces[Queen].for_each(|from| attacked_squares |= queen_attacks(from, all_pieces));
-        attacked_squares |= KING_MOVES[king.usize()];
-        attacked_squares
+        enemy_pieces[Pawn].for_each(|from| output |= PAWN_ATTACKS[side as usize][from.usize()]);
+        enemy_pieces[Knight].for_each(|from| output |= KNIGHT_MOVES[from.usize()]);
+        enemy_pieces[Bishop].for_each(|from| output |= bishop_attacks(from, all_pieces));
+        enemy_pieces[Rook].for_each(|from| output |= rook_attacks(from, all_pieces));
+        enemy_pieces[Queen].for_each(|from| output |= queen_attacks(from, all_pieces));
+        output |= KING_MOVES[king.usize()];
+        output
     }
 }
 
