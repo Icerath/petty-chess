@@ -132,8 +132,9 @@ impl Application {
         self.kill.store(true, Ordering::Relaxed);
         #[cfg(feature = "tracing")]
         let start = Instant::now();
-        let time_available = self.set_time_available(command.time_control);
+        let time_available = self.get_time_available(command.time_control);
         let mut engine = self.engine.clone();
+        engine.time_available = time_available;
         self.kill = engine.kill.clone();
         std::thread::spawn(move || {
             let best_move = engine.search();
@@ -157,7 +158,7 @@ impl Application {
         eprintln!("Nodes searched: {total}");
     }
 
-    fn set_time_available(&mut self, time_control: TimeControl) -> Duration {
+    fn get_time_available(&self, time_control: TimeControl) -> Duration {
         match time_control {
             // TODO - ponder
             TimeControl::Ponder => Duration::MAX,

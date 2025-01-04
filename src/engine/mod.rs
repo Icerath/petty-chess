@@ -6,9 +6,12 @@ mod score;
 mod search;
 pub mod transposition;
 
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
 };
 
 pub use phase::{phase, Phase};
@@ -21,6 +24,7 @@ use crate::prelude::*;
 pub struct Engine {
     pub board: Board,
     pub seen_positions: Vec<Zobrist>,
+    pub time_available: Duration,
     pub kill: Arc<AtomicBool>,
     pub pv: Vec<Move>,
     pub depth_from_root: u16,
@@ -34,6 +38,7 @@ impl Engine {
     pub fn new(board: Board) -> Self {
         Self {
             kill: Arc::default(),
+            time_available: Duration::MAX,
             board,
             pv: vec![],
             depth_from_root: 0,

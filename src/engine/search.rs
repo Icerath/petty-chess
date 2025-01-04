@@ -55,6 +55,11 @@ impl Engine {
             if is_checkmate {
                 break;
             }
+
+            let skip_time = 2.8 - phase(&self.board).endgame().0;
+            if time_started.elapsed().mul_f32(skip_time) > self.time_available {
+                break;
+            }
         }
         best_move
     }
