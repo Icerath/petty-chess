@@ -1,8 +1,5 @@
 use core::fmt;
-use std::{
-    ops::{Index, IndexMut},
-    simd::u64x8,
-};
+use std::ops::{Index, IndexMut};
 
 use crate::prelude::*;
 
@@ -12,7 +9,7 @@ pub struct Board {
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Square>,
     pub zobrist: Zobrist,
-    pub pieces: u64x8,
+    pub pieces: [u64; 8],
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
 }
@@ -29,7 +26,7 @@ impl Board {
         halfmove_clock: 0,
         fullmove_counter: 1,
         zobrist: Zobrist::DEFAULT,
-        pieces: u64x8::from_array([0; 8]),
+        pieces: [0; 8],
     };
 
     pub fn swap_side(&mut self) {
