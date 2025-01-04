@@ -4,7 +4,6 @@ use crate::prelude::*;
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 
 #[must_use]
-#[expect(clippy::too_many_lines)]
 pub fn raw_evaluation(board: &Board) -> i32 {
     let phase = phase(board);
     if !sufficient_material_to_force_checkmate(board) {
@@ -14,7 +13,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
 
     for side in [White, Black] {
         let mut total = 0;
-        let Some(king) = board.get_king_square(side) else { continue };
+        let king = board.get_king_square(side).unwrap();
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
         // punish kings next adjacent to open file
@@ -114,18 +113,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         _ => None,
     };
     if let Some(mop_up_side) = mop_up_side {
-        if let (Some(active_king), Some(inactive_king)) =
-            (board.active_king(), board.inactive_king())
-        {
-            let md = active_king.manhattan_distance(inactive_king);
-            let cmd =
-                board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance() as i32;
-            let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
-            final_total += mop_up_score * phase.endgame();
-        }
+        let md = board.active_king().unwrap().manhattan_distance(board.inactive_king().unwrap());
+        let cmd = board.get_king_square(!mop_up_side).unwrap().centre_manhattan_distance() as i32;
+        let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
+        final_total += mop_up_score * phase.endgame();
     }
-    let mobility_score = raw_mobility_eval(board);
-    final_total + mobility_score
+    final_total + raw_mobility_eval(board)
 }
 
 #[inline]
