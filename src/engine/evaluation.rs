@@ -97,8 +97,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let [mg, eg] = material_and_square_table_values(board, side);
         earlygame += mg;
         endgame += eg;
-        total += (mg + earlygame) * phase.earlygame();
-        total += (eg + endgame) * phase.endgame();
+        total += earlygame * phase.earlygame() + endgame * phase.endgame();
 
         final_total += total * side.positive();
     }
