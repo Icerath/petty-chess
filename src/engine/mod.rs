@@ -6,12 +6,9 @@ mod score;
 mod search;
 pub mod transposition;
 
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::Instant,
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
 };
 
 pub use phase::{phase, Phase};
@@ -27,7 +24,6 @@ pub struct Engine {
     pub kill: Arc<AtomicBool>,
     pub pv: Vec<Move>,
     pub depth_from_root: u16,
-    pub time_started: Instant,
     pub total_nodes: u64,
     pub effective_nodes: u64,
     pub transposition_table: TranspositionTable,
@@ -43,7 +39,6 @@ impl Engine {
             pv: vec![],
             depth_from_root: 0,
             seen_positions: vec![],
-            time_started: Instant::now(),
             total_nodes: 0,
             effective_nodes: 0,
             transposition_table: TranspositionTable::default(),

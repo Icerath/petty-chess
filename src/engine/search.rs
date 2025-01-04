@@ -11,7 +11,7 @@ use crate::{
 
 impl Engine {
     pub fn search(&mut self) -> Move {
-        self.time_started = Instant::now();
+        let time_started = Instant::now();
         self.total_nodes = 0;
         self.effective_nodes = 0;
         self.kill.store(false, Ordering::Release);
@@ -39,7 +39,7 @@ impl Engine {
                 Score::Centipawns { cp: score, bounds: None }
             };
 
-            let time_taken = self.time_started.elapsed();
+            let time_taken = time_started.elapsed();
             let info = Info {
                 depth: Some(depth as u32),
                 score: Some(score),
