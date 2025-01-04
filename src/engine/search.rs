@@ -13,7 +13,6 @@ impl Engine {
     pub fn search(&mut self) -> Move {
         let time_started = Instant::now();
         self.total_nodes = 0;
-        self.effective_nodes = 0;
         self.kill.store(false, Ordering::Release);
         self.transposition_table.num_hits = 0;
 
@@ -29,7 +28,6 @@ impl Engine {
             }
             self.pv = new_pv.into_iter().rev().collect();
             best_move = *self.pv.first().unwrap_or(&best_move);
-            self.effective_nodes = self.total_nodes;
 
             let is_checkmate = score.abs() >= Eval::INFINITY.0;
 
