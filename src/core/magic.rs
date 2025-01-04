@@ -135,7 +135,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
     fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
         occupancy.0 &= self.mask;
         let index = (occupancy.0.wrapping_mul(self.magic) >> self.shift) as usize;
-        Bitboard(self.attacks[index])
+        Bitboard(unsafe { *self.attacks.get_unchecked(index) })
     }
 
     #[allow(clippy::needless_range_loop)]
