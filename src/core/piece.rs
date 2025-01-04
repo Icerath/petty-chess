@@ -70,20 +70,13 @@ impl Piece {
 
 impl Piece {
     #[must_use]
-    #[inline]
+    pub fn byte_symbol(self) -> u8 {
+        [b'p', b'P', b'n', b'N', b'b', b'B', b'r', b'R', b'q', b'Q', b'k', b'K'][self as usize]
+    }
+
+    #[must_use]
     pub fn symbol(self) -> char {
-        let mut symbol = match self.kind() {
-            PieceKind::Pawn => 'p',
-            PieceKind::Knight => 'n',
-            PieceKind::Bishop => 'b',
-            PieceKind::Rook => 'r',
-            PieceKind::Queen => 'q',
-            PieceKind::King => 'k',
-        };
-        if self.is_white() {
-            symbol.make_ascii_uppercase();
-        };
-        symbol
+        self.byte_symbol() as char
     }
 
     #[must_use]
