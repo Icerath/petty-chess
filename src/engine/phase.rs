@@ -29,7 +29,7 @@ pub fn phase(board: &Board) -> Phase {
     sum += (board[Bishop] | board[Knight]).count() as i32;
     sum += 2 * board[Rook].count() as i32;
     sum += 4 * board[Queen].count() as i32;
-    Phase(((sum as f32 / 18.0).clamp(0.0, 1.0) * UPPER_FLOAT) as i32)
+    Phase(((sum * UPPER) / 18).clamp(0, UPPER))
 }
 
 macro_rules! impl_stage {
