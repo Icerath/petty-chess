@@ -75,7 +75,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             return std::mem::take(&mut self.moves);
         }
         pieces[Pawn].for_each(|from| self.gen_pawn_moves(from));
-        pieces[Knight].for_each(|from| self.push_squares(from, KNIGHT_MOVES[from]));
+        pieces[Knight].for_each(|from| self.push_squares(from, KNIGHT_MOVES[from.usize()]));
         pieces[Bishop].for_each(|from| self.push_squares(from, bishop_attacks(from, all_pieces)));
         pieces[Rook].for_each(|from| self.push_squares(from, rook_attacks(from, all_pieces)));
         pieces[Queen].for_each(|from| self.push_squares(from, queen_attacks(from, all_pieces)));
@@ -89,7 +89,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let side = !self.board.active_side;
         self.board
             .get(side + Pawn)
-            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
+            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from.usize()]);
         attacked_squares
     }
 
@@ -176,7 +176,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
     }
 
     fn gen_king_moves(&mut self, from: Square, checkers: Bitboard) {
-        self.push_squares(from, KING_MOVES[from]);
+        self.push_squares(from, KING_MOVES[from.usize()]);
         if G::CAPTURES_ONLY || !checkers.is_empty() {
             return;
         }
@@ -219,11 +219,11 @@ impl Board {
         let mut bb = Bitboard::EMPTY;
         let occupancy = self.all_pieces();
         let Some(king) = self.get_king_square(side) else { return bb };
-        bb |= ATTACK_PAWN_MOVES[side as usize][king] & self[Pawn];
-        bb |= KNIGHT_MOVES[king] & self[Knight];
+        bb |= ATTACK_PAWN_MOVES[side as usize][king.usize()] & self[Pawn];
+        bb |= KNIGHT_MOVES[king.usize()] & self[Knight];
         bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
         bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
-        bb |= KING_MOVES[king] & (self[King]);
+        bb |= KING_MOVES[king.usize()] & (self[King]);
 
         bb & self[!side]
     }
@@ -259,12 +259,12 @@ impl Board {
         let king = self.inactive_king().unwrap();
 
         enemy_pieces[Pawn]
-            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from]);
-        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from]);
+            .for_each(|from| attacked_squares |= ATTACK_PAWN_MOVES[side as usize][from.usize()]);
+        enemy_pieces[Knight].for_each(|from| attacked_squares |= KNIGHT_MOVES[from.usize()]);
         enemy_pieces[Bishop].for_each(|from| attacked_squares |= bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| attacked_squares |= rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| attacked_squares |= queen_attacks(from, all_pieces));
-        attacked_squares |= KING_MOVES[king];
+        attacked_squares |= KING_MOVES[king.usize()];
         attacked_squares
     }
 }

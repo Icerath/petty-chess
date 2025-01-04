@@ -45,19 +45,20 @@ impl Magic {
     #[must_use]
     #[inline]
     pub fn rook_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
-        self.rook_tables[sq].get_attacks(occupancy)
+        self.rook_tables[sq.usize()].get_attacks(occupancy)
     }
 
     #[must_use]
     #[inline]
     pub fn bishop_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
-        self.bishop_tables[sq].get_attacks(occupancy)
+        self.bishop_tables[sq.usize()].get_attacks(occupancy)
     }
 
     #[must_use]
     #[inline]
     pub fn queen_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
-        self.bishop_tables[sq].get_attacks(occupancy) | self.rook_tables[sq].get_attacks(occupancy)
+        self.bishop_tables[sq.usize()].get_attacks(occupancy)
+            | self.rook_tables[sq.usize()].get_attacks(occupancy)
     }
 
     #[allow(unused)]
@@ -95,7 +96,8 @@ struct SquareTables<const PIECE: usize> {
 impl<const PIECE: usize> SquareTables<PIECE> {
     fn preinit(sq: Square) -> Self {
         let mask = Self::mask(sq);
-        let magic = if PIECE == BISHOP { BISHOP_MAGICS[sq] } else { ROOK_MAGICS[sq] };
+        let magic =
+            if PIECE == BISHOP { BISHOP_MAGICS[sq.usize()] } else { ROOK_MAGICS[sq.usize()] };
         let mut attacks: [u64; PIECE] = [0; PIECE];
 
         for i in 0..1 << mask.count_ones() {
@@ -143,10 +145,9 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         let end = if PIECE == ROOK { 4 } else { 8 };
 
         for direction_index in start..end {
-            for n in 1..NUM_SQUARES_TO_EDGE[sq][direction_index] {
+            for n in 1..NUM_SQUARES_TO_EDGE[sq.usize()][direction_index] {
                 let target_square =
-                    Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n)
-                        .unwrap();
+                    Square::try_from(sq.i8() + DIRECTION_OFFSETS[direction_index] * n).unwrap();
                 result.insert(target_square);
             }
         }
@@ -160,7 +161,7 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         let end = if PIECE == ROOK { 4 } else { 8 };
 
         for direction_index in start..end {
-            for n in 1..=NUM_SQUARES_TO_EDGE[sq][direction_index] {
+            for n in 1..=NUM_SQUARES_TO_EDGE[sq.usize()][direction_index] {
                 let target_square =
                     Square::try_from(i8::from(sq) + DIRECTION_OFFSETS[direction_index] * n)
                         .unwrap();

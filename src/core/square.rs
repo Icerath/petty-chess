@@ -1,8 +1,4 @@
-use std::{
-    fmt,
-    ops::{Index, IndexMut},
-    str::FromStr,
-};
+use std::{fmt, str::FromStr};
 
 use crate::prelude::*;
 
@@ -31,7 +27,7 @@ impl Square {
              8,  9, 10, 11, 12, 13, 14, 15,
              0,  1,  2,  3,  4,  5,  6,  7,
         ];
-        unsafe { Self::from_int_unchecked(FLIPPED[self]) }
+        unsafe { Self::from_int_unchecked(FLIPPED[self.usize()]) }
     }
 
     #[must_use]
@@ -83,7 +79,7 @@ impl Square {
             3, 2, 1, 1, 1, 1, 2, 3, //
             3, 2, 2, 2, 2, 2, 2, 3, //
             3, 3, 3, 3, 3, 3, 3, 3, //
-        ][self]
+        ][self.usize()]
     }
 
     #[inline]
@@ -153,22 +149,6 @@ impl File {
     define_file_consts!(A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7);
 }
 
-impl<T> Index<Square> for [T] {
-    type Output = T;
-
-    #[inline]
-    fn index(&self, sq: Square) -> &Self::Output {
-        &self[sq.usize()]
-    }
-}
-
-impl<T> IndexMut<Square> for [T] {
-    #[inline]
-    fn index_mut(&mut self, sq: Square) -> &mut Self::Output {
-        &mut self[sq.usize()]
-    }
-}
-
 impl File {
     #[must_use]
     #[inline]
@@ -212,7 +192,7 @@ impl File {
 
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Self::SQUARES[*self])
+        write!(f, "{}", Self::SQUARES[self.usize()])
     }
 }
 
@@ -280,7 +260,7 @@ impl Square {
 
     #[must_use]
     pub fn algebraic(self) -> &'static str {
-        Self::SQUARES[self]
+        Self::SQUARES[self.usize()]
     }
 }
 
