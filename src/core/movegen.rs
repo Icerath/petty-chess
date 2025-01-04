@@ -255,8 +255,8 @@ impl Board {
                 return false;
             }
         }
-        let unmake = self.make_move(mov);
-        let checkers = self.gen_checkers(!self.active_side);
+        let unmake = self.make_move_no_update(mov);
+        let checkers = self.gen_checkers(self.active_side);
         self.unmake_move(unmake);
         checkers.is_empty()
     }

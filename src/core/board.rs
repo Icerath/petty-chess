@@ -58,6 +58,16 @@ impl Board {
         self.zobrist.xor_piece(sq, piece);
     }
 
+    pub fn insert_piece_no_zobrist(&mut self, sq: Square, piece: Piece) {
+        self[piece.kind()].insert(sq);
+        self[piece.side()].insert(sq);
+    }
+
+    pub fn remove_piece_no_zobrist(&mut self, sq: Square, piece: Piece) {
+        self[piece.kind()].remove(sq);
+        self[piece.side()].remove(sq);
+    }
+
     /// inserts a piece at sq if it doesn't exist or removes it if it does exist.
     pub fn xor_piece(&mut self, sq: Square, piece: Piece) {
         self[piece.kind()] ^= sq;
@@ -103,16 +113,26 @@ impl Board {
                 let pawn = !self.active_side + Pawn;
                 self.remove_piece(back, pawn);
             }
-            MoveFlags::QueenCastle if self.active_side == White => {
-                self.swap(Square::A1, Square::D1);
-            }
-            MoveFlags::QueenCastle => self.swap(Square::A8, Square::D8),
-            MoveFlags::KingCastle if self.active_side == White => self.swap(Square::F1, Square::H1),
-            MoveFlags::KingCastle => self.swap(Square::F8, Square::H8),
             MoveFlags::DoublePawnPush => {
                 let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
                 self.en_passant_target_square = Some(back);
                 self.zobrist.xor_en_passant(back);
+            }
+            MoveFlags::QueenCastle if self.active_side == White => {
+                self.remove_piece(Square::A1, WhiteRook);
+                self.insert_piece(Square::D1, WhiteRook);
+            }
+            MoveFlags::QueenCastle => {
+                self.remove_piece(Square::A8, BlackRook);
+                self.insert_piece(Square::D8, BlackRook);
+            }
+            MoveFlags::KingCastle if self.active_side == White => {
+                self.remove_piece(Square::H1, WhiteRook);
+                self.insert_piece(Square::F1, WhiteRook);
+            }
+            MoveFlags::KingCastle => {
+                self.remove_piece(Square::H8, BlackRook);
+                self.insert_piece(Square::F8, BlackRook);
             }
             flags if flags.promotion().is_some() => {
                 let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
@@ -123,6 +143,49 @@ impl Board {
         }
         self.increment_ply();
         self.update_checkers();
+        unmake
+    }
+
+    pub(crate) fn make_move_no_update(&mut self, mov: Move) -> Unmake {
+        let unmake = Unmake { board: self.clone() };
+        let from_piece = self.get_square(mov.from()).unwrap();
+
+        if let Some(piece) = self.get_square(mov.to()) {
+            self.remove_piece_no_zobrist(mov.to(), piece);
+        }
+        self.remove_piece_no_zobrist(mov.from(), from_piece);
+        self.insert_piece_no_zobrist(mov.to(), from_piece);
+
+        match mov.flags() {
+            MoveFlags::Quiet | MoveFlags::Capture | MoveFlags::DoublePawnPush => {}
+            MoveFlags::EnPassant => {
+                let back = mov.to().add_rank(-self.active_side.forward()).unwrap();
+                let pawn = !self.active_side + Pawn;
+                self.remove_piece_no_zobrist(back, pawn);
+            }
+            MoveFlags::QueenCastle if self.active_side == White => {
+                self.remove_piece_no_zobrist(Square::A1, WhiteRook);
+                self.insert_piece_no_zobrist(Square::D1, WhiteRook);
+            }
+            MoveFlags::QueenCastle => {
+                self.remove_piece_no_zobrist(Square::A8, BlackRook);
+                self.insert_piece_no_zobrist(Square::D8, BlackRook);
+            }
+            MoveFlags::KingCastle if self.active_side == White => {
+                self.remove_piece_no_zobrist(Square::H1, WhiteRook);
+                self.insert_piece_no_zobrist(Square::F1, WhiteRook);
+            }
+            MoveFlags::KingCastle => {
+                self.remove_piece_no_zobrist(Square::H8, BlackRook);
+                self.insert_piece_no_zobrist(Square::F8, BlackRook);
+            }
+            flags if flags.promotion().is_some() => {
+                let piece = self.active_side + PieceKind::from(flags.promotion().unwrap());
+                self.remove_piece_no_zobrist(mov.to(), from_piece);
+                self.insert_piece_no_zobrist(mov.to(), piece);
+            }
+            _ => unreachable!("{:?}", mov.flags()),
+        }
         unmake
     }
 
@@ -223,6 +286,20 @@ impl Board {
         if let Some(piece) = rhs_piece {
             self.remove_piece(rhs, piece);
             self.insert_piece(lhs, piece);
+        }
+    }
+
+    #[inline]
+    pub fn swap_no_zobrist(&mut self, lhs: Square, rhs: Square) {
+        let lhs_piece = self.get_square(lhs);
+        let rhs_piece = self.get_square(rhs);
+        if let Some(piece) = lhs_piece {
+            self.remove_piece_no_zobrist(lhs, piece);
+            self.insert_piece_no_zobrist(rhs, piece);
+        }
+        if let Some(piece) = rhs_piece {
+            self.remove_piece_no_zobrist(rhs, piece);
+            self.insert_piece_no_zobrist(lhs, piece);
         }
     }
 
