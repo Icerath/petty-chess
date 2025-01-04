@@ -56,7 +56,7 @@ impl Engine {
                 break;
             }
 
-            let skip_time = 2.8 - phase(&self.board).endgame().0;
+            let skip_time = 2.8 - phase(&self.board).endgame().as_float();
             if time_started.elapsed().mul_f32(skip_time) > self.time_available {
                 break;
             }
@@ -230,7 +230,7 @@ impl Engine {
             return false;
         }
         // try avoid zugzwang issue
-        if phase(&self.board).endgame().0 > 0.9 {
+        if phase(&self.board).endgame().as_float() > 0.9 {
             return false;
         }
         !self.board.in_check()

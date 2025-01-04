@@ -2,14 +2,17 @@ use std::ops::Mul;
 
 use crate::prelude::*;
 
+const UPPER: i32 = 32;
+const UPPER_FLOAT: f32 = UPPER as f32;
+
 #[derive(Debug, Clone, Copy)]
-pub struct Phase(f32);
+pub struct Phase(i32);
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Earlygame(pub f32);
+pub struct Earlygame(i32);
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Endgame(pub f32);
+pub struct Endgame(i32);
 
 impl Phase {
     #[must_use]
@@ -21,7 +24,19 @@ impl Phase {
     #[inline]
     #[must_use]
     pub fn endgame(self) -> Endgame {
-        Endgame(1.0 - self.0)
+        Endgame(UPPER - self.0)
+    }
+}
+
+impl Endgame {
+    pub fn as_float(self) -> f32 {
+        self.0 as f32 / UPPER_FLOAT
+    }
+}
+
+impl Earlygame {
+    pub fn as_float(self) -> f32 {
+        self.0 as f32 / UPPER_FLOAT
     }
 }
 
@@ -30,7 +45,7 @@ impl Mul<i32> for Earlygame {
 
     #[inline]
     fn mul(self, rhs: i32) -> Self::Output {
-        (self.0 * rhs as f32) as i32
+        (self.0 * rhs) / UPPER
     }
 }
 
@@ -39,7 +54,7 @@ impl Mul<Earlygame> for i32 {
 
     #[inline]
     fn mul(self, rhs: Earlygame) -> Self::Output {
-        (rhs.0 * self as f32) as i32
+        (self * rhs.0) / UPPER
     }
 }
 
@@ -48,7 +63,7 @@ impl Mul<i32> for Endgame {
 
     #[inline]
     fn mul(self, rhs: i32) -> Self::Output {
-        (self.0 * rhs as f32) as i32
+        (self.0 * rhs) / UPPER
     }
 }
 
@@ -57,7 +72,7 @@ impl Mul<Endgame> for i32 {
 
     #[inline]
     fn mul(self, rhs: Endgame) -> Self::Output {
-        (rhs.0 * self as f32) as i32
+        (self * rhs.0) / UPPER
     }
 }
 
@@ -68,18 +83,18 @@ pub fn phase(board: &Board) -> Phase {
     sum += (board[Bishop] | board[Knight]).count() as i32;
     sum += 2 * board[Rook].count() as i32;
     sum += 4 * board[Queen].count() as i32;
-    Phase((sum as f32 / 18.0).clamp(0.0, 1.0))
+    Phase(((sum as f32 / 18.0).clamp(0.0, 1.0) * UPPER_FLOAT) as i32)
 }
 #[test]
 #[allow(clippy::float_cmp)]
 fn test_phase() {
-    assert_eq!(phase(&Board::start_pos()).0, 1.0);
+    assert_eq!(phase(&Board::start_pos()).0, UPPER);
     assert_eq!(
         phase(&Board::from_fen("4k3/4p1n1/p5pp/1p3p2/8/5P2/1QP3PP/4K3 w - -").unwrap()).0,
-        0.0
+        0
     );
     assert_eq!(
         phase(&Board::from_fen("4k3/4p3/p1pp2pp/1p3p2/8/5P2/2PPP1PP/4K3 w - -").unwrap()).0,
-        0.0
+        0
     );
 }

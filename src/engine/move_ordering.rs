@@ -43,7 +43,7 @@ impl Engine {
 
         score += (((abs_piece_square_value(mov.to(), piece, phase)
             - abs_piece_square_value(mov.from(), piece, phase)) as f32
-            * (phase.earlygame().0 * 0.2)) as f32) as i32;
+            * (phase.earlygame().as_float() * 0.2)) as f32) as i32;
 
         if let Some(target_piece) = self.board.get_square(mov.to()) {
             score += MVV_LVA[target_piece.kind() as usize][piece.kind() as usize] as i32 * 4;
