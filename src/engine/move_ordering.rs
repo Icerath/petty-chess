@@ -1,3 +1,5 @@
+use std::mem::MaybeUninit;
+
 use movegen::FullGen;
 
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
@@ -12,10 +14,31 @@ const MVV_LVA: [[u8; 6]; 6] = [
     [0, 0, 0, 0, 0, 0],       // victim K, attacker P, N, B, R, Q, K
 ];
 
+#[inline]
+pub fn sort_by_cached_key<F>(moves: &mut [Move], mut f: F)
+where
+    F: FnMut(Move) -> i16,
+{
+    let mut indices = [MaybeUninit::uninit(); 256];
+    for (i, mov) in moves.iter().copied().enumerate() {
+        indices[i].write((f(mov), i as u8));
+    }
+    let indices = unsafe { &mut *((&raw mut indices[..moves.len()]) as *mut [(i16, u8)]) };
+    indices.sort_by_key(|(k, _)| *k);
+    for i in 0..moves.len() {
+        let mut index = indices[i].1;
+        while (index as usize) < i {
+            index = indices[index as usize].1;
+        }
+        indices[i].1 = index;
+        moves.swap(i, index as usize);
+    }
+}
+
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
-        moves.sort_by_cached_key(|&mov| {
+        sort_by_cached_key(moves, |mov| {
             -self.move_order(mov, killer, phase(&self.board), pawn_attacks)
         });
     }
@@ -26,17 +49,17 @@ impl Engine {
         killer: Option<Move>,
         phase: Phase,
         pawn_attacks: Bitboard,
-    ) -> i32 {
+    ) -> i16 {
         let mut score = 0;
         if self.only_pv_nodes {
             if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {
                 if pv == mov {
-                    return i16::MAX as i32;
+                    return i16::MAX;
                 }
             }
         } else if let Some(killer) = killer {
             if killer == mov {
-                return i16::MAX as i32;
+                return i16::MAX;
             }
         }
         let piece = self.board.get_square(mov.from()).unwrap();
@@ -63,6 +86,6 @@ impl Engine {
             score += 5;
         }
 
-        score
+        score as i16
     }
 }
