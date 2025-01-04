@@ -1,4 +1,4 @@
-use std::mem::MaybeUninit;
+use std::{hint::assert_unchecked, mem::MaybeUninit};
 
 use movegen::FullGen;
 
@@ -62,14 +62,15 @@ impl Engine {
                 return i16::MAX;
             }
         }
-        let piece = self.board.get_square(mov.from()).unwrap();
+        let piece = unsafe { self.board.get_square_kind(mov.from()).unwrap_unchecked() };
 
-        score += (((abs_piece_square_value(mov.to(), piece, phase)
-            - abs_piece_square_value(mov.from(), piece, phase)) as f32
-            * (phase.earlygame().as_float() * 0.2)) as f32) as i32;
+        let piece_sq_diff = abs_piece_square_value(mov.to(), piece + self.board.active_side, phase)
+            - abs_piece_square_value(mov.from(), piece + self.board.active_side, phase);
+        score += piece_sq_diff * (200 * phase.earlygame()) / 1024;
 
-        if let Some(target_piece) = self.board.get_square(mov.to()) {
-            score += MVV_LVA[target_piece.kind() as usize][piece.kind() as usize] as i32 * 4;
+        if let Some(target_piece) = self.board.get_square_kind(mov.to()) {
+            unsafe { assert_unchecked(target_piece != PieceKind::King) };
+            score += MVV_LVA[target_piece as usize][piece as usize] as i32 * 4;
         } else if mov.flags() == MoveFlags::EnPassant {
             score += MVV_LVA[Pawn as usize][Pawn as usize] as i32 * 4;
         }
@@ -82,7 +83,7 @@ impl Engine {
             score += 10;
         }
 
-        if !mov.flags().is_capture() && piece.kind() != Pawn && !pawn_attacks.contains(mov.to()) {
+        if !mov.flags().is_capture() && piece != Pawn && !pawn_attacks.contains(mov.to()) {
             score += 5;
         }
 
