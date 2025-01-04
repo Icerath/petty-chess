@@ -1,3 +1,5 @@
+use movegen::PAWN_ATTACKS;
+
 use super::mobility::raw_mobility_eval;
 use crate::prelude::*;
 
@@ -16,6 +18,14 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let king = board.get_king_square(side).unwrap();
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
+
+        // punish pieces in front of enemy pawns
+        let mut pawn_attacks = Bitboard::EMPTY;
+        enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq.usize()]);
+
+        (friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen])
+            .for_each(|sq| total -= pawn_attacks.contains(sq) as i32 * 40);
+
         // punish kings adjacent to an open file
         for pawns in [friendly[Pawn], enemy[Pawn]] {
             const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
