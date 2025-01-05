@@ -1,7 +1,7 @@
 macro_rules! impl_int_getters {
     ($ty: ident) => {
         #[must_use]
-                pub const fn $ty(self) -> $ty {
+        pub const fn $ty(self) -> $ty {
             self.u8() as $ty
         }
     };
@@ -13,7 +13,7 @@ macro_rules! impl_int_getters {
 macro_rules! impl_into {
     ($struct_name: ident, $ty: ident) => {
         impl From<$struct_name> for $ty {
-                        #[must_use]
+            #[must_use]
             fn from(value: $struct_name) -> Self {
                 value.$ty()
             }
@@ -28,7 +28,7 @@ macro_rules! impl_try_from {
     ($struct_name: ident, $max: literal, $ty: ident) => {
         impl TryFrom<$ty> for $struct_name {
             type Error = ();
-                         fn try_from(value: $ty) -> Result<Self, Self::Error> {
+            fn try_from(value: $ty) -> Result<Self, Self::Error> {
                 match value {
                     0..$max => Ok(Self(value as u8)),
                     _ => Err(())
@@ -58,14 +58,14 @@ macro_rules! bounded_int {
             }
             #[track_caller]
             #[must_use]
-                        /// # Safety
+            /// # Safety
             /// int must be less than `Self::MAX`
             pub const unsafe fn from_int_unchecked(int: u8) -> Self {
                 debug_assert!(int < $max);
                 Self(int)
             }
             #[must_use]
-                        pub const fn add_int(self, rhs: u8) -> Option<Self> {
+            pub const fn add_int(self, rhs: u8) -> Option<Self> {
                 match self.0 + rhs {
                     n @ ..$max => Some(Self(n)),
                     _ => None,
@@ -73,7 +73,7 @@ macro_rules! bounded_int {
                 }
             }
             #[must_use]
-                        pub const fn sub_int(self, rhs: u8) -> Option<Self> {
+            pub const fn sub_int(self, rhs: u8) -> Option<Self> {
                 match self.u8().wrapping_sub(rhs) {
                     n @ ..$max => Some(Self(n)),
                     _ => None,
@@ -81,9 +81,9 @@ macro_rules! bounded_int {
                 }
             }
             #[must_use]
-                        pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
+            pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
                 let out = self.0 as i8 + rhs;
-                if  (out >= 0 && out < $max) {
+                if (out >= 0 && out < $max) {
                     Some(Self(out as u8))
                 } else {
                     None
@@ -103,7 +103,7 @@ macro_rules! bounded_int {
                 Self(self.0 - rhs)
             }
             #[must_use]
-                        pub const fn u8(self) -> u8 {
+            pub const fn u8(self) -> u8 {
                 unsafe { ::std::hint::assert_unchecked(self.0 < $max) };
                 self.0
             }
