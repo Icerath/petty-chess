@@ -34,17 +34,24 @@ const EXPECTED_ROOK_MOVES: u8 = 10;
 const EXPECTED_QUEEN_MOVES: u8 = 20;
 
 fn knight_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / MAX_KNIGHT_MOVES as f32) * 15.0 * MOBILITY_SCORE_MULTIPLIER) as i32
+    let num_moves = num_moves as i32 * 1024;
+    ((num_moves / MAX_KNIGHT_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER as i32) / 1024
 }
+
 fn bishop_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_BISHOP_MOVES as f32).min(1.0) * 15.0 * MOBILITY_SCORE_MULTIPLIER)
-        as i32
+    let num_moves = num_moves as i32 * 1024;
+    ((num_moves / EXPECTED_BISHOP_MOVES as i32).min(1024) * 15 * MOBILITY_SCORE_MULTIPLIER as i32)
+        / 1024
 }
+
 fn rook_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_ROOK_MOVES as f32).min(1.0) * 25.0 * MOBILITY_SCORE_MULTIPLIER)
-        as i32
+    let num_moves = num_moves as i32 * 1024;
+    ((num_moves / EXPECTED_ROOK_MOVES as i32).min(1024) * 25 * MOBILITY_SCORE_MULTIPLIER as i32)
+        / 1024
 }
+
 fn queen_score(num_moves: u8) -> i32 {
-    ((num_moves as f32 / EXPECTED_QUEEN_MOVES as f32).min(1.0) * 45.0 * MOBILITY_SCORE_MULTIPLIER)
-        as i32
+    let num_moves = num_moves as i32 * 1024;
+    ((num_moves / EXPECTED_QUEEN_MOVES as i32).min(1024) * 45 * MOBILITY_SCORE_MULTIPLIER as i32)
+        / 1024
 }
