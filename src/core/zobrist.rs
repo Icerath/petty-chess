@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, hint::assert_unchecked};
 
 use crate::prelude::*;
 
@@ -20,6 +20,7 @@ impl Zobrist {
 
     #[inline]
     pub fn xor_can_castle(&mut self, can_castle: CanCastle) {
+        unsafe { assert_unchecked((can_castle.bits() as usize) < CASTLE_KEYS.len()) };
         self.0 ^= CASTLE_KEYS[can_castle.bits() as usize];
     }
 
