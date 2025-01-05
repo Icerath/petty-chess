@@ -68,9 +68,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let pieces = self.board.friendly_bitboards();
         let all_pieces = self.board.all_pieces();
         let checkers = self.board.gen_checkers(self.board.active_side);
-        if let Some(king_pos) = self.board.active_king() {
-            self.gen_king_moves(king_pos, checkers);
-        }
+        let king_pos = self.board.active_king().unwrap();
+
+        self.gen_king_moves(king_pos, checkers);
         if checkers.count() >= 2 {
             return std::mem::take(&mut self.moves);
         }
