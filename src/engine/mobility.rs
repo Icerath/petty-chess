@@ -1,29 +1,35 @@
 use crate::prelude::*;
 
-const MOBILITY_SCORE_MULTIPLIER: i32 = 2;
-
 pub fn raw_mobility_eval(board: &Board) -> i32 {
     let occupancy = board.all_pieces();
     let mut final_total = 0;
     for side in [White, Black] {
         let mut total = 0;
+        let mut knight_total = 0;
         board.get(side + Knight).for_each(|sq| {
-            total += knight_score((KNIGHT_MOVES[sq.usize()]).count());
+            knight_total += knight_score((KNIGHT_MOVES[sq.usize()]).count());
         });
+        total += knight_total * 15;
+        let mut bishop_total = 0;
         board.get(side + Bishop).for_each(|sq| {
-            total += bishop_score((bishop_attacks(sq, occupancy)).count());
+            bishop_total += bishop_score((bishop_attacks(sq, occupancy)).count());
         });
+        total += bishop_total * 15;
+        let mut rook_total = 0;
         board.get(side + Rook).for_each(|sq| {
-            total += rook_score((rook_attacks(sq, occupancy)).count());
+            rook_total += rook_score((rook_attacks(sq, occupancy)).count());
         });
+        total += rook_total * 25;
+        let mut queen_total = 0;
         board.get(side + Queen).for_each(|sq| {
-            total += queen_score((queen_attacks(sq, occupancy)).count());
+            queen_total += queen_score((queen_attacks(sq, occupancy)).count());
         });
-        final_total += total * side.positive();
+        total += queen_total * 45;
+
+        final_total += (total * side.positive() * 2) / (1024);
     }
     final_total
 }
-
 const MAX_KNIGHT_MOVES: u8 = 8;
 // const MAX_BISHOP_MOVES: u8 = 13;
 const EXPECTED_BISHOP_MOVES: u8 = 10;
@@ -34,20 +40,20 @@ const EXPECTED_QUEEN_MOVES: u8 = 20;
 
 fn knight_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / MAX_KNIGHT_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER) / 1024
+    num_moves / MAX_KNIGHT_MOVES as i32
 }
 
 fn bishop_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_BISHOP_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER) / 1024
+    num_moves / EXPECTED_BISHOP_MOVES as i32
 }
 
 fn rook_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_ROOK_MOVES as i32) * 25 * MOBILITY_SCORE_MULTIPLIER) / 1024
+    num_moves / EXPECTED_ROOK_MOVES as i32
 }
 
 fn queen_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_QUEEN_MOVES as i32) * 45 * MOBILITY_SCORE_MULTIPLIER) / 1024
+    num_moves / EXPECTED_QUEEN_MOVES as i32
 }
