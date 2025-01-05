@@ -61,11 +61,6 @@ impl Square {
     }
 
     #[must_use]
-    pub fn all() -> impl ExactSizeIterator<Item = Self> {
-        (0..64).map(Self)
-    }
-
-    #[must_use]
     pub const fn manhattan_distance(self, other: Self) -> u8 {
         self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
     }
@@ -277,7 +272,7 @@ fn test_manhattan_distance() {
 
 #[test]
 fn test_square_flip() {
-    for sq in Square::all() {
+    for sq in Square::ALL {
         assert_eq!(Square::new(Rank(7 - sq.rank().u8()), sq.file()), sq.flip());
     }
 }

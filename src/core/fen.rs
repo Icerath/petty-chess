@@ -38,7 +38,7 @@ impl Board {
 
     pub fn to_fen_into(&self, buf: &mut String) {
         let mut prev = None::<Square>;
-        for sq in Square::all() {
+        for sq in Square::ALL {
             if let Some(piece) = self.get_square(sq.flip()) {
                 if let Some(prev) = prev {
                     if let Some(dif @ 1..) = sq.file().u8().checked_sub((prev.file().u8() + 1) % 8)
