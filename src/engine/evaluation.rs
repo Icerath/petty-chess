@@ -49,11 +49,10 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file().usize()];
             }
             // reward passed pawns
-            let bonuses = [0, 10, 20, 30, 40, 50, 70, 90];
             let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
             if is_passed_pawn {
                 let offset = sq.rank().relative_to(side).usize();
-                total += bonuses[offset];
+                total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
         });
         // reward outposts
