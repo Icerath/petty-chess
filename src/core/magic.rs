@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
-const ROOK: usize = 4096;
-const BISHOP: usize = 512;
+pub const ROOK: usize = 4096;
+pub const BISHOP: usize = 512;
 
 static ROOK_TABLES: [SquareTables<ROOK>; 64] =
     unsafe { std::mem::transmute(*include_bytes!("magic_rook_tables.bin")) };
@@ -26,11 +26,11 @@ pub fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
 }
 
 #[repr(C)]
-pub struct SquareTables<const PIECE: usize> {
+struct SquareTables<const PIECE: usize> {
+    magic: u64,
     mask: u64,
     shift: u32,
     attacks: [u64; PIECE],
-    magic: u64,
 }
 
 impl<const PIECE: usize> SquareTables<PIECE> {
