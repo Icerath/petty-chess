@@ -43,8 +43,8 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
             total -= pawns_in_file.saturating_sub(1) * 25;
         }
-        // reward non-isolated pawns
         friendly[Pawn].for_each(|sq| {
+            // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
                 total += match sq.file().distance_from_center() {
                     0 => 25,
@@ -54,14 +54,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                     _ => unreachable!(),
                 };
             }
-        });
-        // reward passed pawns
-        friendly[Pawn].for_each(|sq| {
-            const BONUSES: [i32; 8] = [0, 10, 20, 30, 40, 50, 70, 90];
+            // reward passed pawns
+            let bonuses = [0, 10, 20, 30, 40, 50, 70, 90];
             let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
             if is_passed_pawn {
                 let offset = sq.rank().relative_to(side).usize();
-                total += BONUSES[offset];
+                total += bonuses[offset];
             }
         });
         // reward outposts
