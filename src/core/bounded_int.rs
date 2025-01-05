@@ -89,9 +89,13 @@ macro_rules! bounded_int {
             }
             #[must_use]
             #[inline]
-            pub fn add_int_signed(self, rhs: i8) -> Option<Self> {
+            pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
                 let out = self.0 as i8 + rhs;
-                (0..$max).contains(&out).then_some(Self(out as u8))
+                if  (out >= 0 && out < $max) {
+                    Some(Self(out as u8))
+                } else {
+                    None
+                }
             }
             #[track_caller]
             #[must_use]

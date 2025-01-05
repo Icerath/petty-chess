@@ -7,6 +7,16 @@ bounded_int! { pub struct Rank { 8 } }
 bounded_int! { pub struct File { 8 } }
 
 impl Square {
+    pub const ALL: [Self; 64] = {
+        let mut all = [Self::A1; 64];
+        let mut i = 0;
+        while i < 64 {
+            all[i as usize] = Square::from_int(i).unwrap();
+            i += 1;
+        }
+        all
+    };
+
     #[must_use]
     #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
@@ -15,7 +25,7 @@ impl Square {
 
     #[must_use]
     #[inline]
-    pub fn flip(self) -> Self {
+    pub const fn flip(self) -> Self {
         #[rustfmt::skip]
         const FLIPPED: [u8; 64] = [
             56, 57, 58, 59, 60, 61, 62, 63,
@@ -44,14 +54,15 @@ impl Square {
 
     #[must_use]
     #[inline]
-    pub fn add_rank(self, rank: i8) -> Option<Self> {
-        Some(Self::new(self.rank().add_int_signed(rank)?, self.file()))
+    pub const fn add_rank(self, rank: i8) -> Option<Self> {
+        let Some(rank) = self.rank().add_int_signed(rank) else { return None };
+        Some(Self::new(rank, self.file()))
     }
 
     #[must_use]
     #[inline]
-    pub fn add_file(self, file: i8) -> Option<Self> {
-        let file = self.file().add_int_signed(file)?;
+    pub const fn add_file(self, file: i8) -> Option<Self> {
+        let Some(file) = self.file().add_int_signed(file) else { return None };
         Some(Self::new(self.rank(), file))
     }
 
@@ -63,13 +74,13 @@ impl Square {
 
     #[must_use]
     #[inline]
-    pub fn manhattan_distance(self, other: Self) -> u8 {
+    pub const fn manhattan_distance(self, other: Self) -> u8 {
         self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
     }
 
     #[must_use]
     #[inline]
-    pub fn centre_manhattan_distance(self) -> u8 {
+    pub const fn centre_manhattan_distance(self) -> u8 {
         [
             3, 3, 3, 3, 3, 3, 3, 3, //
             3, 2, 2, 2, 2, 2, 2, 3, //
@@ -84,7 +95,7 @@ impl Square {
 
     #[inline]
     #[must_use]
-    pub fn passed_pawn_mask(self, side: Side) -> Bitboard {
+    pub const fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
         let mut mask = file.adjacency_mask();
         match side {
@@ -96,14 +107,17 @@ impl Square {
 
     #[inline]
     #[must_use]
-    pub fn outpost_mask(self, side: Side) -> Bitboard {
+    pub const fn outpost_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.adjacency_mask();
-        match side {
-            Side::White => mask.0 = mask.0.checked_shl((rank.u32() + 1) * 8).unwrap_or_default(),
-            Side::Black => mask.0 = mask.0.checked_shr((8 - rank.u32()) * 8).unwrap_or_default(),
+        let mask = file.adjacency_mask();
+        let mask = match side {
+            Side::White => mask.0.checked_shl((rank.u32() + 1) * 8),
+            Side::Black => mask.0.checked_shr((8 - rank.u32()) * 8),
+        };
+        match mask {
+            Some(mask) => Bitboard(mask),
+            None => Bitboard::EMPTY,
         }
-        mask
     }
 }
 
@@ -112,13 +126,12 @@ macro_rules! impl_file_rank {
         impl $ty {
             #[inline]
             #[must_use]
-            pub fn distance_from_center(self) -> u8 {
-                const OUTPUTS: [u8; 8] = [3, 2, 1, 0, 0, 1, 2, 3];
-                OUTPUTS[self.usize()]
+            pub const fn distance_from_center(self) -> u8 {
+                [3, 2, 1, 0, 0, 1, 2, 3][self.usize()]
             }
             #[must_use]
             #[inline]
-            pub fn relative_to(self, side: Side) -> Self {
+            pub const fn relative_to(self, side: Side) -> Self {
                 match side {
                     Side::White => self,
                     Side::Black => Self(7 - self.u8()),
@@ -152,9 +165,16 @@ impl File {
 impl File {
     #[must_use]
     #[inline]
-    pub fn adjacency_mask(self) -> Bitboard {
-        self.add_int(1).map_or(Bitboard::EMPTY, File::mask)
-            | self.sub_int(1).map_or(Bitboard::EMPTY, File::mask)
+    pub const fn adjacency_mask(self) -> Bitboard {
+        unsafe {
+            match self {
+                Self::A => self.add_int_unchecked(1).mask(),
+                Self::H => self.sub_int_unchecked(1).mask(),
+                _ => Bitboard(
+                    self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0,
+                ),
+            }
+        }
     }
 
     #[must_use]
@@ -259,7 +279,7 @@ impl Square {
     );
 
     #[must_use]
-    pub fn algebraic(self) -> &'static str {
+    pub const fn algebraic(self) -> &'static str {
         Self::SQUARES[self.usize()]
     }
 }
