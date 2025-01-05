@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-const MOBILITY_SCORE_MULTIPLIER: f32 = 2.0;
+const MOBILITY_SCORE_MULTIPLIER: i32 = 2;
 
 pub fn raw_mobility_eval(board: &Board) -> i32 {
     let occupancy = board.all_pieces();
@@ -35,23 +35,20 @@ const EXPECTED_QUEEN_MOVES: u8 = 20;
 
 fn knight_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / MAX_KNIGHT_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER as i32) / 1024
+    ((num_moves / MAX_KNIGHT_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER) / 1024
 }
 
 fn bishop_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_BISHOP_MOVES as i32).min(1024) * 15 * MOBILITY_SCORE_MULTIPLIER as i32)
-        / 1024
+    ((num_moves / EXPECTED_BISHOP_MOVES as i32) * 15 * MOBILITY_SCORE_MULTIPLIER) / 1024
 }
 
 fn rook_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_ROOK_MOVES as i32).min(1024) * 25 * MOBILITY_SCORE_MULTIPLIER as i32)
-        / 1024
+    ((num_moves / EXPECTED_ROOK_MOVES as i32) * 25 * MOBILITY_SCORE_MULTIPLIER) / 1024
 }
 
 fn queen_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
-    ((num_moves / EXPECTED_QUEEN_MOVES as i32).min(1024) * 45 * MOBILITY_SCORE_MULTIPLIER as i32)
-        / 1024
+    ((num_moves / EXPECTED_QUEEN_MOVES as i32) * 45 * MOBILITY_SCORE_MULTIPLIER) / 1024
 }
