@@ -42,7 +42,6 @@ pub enum Promotion {
 
 impl MoveFlags {
     #[must_use]
-    #[inline]
     pub fn promotion(self) -> Option<Promotion> {
         Some(match self {
             Self::BishopPromotion | Self::BishopPromotionCapture => Promotion::Bishop,
@@ -54,7 +53,6 @@ impl MoveFlags {
     }
 
     #[must_use]
-    #[inline]
     pub fn is_capture(self) -> bool {
         self as u8 & 0b0100 == 0b0100
     }

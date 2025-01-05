@@ -123,14 +123,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
     final_total + raw_mobility_eval(board)
 }
 
-#[inline]
 fn material_and_square_table_values(board: &Board, side: Side) -> [i32; 2] {
     let [earlygame, endgame] = material_values(board, side);
     let [earlygame2, endgame2] = square_table_values(board, side);
     [earlygame + earlygame2, endgame + endgame2]
 }
 
-#[inline]
 fn material_values(board: &Board, side: Side) -> [i32; 2] {
     let mut mg = 0;
     let mut eg = 0;
@@ -142,7 +140,6 @@ fn material_values(board: &Board, side: Side) -> [i32; 2] {
     [mg, eg]
 }
 
-#[inline]
 fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
     let mut mg = 0;
     let mut eg = 0;
@@ -161,7 +158,6 @@ fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
     [mg, eg]
 }
 
-#[inline]
 fn has_bishop_pair(board: &Board, side: Side) -> bool {
     // Ignoring underpromotion for now
     board.get(side + Bishop).count() >= 2
@@ -191,25 +187,21 @@ pub fn sufficient_material_to_force_checkmate(board: &Board) -> bool {
         || b[Knight].0 >= 3
 }
 
-#[inline]
 #[must_use]
 pub fn piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
     piece_value(piece, phase) + piece_square_value(sq, piece, phase)
 }
 
-#[inline]
 #[must_use]
 pub fn piece_value(piece: Piece, phase: Phase) -> i32 {
     abs_piece_value(piece.kind(), phase) * piece.side().positive()
 }
 
-#[inline]
 #[must_use]
 pub fn abs_piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
     abs_piece_value(piece.kind(), phase) + abs_piece_square_value(sq, piece, phase)
 }
 
-#[inline]
 #[must_use]
 pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
     let mg = [82, 337, 365, 477, 1025, 0][piece as usize];
@@ -217,13 +209,11 @@ pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
     mg * phase.earlygame() + eg * phase.endgame()
 }
 
-#[inline]
 #[must_use]
 pub fn piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     abs_piece_square_value(sq, piece, phase) * piece.side().positive()
 }
 
-#[inline]
 #[must_use]
 pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     let index = if piece.is_white() { sq.flip() } else { sq };

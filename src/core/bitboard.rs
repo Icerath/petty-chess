@@ -13,23 +13,19 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     pub const EMPTY: Self = Self(0);
 
-    #[inline]
     pub fn insert(&mut self, sq: Square) {
         self.0 |= 1 << sq.u8();
     }
 
-    #[inline]
     pub fn remove(&mut self, sq: Square) {
         self.0 &= !(1 << sq.u8());
     }
 
-    #[inline]
     #[must_use]
     pub fn contains(self, sq: Square) -> bool {
         self.0 & (1 << sq.u8()) > 0
     }
 
-    #[inline]
     #[must_use]
     pub fn bitscan(self) -> Option<Square> {
         if self.is_empty() {
@@ -38,7 +34,6 @@ impl Bitboard {
         unsafe { Some(self.bitscan_unchecked()) }
     }
 
-    #[inline]
     #[must_use]
     /// # Safety
     /// bitboard must not be empty
@@ -46,14 +41,12 @@ impl Bitboard {
         unsafe { Square::from_int_unchecked(self.0.trailing_zeros() as u8) }
     }
 
-    #[inline]
     pub fn bitscan_pop(&mut self) -> Option<Square> {
         let sq = self.bitscan()?;
         self.0 &= self.0 - 1;
         Some(sq)
     }
 
-    #[inline]
     /// # Safety
     /// bitboard must not be empty
     pub unsafe fn bitscan_pop_unchecked(&mut self) -> Square {
@@ -62,7 +55,6 @@ impl Bitboard {
         sq
     }
 
-    #[inline]
     #[must_use]
     pub fn rbitscan(self) -> Option<Square> {
         if self.is_empty() {
@@ -71,7 +63,6 @@ impl Bitboard {
         Some(unsafe { self.rbitscan_unchecked() })
     }
 
-    #[inline]
     #[must_use]
     /// # Safety
     /// bitboard must not be empty
@@ -79,38 +70,32 @@ impl Bitboard {
         unsafe { Square::from_int_unchecked(self.0.leading_zeros() as u8) }
     }
 
-    #[inline]
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
         while !self.is_empty() {
             f(unsafe { self.bitscan_pop_unchecked() });
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn count(self) -> u8 {
         self.0.count_ones() as u8
     }
 
-    #[inline]
     #[must_use]
     pub fn is_empty(self) -> bool {
         self.0 == 0
     }
 
-    #[inline]
     #[must_use]
     pub fn contains_in_file(self, file: File) -> bool {
         (self & file.mask()).0 > 0
     }
 
-    #[inline]
     #[must_use]
     pub fn from_ref(int: &u64) -> &Self {
         unsafe { &*std::ptr::from_ref(int).cast::<Self>() }
     }
 
-    #[inline]
     #[must_use]
     pub fn from_mut(int: &mut u64) -> &mut Self {
         unsafe { &mut *std::ptr::from_mut(int).cast::<Self>() }
@@ -120,7 +105,6 @@ impl Bitboard {
 impl Not for Bitboard {
     type Output = Self;
 
-    #[inline]
     fn not(self) -> Self::Output {
         Self(!self.0)
     }
@@ -129,14 +113,12 @@ impl Not for Bitboard {
 impl BitAnd for Bitboard {
     type Output = Self;
 
-    #[inline]
     fn bitand(self, rhs: Self) -> Self::Output {
         Self(self.0 & rhs.0)
     }
 }
 
 impl BitAndAssign for Bitboard {
-    #[inline]
     fn bitand_assign(&mut self, rhs: Self) {
         self.0 &= rhs.0;
     }
@@ -145,14 +127,12 @@ impl BitAndAssign for Bitboard {
 impl BitOr for Bitboard {
     type Output = Self;
 
-    #[inline]
     fn bitor(self, rhs: Self) -> Self::Output {
         Self(self.0 | rhs.0)
     }
 }
 
 impl BitOrAssign for Bitboard {
-    #[inline]
     fn bitor_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
     }
@@ -161,7 +141,6 @@ impl BitOrAssign for Bitboard {
 impl BitXor<Square> for Bitboard {
     type Output = Bitboard;
 
-    #[inline]
     fn bitxor(self, rhs: Square) -> Self::Output {
         Self(self.0 ^ (1 << rhs.u8()))
     }
@@ -174,7 +153,6 @@ impl BitXorAssign<Square> for Bitboard {
 }
 
 impl FromIterator<Square> for Bitboard {
-    #[inline]
     fn from_iter<T: IntoIterator<Item = Square>>(iter: T) -> Self {
         let mut ret = Self(0);
         ret.extend(iter);
@@ -183,7 +161,6 @@ impl FromIterator<Square> for Bitboard {
 }
 
 impl Extend<Square> for Bitboard {
-    #[inline]
     fn extend<T: IntoIterator<Item = Square>>(&mut self, iter: T) {
         iter.into_iter().for_each(|sq| self.insert(sq));
     }

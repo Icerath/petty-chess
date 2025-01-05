@@ -173,14 +173,12 @@ impl Board {
             prev_en_passant.inspect(|&sq| self.zobrist.xor_en_passant(sq));
     }
 
-    #[inline]
     pub fn increment_ply(&mut self) {
         self.fullmove_counter += self.active_side.is_black() as u16;
         self.halfmove_clock += 1;
         self.swap_side();
     }
 
-    #[inline]
     pub fn decrement_ply(&mut self) {
         self.swap_side();
         self.halfmove_clock -= 1;
@@ -188,44 +186,37 @@ impl Board {
     }
 
     #[must_use]
-    #[inline]
     pub fn side_bitboards(&self, side: Side) -> Pieces {
         let x: [u64; 6] = self.pieces[..6].try_into().unwrap();
         Pieces(x.map(|bitboard| Bitboard(bitboard) & self[side]))
     }
 
     #[must_use]
-    #[inline]
     pub fn friendly_bitboards(&self) -> Pieces {
         self.side_bitboards(self.active_side)
     }
 
     #[must_use]
-    #[inline]
     pub fn enemy_bitboards(&self) -> Pieces {
         self.side_bitboards(!self.active_side)
     }
 
     #[must_use]
-    #[inline]
     pub fn all_pieces(&self) -> Bitboard {
         self[White] | self[Black]
     }
 
     #[must_use]
-    #[inline]
     pub fn get_king_square(&self, side: Side) -> Option<Square> {
         self.get(side + King).bitscan()
     }
 
     #[must_use]
-    #[inline]
     pub fn active_king(&self) -> Option<Square> {
         self.get_king_square(self.active_side)
     }
 
     #[must_use]
-    #[inline]
     pub fn inactive_king(&self) -> Option<Square> {
         self.get_king_square(!self.active_side)
     }
@@ -233,12 +224,10 @@ impl Board {
 
 impl Board {
     #[must_use]
-    #[inline]
     pub fn get(&self, piece: Piece) -> Bitboard {
         self[piece.kind()] & self[piece.side()]
     }
 
-    #[inline]
     pub fn swap(&mut self, lhs: Square, rhs: Square) {
         let lhs_piece = self.get_square(lhs);
         let rhs_piece = self.get_square(rhs);
@@ -252,19 +241,16 @@ impl Board {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn is_piece_at(&self, sq: Square) -> bool {
         self.all_pieces().contains(sq)
     }
 
-    #[inline]
     #[must_use]
     pub fn is_side(&self, sq: Square, side: Side) -> bool {
         self[side].contains(sq)
     }
 
-    #[inline]
     #[must_use]
     pub fn get_square(&self, square: Square) -> Option<Piece> {
         let side = if self[White].contains(square) { White } else { Black };
@@ -272,13 +258,11 @@ impl Board {
         Some(side + kind)
     }
 
-    #[inline]
     #[must_use]
     pub fn get_square_kind(&self, square: Square) -> Option<PieceKind> {
         PieceKind::ALL.into_iter().find(|&kind| self[kind].contains(square))
     }
 
-    #[inline]
     #[must_use]
     pub fn in_check(&self) -> bool {
         !self.gen_checkers(self.active_side).is_empty()

@@ -83,7 +83,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         std::mem::take(&mut self.moves)
     }
 
-    #[inline]
     pub(crate) fn pawn_attack_map(&self) -> Bitboard {
         let mut attacked_squares = Bitboard(0);
         let side = !self.board.active_side;
@@ -93,7 +92,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         attacked_squares
     }
 
-    #[inline]
     fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
         squares &= !self.board[self.board.active_side];
         squares.for_each(|sq| unsafe {
@@ -213,7 +211,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
 }
 
 impl Board {
-    #[inline]
     #[must_use]
     pub fn gen_checkers(&self, side: Side) -> Bitboard {
         let mut bb = Bitboard::EMPTY;
@@ -229,7 +226,6 @@ impl Board {
     }
 
     #[must_use]
-    #[inline]
     pub fn is_legal(&mut self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.gen_attack_map();
@@ -250,7 +246,6 @@ impl Board {
     }
 
     // Generate attack map for enemy pieces
-    #[inline]
     fn gen_attack_map(&self) -> Bitboard {
         let mut output = Bitboard(0);
         let side = !self.active_side;

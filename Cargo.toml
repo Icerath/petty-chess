@@ -28,7 +28,6 @@ debug = false
 
 [profile.release]
 panic = "abort"
-lto = "fat"
 codegen-units = 1
 incremental = false
 rustflags = ["-Ctarget-cpu=native"]

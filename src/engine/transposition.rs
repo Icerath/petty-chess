@@ -33,13 +33,11 @@ impl TranspositionTable {
     }
 
     #[must_use]
-    #[inline]
     pub fn get(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
         self.get_entry(board, alpha, beta, depth).map(|entry| entry.eval)
     }
 
     #[must_use]
-    #[inline]
     pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
         let entry = self.inner.get(&board.zobrist)?;
         if entry.depth < depth {
@@ -55,7 +53,6 @@ impl TranspositionTable {
         None
     }
 
-    #[inline]
     pub fn insert(
         &mut self,
         board: &Board,
@@ -88,7 +85,6 @@ pub struct Entry {
 struct NoHasher(u64);
 
 impl Hasher for NoHasher {
-    #[inline]
     fn finish(&self) -> u64 {
         self.0
     }
@@ -97,7 +93,6 @@ impl Hasher for NoHasher {
         unreachable!();
     }
 
-    #[inline]
     fn write_u64(&mut self, i: u64) {
         self.0 = i;
     }

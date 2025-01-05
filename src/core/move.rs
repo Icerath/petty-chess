@@ -10,25 +10,21 @@ impl Move {
     pub const NULL: Move = Self(0);
 
     #[must_use]
-    #[inline]
     pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
         Self(from.u16() | to.u16() << 6 | (flags as u16) << 12)
     }
 
-    #[inline]
     #[must_use]
     pub fn from(self) -> Square {
         unsafe { Square::from_int_unchecked((self.0 & 0b11_1111) as u8) }
     }
 
     #[must_use]
-    #[inline]
     pub fn to(self) -> Square {
         unsafe { Square::from_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
     }
 
     #[must_use]
-    #[inline]
     pub fn flags(self) -> MoveFlags {
         unsafe { MoveFlags::try_from((self.0 >> 12) as u8).unwrap_unchecked() }
     }

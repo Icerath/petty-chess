@@ -10,12 +10,10 @@ pub struct Phase(i32);
 
 impl Phase {
     #[must_use]
-    #[inline]
     pub fn earlygame(self) -> Earlygame {
         Earlygame(self.0)
     }
 
-    #[inline]
     #[must_use]
     pub fn endgame(self) -> Endgame {
         Endgame(UPPER - self.0)
@@ -23,7 +21,6 @@ impl Phase {
 }
 
 #[must_use]
-#[inline]
 pub fn phase(board: &Board) -> Phase {
     let mut sum = -6;
     sum += (board[Bishop] | board[Knight]).count() as i32;
@@ -46,7 +43,6 @@ macro_rules! impl_stage {
         impl Mul<i32> for $stage {
             type Output = i32;
 
-            #[inline]
             fn mul(self, rhs: i32) -> Self::Output {
                 (self.0 * rhs) / UPPER
             }
@@ -55,7 +51,6 @@ macro_rules! impl_stage {
         impl Mul<$stage> for i32 {
             type Output = i32;
 
-            #[inline]
             fn mul(self, rhs: $stage) -> Self::Output {
                 (self * rhs.0) / UPPER
             }

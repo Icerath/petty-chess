@@ -16,46 +16,38 @@ pub struct Magic {
 static MAGIC: OnceLock<Magic> = OnceLock::new();
 
 #[must_use]
-#[inline]
 pub fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     Magic::get().rook_attacks(sq, occupancy)
 }
 #[must_use]
-#[inline]
 pub fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     Magic::get().bishop_attacks(sq, occupancy)
 }
 #[must_use]
-#[inline]
 pub fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     Magic::get().queen_attacks(sq, occupancy)
 }
 
 impl Magic {
-    #[inline]
     pub fn get() -> &'static Magic {
         MAGIC.get_or_init(Self::preinit)
     }
 
-    #[inline]
     pub fn get_init() -> &'static Magic {
         MAGIC.get_or_init(Self::init)
     }
 
     #[must_use]
-    #[inline]
     pub fn rook_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.rook_tables[sq.usize()].get_attacks(occupancy)
     }
 
     #[must_use]
-    #[inline]
     pub fn bishop_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.bishop_tables[sq.usize()].get_attacks(occupancy)
     }
 
     #[must_use]
-    #[inline]
     pub fn queen_attacks(&self, sq: Square, occupancy: Bitboard) -> Bitboard {
         self.bishop_tables[sq.usize()].get_attacks(occupancy)
             | self.rook_tables[sq.usize()].get_attacks(occupancy)
@@ -131,7 +123,6 @@ impl<const PIECE: usize> SquareTables<PIECE> {
         Err(())
     }
 
-    #[inline]
     fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
         occupancy.0 &= self.mask;
         let index = (occupancy.0.wrapping_mul(self.magic) >> self.shift) as usize;

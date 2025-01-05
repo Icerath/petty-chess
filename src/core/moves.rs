@@ -15,14 +15,12 @@ pub struct Moves {
 
 impl Moves {
     #[must_use]
-    #[inline]
     pub fn new() -> Self {
         Self { array: [MaybeUninit::uninit(); 256], len: 0 }
     }
 
     /// # Safety
     /// self.len must be < 255
-    #[inline]
     pub unsafe fn push(&mut self, mov: Move) {
         debug_assert!(self.len < u8::MAX);
         self.array[self.len as usize].write(mov);
@@ -30,7 +28,6 @@ impl Moves {
     }
 
     /// Returns false if if failed to push the move
-    #[inline]
     pub fn push_checked(&mut self, mov: Move) -> bool {
         if self.len == u8::MAX {
             return false;
@@ -49,7 +46,6 @@ impl Moves {
         self
     }
 
-    #[inline]
     pub fn retain<F>(&mut self, mut f: F)
     where
         F: FnMut(&mut Move) -> bool,
@@ -65,7 +61,6 @@ impl Moves {
 }
 
 impl Default for Moves {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -81,7 +76,6 @@ impl<'a> IntoIterator for &'a Moves {
     type IntoIter = Iter<'a>;
     type Item = &'a Move;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         Iter { moves: self, current: 0 }
     }
@@ -90,14 +84,12 @@ impl<'a> IntoIterator for &'a Moves {
 impl Deref for Moves {
     type Target = [Move];
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe { std::slice::from_raw_parts(self.array.as_ptr().cast(), self.len as usize) }
     }
 }
 
 impl DerefMut for Moves {
-    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { std::slice::from_raw_parts_mut(self.array.as_mut_ptr().cast(), self.len as usize) }
     }
@@ -107,7 +99,6 @@ impl IntoIterator for Moves {
     type IntoIter = IntoIter;
     type Item = Move;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         IntoIter { moves: self, current: 0 }
     }
@@ -126,7 +117,6 @@ pub struct IntoIter {
 impl<'a> Iterator for Iter<'a> {
     type Item = &'a Move;
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.current >= self.moves.len {
             return None;
@@ -140,7 +130,6 @@ impl<'a> Iterator for Iter<'a> {
 impl Iterator for IntoIter {
     type Item = Move;
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.current >= self.moves.len {
             return None;

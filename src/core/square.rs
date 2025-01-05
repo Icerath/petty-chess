@@ -18,13 +18,11 @@ impl Square {
     };
 
     #[must_use]
-    #[inline]
     pub const fn new(rank: Rank, file: File) -> Self {
         Self(file.u8() + rank.u8() * 8)
     }
 
     #[must_use]
-    #[inline]
     pub const fn flip(self) -> Self {
         #[rustfmt::skip]
         const FLIPPED: [u8; 64] = [
@@ -41,45 +39,38 @@ impl Square {
     }
 
     #[must_use]
-    #[inline]
     pub const fn file(self) -> File {
         File(self.u8() % 8)
     }
 
     #[must_use]
-    #[inline]
     pub const fn rank(self) -> Rank {
         Rank(self.u8() / 8)
     }
 
     #[must_use]
-    #[inline]
     pub const fn add_rank(self, rank: i8) -> Option<Self> {
         let Some(rank) = self.rank().add_int_signed(rank) else { return None };
         Some(Self::new(rank, self.file()))
     }
 
     #[must_use]
-    #[inline]
     pub const fn add_file(self, file: i8) -> Option<Self> {
         let Some(file) = self.file().add_int_signed(file) else { return None };
         Some(Self::new(self.rank(), file))
     }
 
-    #[inline]
     #[must_use]
     pub fn all() -> impl ExactSizeIterator<Item = Self> {
         (0..64).map(Self)
     }
 
     #[must_use]
-    #[inline]
     pub const fn manhattan_distance(self, other: Self) -> u8 {
         self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
     }
 
     #[must_use]
-    #[inline]
     pub const fn centre_manhattan_distance(self) -> u8 {
         [
             3, 3, 3, 3, 3, 3, 3, 3, //
@@ -93,7 +84,6 @@ impl Square {
         ][self.usize()]
     }
 
-    #[inline]
     #[must_use]
     pub const fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
@@ -105,7 +95,6 @@ impl Square {
         mask
     }
 
-    #[inline]
     #[must_use]
     pub const fn outpost_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
@@ -124,14 +113,12 @@ impl Square {
 macro_rules! impl_file_rank {
     ($ty: ty) => {
         impl $ty {
-            #[inline]
             #[must_use]
             pub const fn distance_from_center(self) -> u8 {
                 [3, 2, 1, 0, 0, 1, 2, 3][self.usize()]
             }
             #[must_use]
-            #[inline]
-            pub const fn relative_to(self, side: Side) -> Self {
+                        pub const fn relative_to(self, side: Side) -> Self {
                 match side {
                     Side::White => self,
                     Side::Black => Self(7 - self.u8()),
@@ -164,7 +151,6 @@ impl File {
 
 impl File {
     #[must_use]
-    #[inline]
     pub const fn adjacency_mask(self) -> Bitboard {
         unsafe {
             match self {
@@ -178,7 +164,6 @@ impl File {
     }
 
     #[must_use]
-    #[inline]
     // Produces a mask representing a file from 0..8
     // Produces an empty bitboard for File(-1) and File(8)
     // Oher file values are undefined behaviour

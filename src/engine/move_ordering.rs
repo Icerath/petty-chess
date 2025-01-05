@@ -14,7 +14,6 @@ const MVV_LVA: [[u8; 6]; 6] = [
     [0, 0, 0, 0, 0, 0],       // victim K, attacker P, N, B, R, Q, K
 ];
 
-#[inline]
 pub fn sort_by_cached_key<F>(moves: &mut [Move], mut f: F)
 where
     F: FnMut(Move) -> i16,
