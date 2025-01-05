@@ -7,7 +7,6 @@ pub fn raw_mobility_eval(board: &Board) -> i32 {
     let mut final_total = 0;
     for side in [White, Black] {
         let mut total = 0;
-        // Pawns: TODO
         board.get(side + Knight).for_each(|sq| {
             total += knight_score((KNIGHT_MOVES[sq.usize()]).count());
         });
