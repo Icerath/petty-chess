@@ -23,8 +23,8 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let mut pawn_attacks = Bitboard::EMPTY;
         enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq.usize()]);
 
-        (friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen])
-            .for_each(|sq| total -= pawn_attacks.contains(sq) as i32 * 40);
+        let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
+        total -= (pawn_attacks & non_pawns).count() as i32 * 40;
 
         // punish kings adjacent to an open file
         for pawns in [friendly[Pawn], enemy[Pawn]] {
