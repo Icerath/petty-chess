@@ -113,7 +113,7 @@ macro_rules! impl_file_rank {
                 [3, 2, 1, 0, 0, 1, 2, 3][self.usize()]
             }
             #[must_use]
-                        pub const fn relative_to(self, side: Side) -> Self {
+            pub const fn relative_to(self, side: Side) -> Self {
                 match side {
                     Side::White => self,
                     Side::Black => Self(7 - self.u8()),
