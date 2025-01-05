@@ -46,13 +46,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         friendly[Pawn].for_each(|sq| {
             // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
-                total += match sq.file().distance_from_center() {
-                    0 => 25,
-                    1 => 23,
-                    2 => 18,
-                    3 => 15,
-                    _ => unreachable!(),
-                };
+                total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file().usize()];
             }
             // reward passed pawns
             let bonuses = [0, 10, 20, 30, 40, 50, 70, 90];
