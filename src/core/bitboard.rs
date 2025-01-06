@@ -1,5 +1,6 @@
 use std::{
     fmt,
+    iter::FusedIterator,
     ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
 };
 
@@ -177,4 +178,68 @@ impl fmt::Debug for Bitboard {
         }
         Ok(())
     }
+}
+
+impl IntoIterator for Bitboard {
+    type IntoIter = IntoIter;
+    type Item = Square;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter(self)
+    }
+}
+
+#[repr(transparent)]
+pub struct IntoIter(Bitboard);
+
+impl Iterator for IntoIter {
+    type Item = Square;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.bitscan_pop()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+
+    fn count(self) -> usize {
+        self.len()
+    }
+
+    fn for_each<F>(self, f: F)
+    where
+        F: FnMut(Self::Item),
+    {
+        self.0.for_each(f);
+    }
+
+    fn fold<B, F>(mut self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let mut accum = init;
+        while !self.0.is_empty() {
+            accum = f(accum, unsafe { self.0.bitscan_pop_unchecked() });
+        }
+        accum
+    }
+}
+
+impl ExactSizeIterator for IntoIter {
+    fn len(&self) -> usize {
+        self.0.count() as usize
+    }
+}
+
+impl FusedIterator for IntoIter {}
+
+#[test]
+fn test_iter() {
+    let bitboard: Bitboard = [Square::A1, Square::A2].into_iter().collect();
+    let mut iter = bitboard.into_iter();
+    assert_eq!(iter.next(), Some(Square::A1));
+    assert_eq!(iter.next(), Some(Square::A2));
+    assert_eq!(iter.next(), None);
 }
