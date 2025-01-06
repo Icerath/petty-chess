@@ -19,6 +19,13 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
 
+        // king safety
+        earlygame -= (enemy[Queen] & king.nearby3()).count() as i32 * 80;
+        earlygame -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 40;
+
+        earlygame -= (enemy[Queen] & king.nearby2()).count() as i32 * 80;
+        earlygame -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 30;
+
         // punish pieces in front of enemy pawns
         let mut pawn_attacks = Bitboard::EMPTY;
         enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq.usize()]);

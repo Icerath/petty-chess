@@ -66,6 +66,17 @@ impl Square {
     }
 
     #[must_use]
+    pub const fn square_distance(self, other: Self) -> u8 {
+        let file_diff = self.file().u8().abs_diff(other.file().u8());
+        let rank_diff = self.rank().u8().abs_diff(other.rank().u8());
+        if file_diff > rank_diff {
+            file_diff
+        } else {
+            rank_diff
+        }
+    }
+
+    #[must_use]
     pub const fn centre_manhattan_distance(self) -> u8 {
         [
             3, 3, 3, 3, 3, 3, 3, 3, //
@@ -102,6 +113,47 @@ impl Square {
             Some(mask) => Bitboard(mask),
             None => Bitboard::EMPTY,
         }
+    }
+
+    #[must_use]
+    pub(crate) fn nearby3(self) -> Bitboard {
+        const LUT: [Bitboard; 64] = {
+            let mut lut = [Bitboard::EMPTY; 64];
+            let mut sq = 0;
+            while sq < 64 {
+                lut[sq as usize] = Square::from_int(sq).unwrap().compute_nearby(3);
+                sq += 1;
+            }
+            lut
+        };
+        LUT[self.usize()]
+    }
+
+    #[must_use]
+    pub(crate) fn nearby2(self) -> Bitboard {
+        const LUT: [Bitboard; 64] = {
+            let mut lut = [Bitboard::EMPTY; 64];
+            let mut sq = 0;
+            while sq < 64 {
+                lut[sq as usize] = Square::from_int(sq).unwrap().compute_nearby(2);
+                sq += 1;
+            }
+            lut
+        };
+        LUT[self.usize()]
+    }
+
+    const fn compute_nearby(self, distance: u8) -> Bitboard {
+        let mut bitboard = Bitboard::EMPTY;
+        let mut i = 0;
+        while i < 64 {
+            let sq = Square::from_int(i).unwrap();
+            if sq.u8() != self.u8() && sq.square_distance(self) <= distance {
+                bitboard.insert(sq);
+            }
+            i += 1;
+        }
+        bitboard
     }
 }
 
