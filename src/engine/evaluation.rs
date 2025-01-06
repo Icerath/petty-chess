@@ -125,8 +125,8 @@ fn material_values(board: &Board, side: Side) -> [i32; 2] {
     let mut eg = 0;
     for piece in [Pawn, Knight, Bishop, Rook, Queen] {
         let count = board.get(piece + side).count() as i32;
-        mg += count * [82, 337, 365, 477, 1025, 0][piece as usize];
-        eg += count * [94, 281, 297, 512, 936, 0][piece as usize];
+        mg += count * MG_PIECE_VALUES[piece as usize];
+        eg += count * EG_PIECE_VALUES[piece as usize];
     }
     [mg, eg]
 }
@@ -195,9 +195,8 @@ pub fn abs_piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 
 
 #[must_use]
 pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
-    let mg = [82, 337, 365, 477, 1025, 0][piece as usize];
-    let eg = [94, 281, 297, 512, 936, 0][piece as usize];
-    mg * phase.earlygame() + eg * phase.endgame()
+    MG_PIECE_VALUES[piece as usize] * phase.earlygame()
+        + EG_PIECE_VALUES[piece as usize] * phase.endgame()
 }
 
 #[must_use]
@@ -214,8 +213,12 @@ pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     mg * phase.earlygame() + eg * phase.endgame()
 }
 
+const MG_PIECE_VALUES: [i32; 6] = [82, 337, 365, 477, 1025, 0];
+const EG_PIECE_VALUES: [i32; 6] = [94, 281, 297, 512, 936, 0];
+
 #[rustfmt::skip]
 mod square_tables {
+
     pub const MG: [[i32; 64]; 6] = [MG_PAWN, MG_KNIGHT, MG_BISHOP, MG_ROOK, MG_QUEEN, MG_KING];
     pub const EG: [[i32; 64]; 6] = [EG_PAWN, EG_KNIGHT, EG_BISHOP, EG_ROOK, EG_QUEEN, EG_KING];
 
