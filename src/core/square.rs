@@ -217,11 +217,8 @@ impl FromStr for Square {
     type Err = InvalidSquare;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::SQUARES
-            .iter()
-            .position(|&sq| sq == input)
-            .map(|index| unsafe { Self::from_int_unchecked(index as u8) })
-            .ok_or(InvalidSquare)
+        let bstr = input.as_bytes().try_into().map_err(|_| InvalidSquare)?;
+        Self::from_bstr(bstr).ok_or(InvalidSquare)
     }
 }
 
@@ -262,6 +259,13 @@ impl Square {
     pub const fn algebraic(self) -> &'static str {
         Self::SQUARES[self.usize()]
     }
+
+    #[must_use]
+    pub(crate) fn from_bstr(bstr: [u8; 2]) -> Option<Self> {
+        let square_int =
+            bstr[0].checked_sub(b'a')?.checked_add((bstr[1].checked_sub(b'1')?).checked_mul(8)?)?;
+        Square::from_int(square_int)
+    }
 }
 
 #[test]
@@ -274,5 +278,13 @@ fn test_manhattan_distance() {
 fn test_square_flip() {
     for sq in Square::ALL {
         assert_eq!(Square::new(Rank(7 - sq.rank().u8()), sq.file()), sq.flip());
+    }
+}
+
+#[test]
+fn test_square_from_str() {
+    for sq in Square::ALL {
+        let sq_str = sq.algebraic();
+        assert_eq!(sq_str.parse::<Square>().expect(sq_str), sq);
     }
 }

@@ -184,11 +184,9 @@ fn parse_can_castle(fen: &[u8]) -> Option<CanCastle> {
 fn parse_en_passant(fen: &[u8]) -> Option<Option<Square>> {
     if fen == b"-" {
         return Some(None);
-    } else if fen.len() != 2 {
-        return None;
     }
-    let square_int = fen[0].wrapping_sub(b'b').wrapping_mul(8) + (fen[1].wrapping_sub(b'0'));
-    Square::from_int(square_int).map(Some)
+    let bstr = fen.try_into().ok()?;
+    Square::from_bstr(bstr).map(Some)
 }
 
 #[test]
