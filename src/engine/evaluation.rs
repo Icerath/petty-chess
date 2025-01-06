@@ -28,7 +28,6 @@ pub fn raw_evaluation(board: &Board) -> i32 {
 
         // punish kings adjacent to an open file
         for pawns in [friendly[Pawn], enemy[Pawn]] {
-            const PENALTIES: [i32; 8] = [40, 35, 25, 10, 10, 25, 35, 40];
             let file = king.file();
 
             let left_open = file.sub_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
@@ -36,7 +35,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
 
             let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-            earlygame -= num_open_files * PENALTIES[file.usize()];
+            earlygame -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file.usize()];
         }
         // punish double pawns
         for file in File::ALL {
