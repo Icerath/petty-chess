@@ -4,10 +4,15 @@ use crate::prelude::*;
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 pub const KIWIPETE: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+#[cfg(test)]
 pub const PERFT_POSITION_3: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -";
+#[cfg(test)]
 pub const PERFT_POSITION_4: &str =
     "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
+#[cfg(test)]
 pub const PERFT_POSITION_5: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+#[cfg(test)]
+pub const EN_PASSANT_TEST: &str = "rnbqkbnr/pppppppp/8/8/3Pp3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2";
 
 #[allow(clippy::missing_panics_doc)]
 impl Board {
@@ -22,16 +27,19 @@ impl Board {
     }
 
     #[must_use]
+    #[cfg(test)]
     pub fn perft_position_3() -> Self {
         Self::from_fen(PERFT_POSITION_3).expect("Should be valid FEN")
     }
 
     #[must_use]
+    #[cfg(test)]
     pub fn perft_position_4() -> Self {
         Self::from_fen(PERFT_POSITION_4).expect("Should be valid FEN")
     }
 
     #[must_use]
+    #[cfg(test)]
     pub fn perft_position_5() -> Self {
         Self::from_fen(PERFT_POSITION_5).expect("Should be valid FEN")
     }
@@ -176,12 +184,11 @@ fn parse_can_castle(fen: &[u8]) -> Option<CanCastle> {
 fn parse_en_passant(fen: &[u8]) -> Option<Option<Square>> {
     if fen == b"-" {
         return Some(None);
+    } else if fen.len() != 2 {
+        return None;
     }
-    Square::SQUARES
-        .iter()
-        .position(|&sq| sq.as_bytes() == fen)
-        .map(|index| unsafe { Square::from_int_unchecked(index as u8) })
-        .map(Some)
+    let square_int = fen[0].wrapping_sub(b'b').wrapping_mul(8) + (fen[1].wrapping_sub(b'0'));
+    Square::from_int(square_int).map(Some)
 }
 
 #[test]
@@ -204,4 +211,14 @@ fn test_fen_parsing() {
 #[test]
 fn test_can_castle() {
     assert_eq!(parse_can_castle(b"Kkq"), Some(CanCastle::WHITE_KING_SIDE | CanCastle::BOTH_BLACK));
+}
+
+#[test]
+fn test_fen_en_passant() {
+    assert_eq!(parse_en_passant(b"g6"), Some(Some(Square::G6)));
+    assert_eq!(parse_en_passant(b"-"), Some(None));
+    assert_eq!(parse_en_passant(b"1a"), None);
+
+    let board = Board::from_fen(EN_PASSANT_TEST).unwrap();
+    assert_eq!(board.en_passant_target_square, Some(Square::D3));
 }
