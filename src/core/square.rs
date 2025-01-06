@@ -50,8 +50,8 @@ impl Square {
 
     #[must_use]
     pub const fn add_rank(self, rank: i8) -> Option<Self> {
-        let Some(rank) = self.rank().add_int_signed(rank) else { return None };
-        Some(Self::new(rank, self.file()))
+        let Some(_) = self.rank().add_int_signed(rank) else { return None };
+        Some(unsafe { self.add_int_signed_unchecked(rank * 8) })
     }
 
     #[must_use]
