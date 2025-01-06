@@ -94,19 +94,19 @@ impl Board {
     }
 
     #[must_use]
-    pub fn from_fen(fen: &str) -> Option<Board> {
-        let mut fields = fen.split(' ');
+    pub fn from_fen<S: AsRef<[u8]>>(fen: S) -> Option<Board> {
+        let mut fields = fen.as_ref().split(|&b| b == b' ');
 
         let mut board = parse_pieces(fields.next()?)?;
         let active_side = match fields.next()? {
-            "w" => White,
-            "b" => Black,
+            b"w" => White,
+            b"b" => Black,
             _ => return None,
         };
         let can_castle = parse_can_castle(fields.next()?)?;
         let en_passant_target_square = parse_en_passant(fields.next()?)?;
-        let halfmove_clock = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(0);
-        let fullmove_counter = fields.next().and_then(|fen| fen.parse().ok()).unwrap_or(1);
+        let halfmove_clock = fields.next().and_then(atoi::atoi).unwrap_or(0);
+        let fullmove_counter = fields.next().and_then(atoi::atoi).unwrap_or(1);
 
         if active_side == Black {
             board.swap_side();
@@ -123,12 +123,12 @@ impl Board {
     }
 }
 
-fn parse_pieces(fen: &str) -> Option<Board> {
+fn parse_pieces(fen: &[u8]) -> Option<Board> {
     let mut board = Board::EMPTY;
     let mut rank = 7;
     let mut file = 0;
 
-    for c in fen.bytes() {
+    for c in fen {
         let kind = match c.to_ascii_lowercase() {
             b'1'..=b'9' => {
                 file += c - b'0';
@@ -155,10 +155,10 @@ fn parse_pieces(fen: &str) -> Option<Board> {
     Some(board)
 }
 
-fn parse_can_castle(fen: &str) -> Option<CanCastle> {
+fn parse_can_castle(fen: &[u8]) -> Option<CanCastle> {
     let mut can_castle = CanCastle::empty();
 
-    for byte in fen.as_bytes() {
+    for byte in fen {
         match byte {
             b'-' => return Some(can_castle),
             b'K' => can_castle |= CanCastle::WHITE_KING_SIDE,
@@ -172,12 +172,16 @@ fn parse_can_castle(fen: &str) -> Option<CanCastle> {
     Some(can_castle)
 }
 
-#[allow(clippy::option_option)]
-fn parse_en_passant(fen: &str) -> Option<Option<Square>> {
-    if fen == "-" {
+#[expect(clippy::option_option)]
+fn parse_en_passant(fen: &[u8]) -> Option<Option<Square>> {
+    if fen == b"-" {
         return Some(None);
     }
-    fen.parse().map(Some).ok()
+    Square::SQUARES
+        .iter()
+        .position(|&sq| sq.as_bytes() == fen)
+        .map(|index| unsafe { Square::from_int_unchecked(index as u8) })
+        .map(Some)
 }
 
 #[test]
@@ -199,5 +203,5 @@ fn test_fen_parsing() {
 
 #[test]
 fn test_can_castle() {
-    assert_eq!(parse_can_castle("Kkq"), Some(CanCastle::WHITE_KING_SIDE | CanCastle::BOTH_BLACK));
+    assert_eq!(parse_can_castle(b"Kkq"), Some(CanCastle::WHITE_KING_SIDE | CanCastle::BOTH_BLACK));
 }

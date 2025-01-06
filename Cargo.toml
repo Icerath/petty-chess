@@ -6,6 +6,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+atoi = "2.0.0"
 bitflags = "2.6.0"
 derive-try-from-primitive = "1.0.0"
 tracing = { version = "0.1.40", optional = true }
