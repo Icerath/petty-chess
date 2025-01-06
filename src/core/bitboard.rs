@@ -13,21 +13,21 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     pub const EMPTY: Self = Self(0);
 
-    pub fn insert(&mut self, sq: Square) {
+    pub const fn insert(&mut self, sq: Square) {
         self.0 |= 1 << sq.u8();
     }
 
-    pub fn remove(&mut self, sq: Square) {
+    pub const fn remove(&mut self, sq: Square) {
         self.0 &= !(1 << sq.u8());
     }
 
     #[must_use]
-    pub fn contains(self, sq: Square) -> bool {
+    pub const fn contains(self, sq: Square) -> bool {
         self.0 & (1 << sq.u8()) > 0
     }
 
     #[must_use]
-    pub fn bitscan(self) -> Option<Square> {
+    pub const fn bitscan(self) -> Option<Square> {
         if self.is_empty() {
             return None;
         }
@@ -37,26 +37,26 @@ impl Bitboard {
     #[must_use]
     /// # Safety
     /// bitboard must not be empty
-    pub unsafe fn bitscan_unchecked(self) -> Square {
+    pub const unsafe fn bitscan_unchecked(self) -> Square {
         unsafe { Square::from_int_unchecked(self.0.trailing_zeros() as u8) }
     }
 
-    pub fn bitscan_pop(&mut self) -> Option<Square> {
-        let sq = self.bitscan()?;
+    pub const fn bitscan_pop(&mut self) -> Option<Square> {
+        let Some(sq) = self.bitscan() else { return None };
         self.0 &= self.0 - 1;
         Some(sq)
     }
 
     /// # Safety
     /// bitboard must not be empty
-    pub unsafe fn bitscan_pop_unchecked(&mut self) -> Square {
+    pub const unsafe fn bitscan_pop_unchecked(&mut self) -> Square {
         let sq = unsafe { self.bitscan_unchecked() };
         self.0 &= self.0 - 1;
         sq
     }
 
     #[must_use]
-    pub fn rbitscan(self) -> Option<Square> {
+    pub const fn rbitscan(self) -> Option<Square> {
         if self.is_empty() {
             return None;
         }
@@ -66,7 +66,7 @@ impl Bitboard {
     #[must_use]
     /// # Safety
     /// bitboard must not be empty
-    pub unsafe fn rbitscan_unchecked(self) -> Square {
+    pub const unsafe fn rbitscan_unchecked(self) -> Square {
         unsafe { Square::from_int_unchecked(self.0.leading_zeros() as u8) }
     }
 
@@ -77,27 +77,27 @@ impl Bitboard {
     }
 
     #[must_use]
-    pub fn count(self) -> u8 {
+    pub const fn count(self) -> u8 {
         self.0.count_ones() as u8
     }
 
     #[must_use]
-    pub fn is_empty(self) -> bool {
+    pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
 
     #[must_use]
-    pub fn contains_in_file(self, file: File) -> bool {
-        (self & file.mask()).0 > 0
+    pub const fn contains_in_file(self, file: File) -> bool {
+        (self.0 & file.mask().0) > 0
     }
 
     #[must_use]
-    pub fn from_ref(int: &u64) -> &Self {
+    pub const fn from_ref(int: &u64) -> &Self {
         unsafe { &*std::ptr::from_ref(int).cast::<Self>() }
     }
 
     #[must_use]
-    pub fn from_mut(int: &mut u64) -> &mut Self {
+    pub const fn from_mut(int: &mut u64) -> &mut Self {
         unsafe { &mut *std::ptr::from_mut(int).cast::<Self>() }
     }
 }
