@@ -1,8 +1,6 @@
 use std::marker::PhantomData;
 
 use crate::prelude::*;
-pub const DIRECTION_OFFSETS: [i8; 8] = [8, -8, -1, 1, 7, -7, 9, -9];
-pub const NUM_SQUARES_TO_EDGE: [[i8; 8]; 64] = compute_num_squares_to_edge();
 pub const KING_MOVES: [Bitboard; 64] = compute_king_moves();
 pub const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
 pub const PAWN_ATTACKS: [[Bitboard; 64]; 2] = compute_pawn_moves();
@@ -369,41 +367,6 @@ const fn compute_king_moves() -> [Bitboard; 64] {
         bitboard.0 |= if num_down > 0 && num_right > 0 { 1 << (index + down + right) } else { 0 };
 
         squares[index as usize] = bitboard;
-        index += 1;
-    }
-    squares
-}
-
-const fn compute_num_squares_to_edge() -> [[i8; 8]; 64] {
-    const fn min(lhs: i8, rhs: i8) -> i8 {
-        if lhs < rhs {
-            lhs
-        } else {
-            rhs
-        }
-    }
-
-    let mut squares = [[0; 8]; 64];
-
-    let mut index = 0;
-    while index < 64 {
-        let sq = Square::from_int(index as u8).unwrap();
-
-        let num_up = 7 - sq.rank().i8();
-        let num_down = sq.rank().i8();
-        let num_left = sq.file().i8();
-        let num_right = 7 - sq.file().i8();
-
-        squares[sq.usize()] = [
-            num_up,
-            num_down,
-            num_left,
-            num_right,
-            min(num_up, num_left),
-            min(num_down, num_right),
-            min(num_up, num_right),
-            min(num_down, num_left),
-        ];
         index += 1;
     }
     squares

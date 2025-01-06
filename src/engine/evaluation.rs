@@ -185,29 +185,9 @@ pub fn sufficient_material_to_force_checkmate(board: &Board) -> bool {
 }
 
 #[must_use]
-pub fn piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
-    piece_value(piece, phase) + piece_square_value(sq, piece, phase)
-}
-
-#[must_use]
-pub fn piece_value(piece: Piece, phase: Phase) -> i32 {
-    abs_piece_value(piece.kind(), phase) * piece.side().positive()
-}
-
-#[must_use]
-pub fn abs_piece_value_at_square(sq: Square, piece: Piece, phase: Phase) -> i32 {
-    abs_piece_value(piece.kind(), phase) + abs_piece_square_value(sq, piece, phase)
-}
-
-#[must_use]
 pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
     MG_PIECE_VALUES[piece as usize] * phase.earlygame()
         + EG_PIECE_VALUES[piece as usize] * phase.endgame()
-}
-
-#[must_use]
-pub fn piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
-    abs_piece_square_value(sq, piece, phase) * piece.side().positive()
 }
 
 #[must_use]

@@ -19,19 +19,6 @@ pub enum Nodetype {
 }
 
 impl TranspositionTable {
-    pub fn reserve(&mut self, additional: usize) {
-        self.inner.reserve(additional);
-    }
-
-    #[must_use]
-    pub fn capacity(&self) -> usize {
-        self.inner.capacity()
-    }
-
-    pub fn clear(&mut self) {
-        self.inner.clear();
-    }
-
     #[must_use]
     pub fn get(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
         self.get_entry(board, alpha, beta, depth).map(|entry| entry.eval)
