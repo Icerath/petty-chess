@@ -56,8 +56,8 @@ impl Square {
 
     #[must_use]
     pub const fn add_file(self, file: i8) -> Option<Self> {
-        let Some(file) = self.file().add_int_signed(file) else { return None };
-        Some(Self::new(self.rank(), file))
+        let Some(_) = self.file().add_int_signed(file) else { return None };
+        Some(unsafe { self.add_int_signed_unchecked(file) })
     }
 
     #[must_use]

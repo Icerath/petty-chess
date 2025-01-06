@@ -89,6 +89,11 @@ macro_rules! bounded_int {
                     None
                 }
             }
+            #[must_use]
+            #[expect(clippy::missing_safety_doc, reason="TODO")]
+            pub const unsafe fn add_int_signed_unchecked(self, rhs: i8) -> Self {
+                Self(self.0.wrapping_add_signed(rhs))
+            }
             #[track_caller]
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]
