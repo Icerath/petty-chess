@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-#[inline(never)]
 pub fn raw_mobility_eval(board: &Board) -> i32 {
     let occupancy = board.all_pieces();
     let mut final_total = 0;
