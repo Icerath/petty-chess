@@ -327,3 +327,25 @@ impl IndexMut<Side> for Board {
         Bitboard::from_mut(&mut self.pieces[side as usize + 6])
     }
 }
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Board {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.to_fen().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Board {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let fen: &str = serde::Deserialize::deserialize(deserializer)?;
+        Self::from_fen(fen)
+            .ok_or_else(|| serde::de::Error::custom(format_args!("Unexpected: {fen:?}")))
+    }
+}
