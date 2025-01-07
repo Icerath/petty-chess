@@ -107,7 +107,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let can_promote = (self.board.active_side == White && from.rank().u8() == 6)
             || (self.board.active_side == Black && from.rank().u8() == 1);
 
-        if let Some(to) = Square::try_from(i8::from(from) + forward * 8).unwrap().add_file(1) {
+        if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(1) {
             if self.board.is_side(to, !self.board.active_side) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
@@ -119,7 +119,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
                 }
             }
         }
-        if let Some(to) = Square::try_from(i8::from(from) + forward * 8).unwrap().add_file(-1) {
+        if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(-1) {
             if self.board.is_side(to, !self.board.active_side) {
                 if can_promote {
                     self.moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
@@ -132,7 +132,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
         }
         if let Some(en_passant) = self.board.en_passant_target_square {
-            if ((en_passant.file().i8() - from.file().i8()).abs()) <= 1
+            if en_passant.file().u8().abs_diff(from.file().u8()) <= 1
                 && from.rank().i8() == en_passant.rank().i8() - forward
             {
                 self.moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
@@ -142,7 +142,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         if G::CAPTURES_ONLY {
             return;
         }
-        let to = Square::try_from(i8::from(from) + forward * 8).unwrap();
+        let to = from.add_int_signed(forward * 8).unwrap();
         if !self.board.is_piece_at(to) {
             let can_double_push = (self.board.active_side == White && from.rank().u8() == 1)
                 || (self.board.active_side == Black && from.rank().u8() == 6);
@@ -152,7 +152,7 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
             }
 
             if can_double_push {
-                let to = Square::try_from(i8::from(from) + forward * 16).unwrap();
+                let to = from.add_int_signed(forward * 16).unwrap();
                 if !self.board.is_piece_at(to) {
                     self.moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
                 }
