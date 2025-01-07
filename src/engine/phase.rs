@@ -62,7 +62,6 @@ impl_stage!(Earlygame);
 impl_stage!(Endgame);
 
 #[test]
-#[allow(clippy::float_cmp)]
 fn test_phase() {
     assert_eq!(phase(&Board::start_pos()).0, UPPER);
     assert_eq!(

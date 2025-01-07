@@ -68,7 +68,6 @@ impl Engine {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
     }
 
-    #[allow(clippy::too_many_lines)]
     pub(crate) fn negamax(
         &mut self,
         mut alpha: i32,

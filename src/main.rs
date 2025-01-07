@@ -66,7 +66,7 @@ impl Default for Application {
     }
 }
 
-#[allow(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
+#[expect(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
 impl Application {
     fn process_message(&mut self, msg: UciMessage) {
         use UciMessage as Uci;

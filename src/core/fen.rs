@@ -14,7 +14,7 @@ pub const PERFT_POSITION_5: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK
 #[cfg(test)]
 pub const EN_PASSANT_TEST: &str = "rnbqkbnr/pppppppp/8/8/3Pp3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2";
 
-#[allow(clippy::missing_panics_doc)]
+#[expect(clippy::missing_panics_doc)]
 impl Board {
     #[must_use]
     pub fn start_pos() -> Self {
