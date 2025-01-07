@@ -66,9 +66,9 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         let pieces = self.board.friendly_bitboards();
         let all_pieces = self.board.all_pieces();
         let checkers = self.board.gen_checkers(self.board.active_side);
-        let king_pos = self.board.active_king().unwrap();
-
-        self.gen_king_moves(king_pos, checkers);
+        if let Some(king_pos) = self.board.active_king() {
+            self.gen_king_moves(king_pos, checkers);
+        }
         if checkers.count() >= 2 {
             return std::mem::take(&mut self.moves);
         }
@@ -243,14 +243,16 @@ impl Board {
         let side = !self.active_side;
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
-        let king = self.inactive_king().unwrap();
 
         enemy_pieces[Pawn].for_each(|from| output |= PAWN_ATTACKS[side as usize][from.usize()]);
         enemy_pieces[Knight].for_each(|from| output |= KNIGHT_MOVES[from.usize()]);
         enemy_pieces[Bishop].for_each(|from| output |= bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| output |= rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| output |= queen_attacks(from, all_pieces));
-        output |= KING_MOVES[king.usize()];
+
+        if let Some(king) = self.inactive_king() {
+            output |= KING_MOVES[king.usize()];
+        }
         output
     }
 }

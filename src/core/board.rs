@@ -70,6 +70,9 @@ impl Board {
         self.zobrist.xor_piece(sq, piece);
     }
 
+    /// # Panics
+    /// May panic on illegal moves
+    #[track_caller]
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
         let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
