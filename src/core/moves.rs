@@ -21,18 +21,18 @@ impl Moves {
 
     /// # Safety
     /// self.len must be < 255
-    pub unsafe fn push(&mut self, mov: Move) {
+    pub unsafe fn push_unchecked(&mut self, mov: Move) {
         debug_assert!(self.len < u8::MAX);
         self.array[self.len as usize].write(mov);
         self.len += 1;
     }
 
     /// Returns false if if failed to push the move
-    pub fn push_checked(&mut self, mov: Move) -> bool {
+    pub fn push(&mut self, mov: Move) -> bool {
         if self.len == u8::MAX {
             return false;
         }
-        unsafe { self.push(mov) };
+        unsafe { self.push_unchecked(mov) };
         true
     }
 
@@ -53,7 +53,7 @@ impl Moves {
         let mut new = Self::new();
         for mov in self.as_slice_mut() {
             if f(mov) {
-                unsafe { new.push(*mov) };
+                unsafe { new.push_unchecked(*mov) };
             }
         }
         *self = new;
