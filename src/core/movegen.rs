@@ -231,10 +231,9 @@ impl Board {
                 return false;
             }
         }
-        let unmake = self.make_move_no_update(mov);
-        let checkers = self.gen_checkers(self.active_side);
-        self.unmake_move(unmake);
-        checkers.is_empty()
+        let mut board = self.clone();
+        board.make_move_no_update(mov);
+        board.gen_checkers(self.active_side).is_empty()
     }
 
     // Generate attack map for enemy pieces

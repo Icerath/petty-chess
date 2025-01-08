@@ -72,9 +72,23 @@ impl Board {
 
     /// # Panics
     /// May panic on illegal moves
+    #[must_use]
+    pub fn with_move(&self, mov: Move) -> Self {
+        let mut new = self.clone();
+        new.make_move_inner(mov);
+        new
+    }
+
+    /// # Panics
+    /// May panic on illegal moves
     #[track_caller]
     pub fn make_move(&mut self, mov: Move) -> Unmake {
         let unmake = Unmake { board: self.clone() };
+        self.make_move_inner(mov);
+        unmake
+    }
+
+    fn make_move_inner(&mut self, mov: Move) {
         let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
         if let Some(sq) = self.en_passant_target_square {
@@ -140,11 +154,9 @@ impl Board {
             _ => unreachable!("{:?}", mov.flags()),
         }
         self.increment_ply();
-        unmake
     }
 
-    pub(crate) fn make_move_no_update(&mut self, mov: Move) -> Unmake {
-        let unmake = Unmake { board: self.clone() };
+    pub(crate) fn make_move_no_update(&mut self, mov: Move) {
         let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
         if let Some(piece) = self.get_square_kind(mov.to()) {
@@ -158,7 +170,6 @@ impl Board {
             let pawn = !self.active_side + Pawn;
             self.remove_piece_no_zobrist(back, pawn);
         }
-        unmake
     }
 
     #[must_use]
