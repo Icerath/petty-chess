@@ -47,7 +47,7 @@ macro_rules! bounded_int {
         pub struct $struct_name(u8);
         impl $struct_name {
             pub const MIN: Self = Self(0);
-            pub const MAX: Self = Self($max);
+            pub const MAX: Self = Self($max - 1);
 
             #[must_use]
                         pub const fn from_int(int: u8) -> Option<Self> {
