@@ -188,8 +188,8 @@ impl Board {
             return mov.with_flags(MoveFlags::DoublePawnPush);
         }
         let is_en_passant = self[Pawn].contains(mov.from())
-            && mov.file_diff() != 0
-            && self[!self.active_side].contains(mov.to());
+            && mov.file_diff() > 0
+            && !self[!self.active_side].contains(mov.to());
 
         if is_en_passant {
             return mov.with_flags(MoveFlags::EnPassant);
