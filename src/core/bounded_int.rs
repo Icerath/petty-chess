@@ -66,7 +66,7 @@ macro_rules! bounded_int {
             }
             #[must_use]
             pub const fn add_int(self, rhs: u8) -> Option<Self> {
-                match self.0 + rhs {
+                match self.u8() + rhs {
                     n @ ..$limit => Some(Self(n)),
                     _ => None,
 
@@ -82,7 +82,7 @@ macro_rules! bounded_int {
             }
             #[must_use]
             pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
-                let out = self.0 as i8 + rhs;
+                let out = self.u8() as i8 + rhs;
                 if (out >= 0 && out < $limit) {
                     Some(Self(out as u8))
                 } else {
@@ -92,20 +92,20 @@ macro_rules! bounded_int {
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]
             pub const unsafe fn add_int_signed_unchecked(self, rhs: i8) -> Self {
-                Self(self.0.wrapping_add_signed(rhs))
+                Self(self.u8().wrapping_add_signed(rhs))
             }
             #[track_caller]
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]
             pub const unsafe fn add_int_unchecked(self, rhs: u8) -> Self {
-                debug_assert!(self.0 + rhs < $limit);
-                Self(self.0 + rhs)
+                debug_assert!(self.u8() + rhs < $limit);
+                Self(self.u8() + rhs)
             }
             #[track_caller]
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]
             pub const unsafe fn sub_int_unchecked(self, rhs: u8) -> Self {
-                Self(self.0 - rhs)
+                Self(self.u8() - rhs)
             }
             #[must_use]
             pub const fn u8(self) -> u8 {
