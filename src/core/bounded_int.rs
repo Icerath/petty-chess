@@ -25,34 +25,34 @@ macro_rules! impl_into {
 }
 
 macro_rules! impl_try_from {
-    ($struct_name: ident, $max: literal, $ty: ident) => {
+    ($struct_name: ident, $limit: literal, $ty: ident) => {
         impl TryFrom<$ty> for $struct_name {
             type Error = ();
             fn try_from(value: $ty) -> Result<Self, Self::Error> {
                 match value {
-                    0..$max => Ok(Self(value as u8)),
+                    0..$limit => Ok(Self(value as u8)),
                     _ => Err(())
                 }
             }
         }
     };
-    ($struct_name: ident $max: literal : $($ty: ident),+) => {
-        $(impl_try_from!($struct_name, $max, $ty);)+
+    ($struct_name: ident $limit: literal : $($ty: ident),+) => {
+        $(impl_try_from!($struct_name, $limit, $ty);)+
     };
 }
 
 macro_rules! bounded_int {
-    (pub struct $struct_name: ident { $max: literal }) => {
+    (pub struct $struct_name: ident { $limit: literal }) => {
         #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $struct_name(u8);
         impl $struct_name {
             pub const MIN: Self = Self(0);
-            pub const MAX: Self = Self($max - 1);
+            pub const MAX: Self = Self($limit - 1);
 
             #[must_use]
                         pub const fn from_int(int: u8) -> Option<Self> {
                 match int {
-                    ..$max => Some(Self(int)),
+                    ..$limit => Some(Self(int)),
                     _ => None,
                 }
             }
@@ -61,13 +61,13 @@ macro_rules! bounded_int {
             /// # Safety
             /// int must be less than `Self::MAX`
             pub const unsafe fn from_int_unchecked(int: u8) -> Self {
-                debug_assert!(int < $max);
+                debug_assert!(int < $limit);
                 Self(int)
             }
             #[must_use]
             pub const fn add_int(self, rhs: u8) -> Option<Self> {
                 match self.0 + rhs {
-                    n @ ..$max => Some(Self(n)),
+                    n @ ..$limit => Some(Self(n)),
                     _ => None,
 
                 }
@@ -75,7 +75,7 @@ macro_rules! bounded_int {
             #[must_use]
             pub const fn sub_int(self, rhs: u8) -> Option<Self> {
                 match self.u8().wrapping_sub(rhs) {
-                    n @ ..$max => Some(Self(n)),
+                    n @ ..$limit => Some(Self(n)),
                     _ => None,
 
                 }
@@ -83,7 +83,7 @@ macro_rules! bounded_int {
             #[must_use]
             pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
                 let out = self.0 as i8 + rhs;
-                if (out >= 0 && out < $max) {
+                if (out >= 0 && out < $limit) {
                     Some(Self(out as u8))
                 } else {
                     None
@@ -98,7 +98,7 @@ macro_rules! bounded_int {
             #[must_use]
             #[expect(clippy::missing_safety_doc, reason="TODO")]
             pub const unsafe fn add_int_unchecked(self, rhs: u8) -> Self {
-                debug_assert!(self.0 + rhs < $max);
+                debug_assert!(self.0 + rhs < $limit);
                 Self(self.0 + rhs)
             }
             #[track_caller]
@@ -109,12 +109,12 @@ macro_rules! bounded_int {
             }
             #[must_use]
             pub const fn u8(self) -> u8 {
-                unsafe { ::std::hint::assert_unchecked(self.0 < $max) };
+                unsafe { ::std::hint::assert_unchecked(self.0 < $limit) };
                 self.0
             }
             impl_int_getters!(i8, i16, i32, i64, isize, u16, u32, u64, usize);
         }
         impl_into!($struct_name : u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
-        impl_try_from!($struct_name $max : u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
+        impl_try_from!($struct_name $limit : u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
     };
 }
