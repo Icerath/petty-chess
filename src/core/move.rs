@@ -6,8 +6,46 @@ use crate::prelude::*;
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Move(u16);
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Move {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Move {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let str = serde::Deserialize::deserialize(deserializer)?;
+
+        Self::from_str(str)
+            .map_err(|()| serde::de::Error::custom(format_args!("Unexpected: {str:?}")))
+    }
+}
+
 impl Move {
     pub const NULL: Move = Self(0);
+
+    #[must_use]
+    pub fn rank_diff(self) -> u8 {
+        self.from().rank().diff(self.to().rank())
+    }
+
+    #[must_use]
+    pub fn file_diff(self) -> u8 {
+        self.from().file().diff(self.to().file())
+    }
+
+    #[must_use]
+    pub fn with_flags(self, flags: MoveFlags) -> Self {
+        Self::new(self.from(), self.to(), flags)
+    }
 
     #[must_use]
     pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {

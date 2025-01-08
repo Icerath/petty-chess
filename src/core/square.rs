@@ -171,6 +171,10 @@ macro_rules! impl_file_rank {
                     Side::Black => Self(7 - self.u8()),
                 }
             }
+            #[must_use]
+            pub const fn diff(self, other: Self) -> u8 {
+                self.u8().abs_diff(other.u8())
+            }
         }
     };
     ($($ty: ty),+) => {
