@@ -220,6 +220,13 @@ impl File {
     }
 }
 
+impl Rank {
+    #[must_use]
+    pub const fn mask(self) -> Bitboard {
+        Bitboard(0x0000_0000_0000_00FF << (self.u8() * 8))
+    }
+}
+
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Self::SQUARES[self.usize()])
@@ -317,4 +324,10 @@ fn test_square_from_str() {
         let sq_str = sq.algebraic();
         assert_eq!(sq_str.parse::<Square>().expect(sq_str), sq);
     }
+}
+
+#[test]
+fn test_rank_mask() {
+    let board = Board::start_pos();
+    assert_eq!(board[Pawn] & Rank(1).mask(), Rank(1).mask());
 }
