@@ -50,7 +50,7 @@ macro_rules! bounded_int {
             pub const MAX: Self = Self($limit - 1);
 
             #[must_use]
-                        pub const fn from_int(int: u8) -> Option<Self> {
+            pub const fn from_int(int: u8) -> Option<Self> {
                 match int {
                     ..$limit => Some(Self(int)),
                     _ => None,
