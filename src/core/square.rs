@@ -175,11 +175,23 @@ macro_rules! impl_file_rank {
             pub const fn diff(self, other: Self) -> u8 {
                 self.u8().abs_diff(other.u8())
             }
+
+            #[must_use]
+            pub const fn adjacency_mask(self) -> Bitboard {
+                unsafe {
+                    match self {
+                        Self::MIN => self.add_int_unchecked(1).mask(),
+                        Self::MAX => self.sub_int_unchecked(1).mask(),
+                        _ => Bitboard(self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0),
+                    }
+                }
+            }
         }
     };
     ($($ty: ty),+) => {
         $(impl_file_rank!($ty);)+
     };
+
 }
 
 impl_file_rank!(File, Rank);
@@ -198,21 +210,6 @@ impl File {
         [Self::A, Self::B, Self::C, Self::D, Self::E, Self::F, Self::G, Self::H];
 
     define_file_consts!(A 0, B 1, C 2, D 3, E 4, F 5, G 6, H 7);
-}
-
-impl File {
-    #[must_use]
-    pub const fn adjacency_mask(self) -> Bitboard {
-        unsafe {
-            match self {
-                Self::A => self.add_int_unchecked(1).mask(),
-                Self::H => self.sub_int_unchecked(1).mask(),
-                _ => Bitboard(
-                    self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0,
-                ),
-            }
-        }
-    }
 
     #[must_use]
     pub const fn mask(self) -> Bitboard {
@@ -221,6 +218,8 @@ impl File {
 }
 
 impl Rank {
+    pub const ALL: [Self; 8] = unsafe { std::mem::transmute([0u8, 1, 2, 3, 4, 5, 6, 7]) };
+
     #[must_use]
     pub const fn mask(self) -> Bitboard {
         Bitboard(0x0000_0000_0000_00FF << (self.u8() * 8))
@@ -328,6 +327,15 @@ fn test_square_from_str() {
 
 #[test]
 fn test_rank_mask() {
+    let mask = Rank::from_int(1).unwrap().mask();
     let board = Board::start_pos();
-    assert_eq!(board[Pawn] & Rank(1).mask(), Rank(1).mask());
+    assert_eq!(board[Pawn] & mask, mask);
+
+    for file in File::ALL {
+        for rank in Rank::ALL {
+            assert_eq!((file.mask() & rank.mask()).count(), 1);
+            assert_eq!(file.mask().count(), 8);
+            assert_eq!(rank.mask().count(), 8);
+        }
+    }
 }
