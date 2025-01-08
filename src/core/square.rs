@@ -215,34 +215,8 @@ impl File {
     }
 
     #[must_use]
-    // Produces a mask representing a file from 0..8
-    // Produces an empty bitboard for File(-1) and File(8)
-    // Oher file values are undefined behaviour
     pub const fn mask(self) -> Bitboard {
-        const FILES: [Bitboard; 8] = [
-            File(0).compute_mask(),
-            File(1).compute_mask(),
-            File(2).compute_mask(),
-            File(3).compute_mask(),
-            File(4).compute_mask(),
-            File(5).compute_mask(),
-            File(6).compute_mask(),
-            File(7).compute_mask(),
-        ];
-        FILES[self.usize()]
-    }
-
-    const fn compute_mask(self) -> Bitboard {
-        Bitboard(
-            (1 << self.u8())
-                + (1 << (8 + self.u8()))
-                + (1 << (16 + self.u8()))
-                + (1 << (24 + self.u8()))
-                + (1 << (32 + self.u8()))
-                + (1 << (40 + self.u8()))
-                + (1 << (48 + self.u8()))
-                + (1 << (56 + self.u8())),
-        )
+        Bitboard(0x0101_0101_0101_0101 << self.u8())
     }
 }
 
