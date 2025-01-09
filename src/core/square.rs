@@ -93,7 +93,7 @@ impl Square {
     #[must_use]
     pub const fn passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
-        let mut mask = file.adjacency_mask();
+        let mut mask = Bitboard(file.adjacency_mask().0 | file.mask().0);
         match side {
             Side::White => mask.0 <<= (rank.u8() + 1) * 8,
             Side::Black => mask.0 >>= (8 - rank.u8()) * 8,
