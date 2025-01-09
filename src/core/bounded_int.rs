@@ -59,7 +59,7 @@ macro_rules! bounded_int {
             #[track_caller]
             #[must_use]
             /// # Safety
-            /// int must be less than `Self::MAX`
+            /// int must be <= `Self::MAX`
             pub const unsafe fn from_int_unchecked(int: u8) -> Self {
                 debug_assert!(int < $limit);
                 Self(int)
