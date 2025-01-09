@@ -88,11 +88,6 @@ impl Bitboard {
     }
 
     #[must_use]
-    pub const fn contains_in_file(self, file: File) -> bool {
-        (self.0 & file.mask().0) > 0
-    }
-
-    #[must_use]
     pub const fn from_ref(int: &u64) -> &Self {
         unsafe { &*std::ptr::from_ref(int).cast::<Self>() }
     }
