@@ -176,16 +176,31 @@ macro_rules! impl_file_rank {
                 self.u8().abs_diff(other.u8())
             }
 
-            #[must_use]
-            pub const fn adjacency_mask(self) -> Bitboard {
-                unsafe {
-                    match self {
-                        Self::MIN => self.add_int_unchecked(1).mask(),
-                        Self::MAX => self.sub_int_unchecked(1).mask(),
-                        _ => Bitboard(self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0),
-                    }
-                }
+    #[must_use]
+    pub const fn adjacency_mask(self) -> Bitboard {
+        const LUT: [Bitboard; 8] = {
+            let mut lut = [Bitboard::EMPTY; 8];
+            let mut i = 0;
+            while i < 8 {
+                lut[i as usize] = <$ty>::from_int(i).unwrap().compute_adjacency_mask();
+                i += 1;
             }
+            lut
+        };
+        LUT[self.usize()]
+    }
+
+    const fn compute_adjacency_mask(self) -> Bitboard {
+        unsafe {
+            match self {
+                Self::MIN => self.add_int_unchecked(1).mask(),
+                Self::MAX => self.sub_int_unchecked(1).mask(),
+                _ => Bitboard(
+                    self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0,
+                ),
+            }
+        }
+    }
         }
     };
     ($($ty: ty),+) => {
