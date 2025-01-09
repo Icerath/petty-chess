@@ -16,7 +16,7 @@ impl Engine {
         self.kill.store(false, Ordering::Release);
         self.transposition_table.num_hits = 0;
 
-        let mut best_move = self.board.gen_legal_moves().first().copied().unwrap_or(Move::NULL);
+        let mut best_move = *self.board.gen_legal_moves().first().unwrap_or(&Move::NULL);
 
         for depth in 1.. {
             self.only_pv_nodes = true;
