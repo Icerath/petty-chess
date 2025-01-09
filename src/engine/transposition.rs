@@ -20,6 +20,11 @@ pub enum Nodetype {
 
 impl TranspositionTable {
     #[must_use]
+    pub fn mb(&self) -> usize {
+        (self.inner.capacity() * (size_of::<Zobrist>() + size_of::<Entry>())) / 1_000_000
+    }
+
+    #[must_use]
     pub fn get(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
         self.get_entry(board, alpha, beta, depth).map(|entry| entry.eval)
     }
