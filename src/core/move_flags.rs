@@ -32,7 +32,8 @@ pub enum Castle {
     QueenSide,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
 pub enum Promotion {
     Knight,
     Bishop,
@@ -43,13 +44,14 @@ pub enum Promotion {
 impl MoveFlags {
     #[must_use]
     pub fn promotion(self) -> Option<Promotion> {
-        Some(match self {
-            Self::BishopPromotion | Self::BishopPromotionCapture => Promotion::Bishop,
-            Self::KnightPromotion | Self::KnightPromotionCapture => Promotion::Knight,
-            Self::RookPromotion | Self::RookPromotionCapture => Promotion::Rook,
-            Self::QueenPromotion | Self::QueenPromotionCapture => Promotion::Queen,
-            _ => return None,
-        })
+        if !self.is_promotion() {
+            return None;
+        }
+        Some(Promotion::try_from(self as u8 & 0b0011).unwrap())
+    }
+
+    fn is_promotion(self) -> bool {
+        (self as u8 & 0b1000) == 0b1000
     }
 
     #[must_use]
