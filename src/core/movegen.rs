@@ -22,35 +22,35 @@ impl GenType for FullGen {
 
 pub struct MoveGenerator<'a, G: GenType = FullGen> {
     moves: Moves,
-    board: &'a mut Board,
+    board: &'a Board,
     ty: PhantomData<G>,
 }
 
 impl Board {
     #[must_use]
-    pub fn gen_pseudolegal_moves(&mut self) -> Moves {
+    pub fn gen_pseudolegal_moves(&self) -> Moves {
         MoveGenerator::<FullGen>::new(self).gen_pseudolegal_moves()
     }
 
     #[must_use]
-    pub fn gen_legal_moves(&mut self) -> Moves {
+    pub fn gen_legal_moves(&self) -> Moves {
         MoveGenerator::<FullGen>::new(self).gen_legal_moves()
     }
 
     #[must_use]
-    pub fn gen_capture_moves(&mut self) -> Moves {
+    pub fn gen_capture_moves(&self) -> Moves {
         MoveGenerator::<CapturesOnly>::new(self).gen_legal_moves()
     }
 
     #[must_use]
-    pub fn gen_pseudolegal_capture_moves(&mut self) -> Moves {
+    pub fn gen_pseudolegal_capture_moves(&self) -> Moves {
         MoveGenerator::<CapturesOnly>::new(self).gen_pseudolegal_moves()
     }
 }
 
 impl<'a, G: GenType> MoveGenerator<'a, G> {
     #[must_use]
-    pub fn new(board: &'a mut Board) -> Self {
+    pub fn new(board: &'a Board) -> Self {
         Self { moves: Moves::default(), board, ty: PhantomData }
     }
 
@@ -209,7 +209,7 @@ impl Board {
     }
 
     #[must_use]
-    pub fn is_legal(&mut self, mov: Move) -> bool {
+    pub fn is_legal(&self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.gen_attack_map();
             let squares = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {

@@ -1,7 +1,5 @@
 use std::{sync::atomic::Ordering, time::Instant};
 
-use movegen::FullGen;
-
 use super::{evaluation::evaluate, phase::phase, transposition::Nodetype, Engine};
 use crate::{
     engine::score::Eval,
@@ -111,7 +109,7 @@ impl Engine {
             }
         }
 
-        let mut moves = MoveGenerator::<FullGen>::new(&mut self.board).gen_pseudolegal_moves();
+        let mut moves = self.board.gen_pseudolegal_moves();
         let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves, killer_move);
@@ -215,9 +213,8 @@ impl Engine {
         }
 
         if !encountered_legal_move {
-            let mut movegen = MoveGenerator::<FullGen>::new(&mut self.board);
             let legal_moves =
-                movegen.gen_pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
+                self.board.gen_pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
             if !legal_moves {
                 return if self.board.in_check() { -Eval::MATE.0 } else { 0 };
             }
