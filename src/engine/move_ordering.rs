@@ -37,9 +37,8 @@ where
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
         let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
-        sort_by_cached_key(moves, |mov| {
-            -self.move_order(mov, killer, phase(&self.board), pawn_attacks)
-        });
+        let phase = phase(&self.board);
+        sort_by_cached_key(moves, |mov| -self.move_order(mov, killer, phase, pawn_attacks));
     }
 
     fn move_order(
