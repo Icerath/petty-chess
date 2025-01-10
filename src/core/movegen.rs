@@ -81,15 +81,6 @@ impl<'a, G: GenType> MoveGenerator<'a, G> {
         std::mem::take(&mut self.moves)
     }
 
-    pub(crate) fn pawn_attack_map(&self) -> Bitboard {
-        let mut attacked_squares = Bitboard(0);
-        let side = !self.board.active_side;
-        self.board
-            .get(side + Pawn)
-            .for_each(|from| attacked_squares |= PAWN_ATTACKS[side as usize][from.usize()]);
-        attacked_squares
-    }
-
     fn push_squares(&mut self, from: Square, mut squares: Bitboard) {
         squares &= !self.board[self.board.active_side];
         squares.for_each(|sq| {
@@ -253,6 +244,13 @@ impl Board {
             output |= KING_MOVES[king.usize()];
         }
         output
+    }
+
+    #[must_use]
+    pub fn pawn_attacks(&self, side: Side) -> Bitboard {
+        (self.get(side + Pawn))
+            .into_iter()
+            .fold(Bitboard::EMPTY, |acc, from| acc | PAWN_ATTACKS[side as usize][from.usize()])
     }
 }
 

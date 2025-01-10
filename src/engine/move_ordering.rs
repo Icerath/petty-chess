@@ -1,7 +1,5 @@
 use std::{hint::assert_unchecked, mem::MaybeUninit};
 
-use movegen::FullGen;
-
 use super::evaluation::{abs_piece_square_value, abs_piece_value};
 use crate::prelude::*;
 
@@ -36,7 +34,7 @@ where
 
 impl Engine {
     pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
-        let pawn_attacks = MoveGenerator::<FullGen>::new(&mut self.board).pawn_attack_map();
+        let pawn_attacks = self.board.pawn_attacks(!self.board.active_side);
         let phase = phase(&self.board);
         sort_by_cached_key(moves, |mov| -self.move_order(mov, killer, phase, pawn_attacks));
     }
