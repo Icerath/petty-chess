@@ -72,13 +72,22 @@ pub fn raw_evaluation(board: &Board) -> i32 {
             }
         });
         // reward pawns close to king
-        (friendly[Pawn] & king.file().adjacency_mask()).for_each(|sq| {
-            const BONUSES: [[i32; 2]; 8] =
-                [[18, 14], [15, 10], [13, 9], [8, 4], [8, 4], [13, 9], [15, 10], [18, 14]];
-
-            let dif_rank = sq.rank().u8().abs_diff(king.rank().u8()).saturating_sub(1);
-            total += BONUSES[sq.file().usize()].get(dif_rank as usize).unwrap_or(&0);
-        });
+        (friendly[Pawn] & king.nearby2() & (king.file().adjacency_mask() | king.file().mask()))
+            .for_each(|sq| {
+                const BONUSES: [[i32; 3]; 8] = [
+                    [18, 18, 14],
+                    [15, 15, 10],
+                    [13, 13, 9],
+                    [8, 8, 4],
+                    [8, 8, 4],
+                    [13, 13, 9],
+                    [15, 15, 10],
+                    [18, 18, 14],
+                ];
+                let dif_rank = sq.rank().u8().abs_diff(king.rank().u8());
+                unsafe { std::hint::assert_unchecked(dif_rank < 3) };
+                total += BONUSES[sq.file().usize()][dif_rank as usize];
+            });
         // reward rooks on an open file
         friendly[Rook].for_each(|sq| {
             if (board[Pawn] & sq.file().mask()).is_empty() {
