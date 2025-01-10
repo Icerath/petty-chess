@@ -145,13 +145,14 @@ impl Application {
             #[cfg(feature = "tracing")]
             tracing::info!("Num transpositions: {}", engine.transposition_table.num_hits);
         });
-        let kill = self.kill.clone();
-        if time_available != Duration::MAX {
-            std::thread::spawn(move || {
-                std::thread::sleep(time_available);
-                kill.store(true, Ordering::Relaxed);
-            });
+        if time_available == Duration::MAX {
+            return;
         }
+        let kill = self.kill.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(time_available);
+            kill.store(true, Ordering::Relaxed);
+        });
     }
 
     fn go_perft(&mut self, depth: u8) {
