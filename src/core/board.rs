@@ -275,6 +275,25 @@ impl Board {
 
 impl Board {
     #[must_use]
+    pub fn sufficient_material(&self) -> bool {
+        let w = self.side_bitboards(White);
+        let b = self.side_bitboards(Black);
+
+        !w[Queen].is_empty()
+            || !b[Queen].is_empty()
+            || !w[Rook].is_empty()
+            || !b[Rook].is_empty()
+            || !w[Pawn].is_empty()
+            || !b[Pawn].is_empty()
+            || w[Bishop].count() >= 2
+            || b[Bishop].count() >= 2
+            || (!w[Bishop].is_empty() && !w[Knight].is_empty())
+            || (!b[Bishop].is_empty() && !b[Knight].is_empty())
+            || w[Knight].0 >= 3
+            || b[Knight].0 >= 3
+    }
+
+    #[must_use]
     pub fn get(&self, piece: Piece) -> Bitboard {
         self[piece.kind()] & self[piece.side()]
     }

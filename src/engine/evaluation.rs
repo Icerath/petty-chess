@@ -8,7 +8,7 @@ const ROOK_SAME_FILE_BONUS: i32 = 20;
 #[must_use]
 pub fn raw_evaluation(board: &Board) -> i32 {
     let phase = phase(board);
-    if !sufficient_material_to_force_checkmate(board) {
+    if !board.sufficient_material() {
         return 0;
     }
     let mut final_total = 0;
@@ -172,25 +172,6 @@ fn has_bishop_pair(board: &Board, side: Side) -> bool {
 #[must_use]
 pub fn evaluate(board: &Board) -> i32 {
     raw_evaluation(board) * board.active_side.positive()
-}
-
-#[must_use]
-pub fn sufficient_material_to_force_checkmate(board: &Board) -> bool {
-    let w = board.side_bitboards(White);
-    let b = board.side_bitboards(Black);
-
-    !w[Queen].is_empty()
-        || !b[Queen].is_empty()
-        || !w[Rook].is_empty()
-        || !b[Rook].is_empty()
-        || !w[Pawn].is_empty()
-        || !b[Pawn].is_empty()
-        || has_bishop_pair(board, Side::White)
-        || has_bishop_pair(board, Side::Black)
-        || (!w[Bishop].is_empty() && !w[Knight].is_empty())
-        || (!b[Bishop].is_empty() && !b[Knight].is_empty())
-        || w[Knight].0 >= 3
-        || b[Knight].0 >= 3
 }
 
 #[must_use]
