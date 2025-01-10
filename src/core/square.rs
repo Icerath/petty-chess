@@ -92,11 +92,34 @@ impl Square {
 
     #[must_use]
     pub const fn passed_pawn_mask(self, side: Side) -> Bitboard {
+        const LUT: [[Bitboard; 64]; 2] = {
+            let mut black_lut = [Bitboard::EMPTY; 64];
+            let mut i = 0;
+            while i < 64 {
+                black_lut[i as usize] =
+                    Square::from_int(i).unwrap().compute_passed_pawn_mask(Black);
+                i += 1;
+            }
+
+            let mut white_lut = [Bitboard::EMPTY; 64];
+            let mut i = 0;
+            while i < 64 {
+                white_lut[i as usize] =
+                    Square::from_int(i).unwrap().compute_passed_pawn_mask(White);
+                i += 1;
+            }
+            [black_lut, white_lut]
+        };
+        LUT[side as usize][self.usize()]
+    }
+
+    #[must_use]
+    const fn compute_passed_pawn_mask(self, side: Side) -> Bitboard {
         let (file, rank) = (self.file(), self.rank());
         let mut mask = Bitboard(file.adjacency_mask().0 | file.mask().0);
         match side {
-            Side::White => mask.0 <<= (rank.u8() + 1) * 8,
-            Side::Black => mask.0 >>= (8 - rank.u8()) * 8,
+            Side::White => mask.0 = mask.0.wrapping_shl(((rank.u8() + 1) * 8) as u32),
+            Side::Black => mask.0 = mask.0.wrapping_shr(((8 - rank.u8()) * 8) as u32),
         }
         mask
     }
