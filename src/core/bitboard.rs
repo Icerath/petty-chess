@@ -39,6 +39,7 @@ impl Bitboard {
     /// # Safety
     /// bitboard must not be empty
     pub const unsafe fn bitscan_unchecked(self) -> Square {
+        unsafe { std::hint::assert_unchecked(self.0 != 0) };
         unsafe { Square::from_int_unchecked(self.0.trailing_zeros() as u8) }
     }
 
