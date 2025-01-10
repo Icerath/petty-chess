@@ -61,6 +61,7 @@ impl Engine {
                 break;
             }
         }
+        #[cfg(feature = "tracing")]
         tracing::info!("Tablesize: {}Mb", self.transposition_table.mb());
         best_move
     }
