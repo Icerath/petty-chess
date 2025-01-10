@@ -103,7 +103,7 @@ impl Engine {
                     depth - 2,
                     beta,
                     Nodetype::Beta,
-                    0,
+                    (),
                 );
                 return (beta, None);
             }
@@ -115,7 +115,6 @@ impl Engine {
         self.order_moves(&mut moves, killer_move);
         let mut nodetype = Nodetype::Alpha;
 
-        let curr_nodes = self.total_nodes;
         let mut killer_move = None;
         for mov in moves {
             if !self.board.is_legal(mov) {
@@ -154,7 +153,7 @@ impl Engine {
                     depth,
                     beta,
                     Nodetype::Beta,
-                    self.total_nodes - curr_nodes,
+                    (),
                 );
                 return (beta, Some(mov));
             }
@@ -173,7 +172,7 @@ impl Engine {
             depth,
             alpha,
             nodetype,
-            self.total_nodes - curr_nodes,
+            (),
         );
         (alpha, None)
     }

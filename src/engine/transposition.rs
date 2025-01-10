@@ -6,8 +6,8 @@ use std::{
 use crate::prelude::*;
 
 #[derive(Default, Clone)]
-pub struct TranspositionTable {
-    inner: HashMap<Zobrist, Entry, BuildHasherDefault<NoHasher>>,
+pub struct TranspositionTable<T> {
+    inner: HashMap<Zobrist, Entry<T>, BuildHasherDefault<NoHasher>>,
     pub num_hits: u64,
 }
 
@@ -18,10 +18,10 @@ pub enum Nodetype {
     Beta,
 }
 
-impl TranspositionTable {
+impl<T> TranspositionTable<T> {
     #[must_use]
     pub fn mb(&self) -> usize {
-        (self.inner.capacity() * (size_of::<Zobrist>() + size_of::<Entry>())) / 1_000_000
+        (self.inner.capacity() * (size_of::<Zobrist>() + size_of::<Entry<T>>())) / 1_000_000
     }
 
     #[must_use]
@@ -30,7 +30,13 @@ impl TranspositionTable {
     }
 
     #[must_use]
-    pub fn get_entry(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<&Entry> {
+    pub fn get_entry(
+        &mut self,
+        board: &Board,
+        alpha: i32,
+        beta: i32,
+        depth: u8,
+    ) -> Option<&Entry<T>> {
         let entry = self.inner.get(&board.zobrist)?;
         if entry.depth < depth {
             return None;
@@ -52,7 +58,7 @@ impl TranspositionTable {
         depth: u8,
         eval: i32,
         nodetype: Nodetype,
-        treesize: u64,
+        extra: T,
     ) {
         if eval.abs() == Eval::MATE.0 {
             return;
@@ -60,17 +66,17 @@ impl TranspositionTable {
         if seen_positions.iter().filter(|&&sq| sq == board.zobrist).count() > 1 {
             return;
         }
-        let entry = Entry { eval, nodetype, depth, treesize };
+        let entry = Entry { eval, nodetype, depth, extra };
         self.inner.insert(board.zobrist, entry);
     }
 }
 
 #[derive(Clone)]
-pub struct Entry {
+pub struct Entry<T> {
     pub eval: i32,
     pub nodetype: Nodetype,
     pub depth: u8,
-    pub treesize: u64,
+    pub extra: T,
 }
 
 #[derive(Default)]
