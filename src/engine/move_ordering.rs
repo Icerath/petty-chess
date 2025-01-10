@@ -23,7 +23,7 @@ where
         indices[i].write((f(mov), i as u8));
     }
     let indices = unsafe { &mut *((&raw mut indices[..moves.len()]) as *mut [(i16, u8)]) };
-    indices.sort_by_key(|(k, _)| *k);
+    indices.sort_unstable_by_key(|(k, _)| *k);
     for i in 0..moves.len() {
         let mut index = indices[i].1;
         while (index as usize) < i {
