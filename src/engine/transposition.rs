@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{hash_map::Entry as HashEntry, HashMap},
     hash::{BuildHasherDefault, Hasher},
 };
 
@@ -67,7 +67,14 @@ impl<T> TranspositionTable<T> {
             return;
         }
         let entry = Entry { eval, nodetype, depth, extra };
-        self.inner.insert(board.zobrist, entry);
+        match self.inner.entry(board.zobrist) {
+            HashEntry::Occupied(mut occupied) => {
+                if occupied.get().depth <= depth {
+                    occupied.insert(entry);
+                }
+            }
+            HashEntry::Vacant(vacant) => _ = vacant.insert(entry),
+        }
     }
 }
 
