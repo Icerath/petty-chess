@@ -1,6 +1,7 @@
 macro_rules! impl_int_getters {
     ($ty: ident) => {
         #[must_use]
+        #[allow(clippy::cast_possible_wrap)]
         pub const fn $ty(self) -> $ty {
             self.u8() as $ty
         }
@@ -28,6 +29,7 @@ macro_rules! impl_try_from {
     ($struct_name: ident, $limit: literal, $ty: ident) => {
         impl TryFrom<$ty> for $struct_name {
             type Error = ();
+            #[allow(clippy::cast_possible_truncation)]
             fn try_from(value: $ty) -> Result<Self, Self::Error> {
                 match value {
                     0..$limit => Ok(Self(value as u8)),
@@ -81,6 +83,7 @@ macro_rules! bounded_int {
                 }
             }
             #[must_use]
+            #[expect(clippy::cast_possible_wrap)]
             pub const fn add_int_signed(self, rhs: i8) -> Option<Self> {
                 let out = self.u8() as i8 + rhs;
                 if (out >= 0 && out < $limit) {
