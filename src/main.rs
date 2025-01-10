@@ -134,6 +134,7 @@ impl Application {
         let start = Instant::now();
         let time_available = self.get_time_available(command.time_control);
         let mut engine = self.engine.clone();
+        engine.kill = Arc::default();
         engine.time_available = time_available;
         self.kill = engine.kill.clone();
         std::thread::spawn(move || {
