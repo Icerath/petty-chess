@@ -15,9 +15,10 @@ use petty_chess::{
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
+use tracing::level_filters::LevelFilter;
 #[cfg(feature = "tracing")]
 use {
-    tracing::{debug, Level},
+    tracing::debug,
     tracing_appender::rolling::{RollingFileAppender, Rotation},
 };
 
@@ -25,19 +26,21 @@ use {
 struct Args {
     #[arg(long = "run")]
     message: Option<String>,
+    #[arg(long, default_value = "OFF")]
+    log_level: LevelFilter,
 }
 
 fn main() {
     let args = Args::parse();
 
     #[cfg(feature = "tracing")]
-    {
+    if args.log_level != LevelFilter::OFF {
         let writer = RollingFileAppender::builder()
             .rotation(Rotation::DAILY)
             .filename_suffix("log")
             .build("./logs")
             .unwrap();
-        tracing_subscriber::fmt().with_max_level(Level::DEBUG).with_writer(writer).init();
+        tracing_subscriber::fmt().with_max_level(args.log_level).with_writer(writer).init();
     }
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
