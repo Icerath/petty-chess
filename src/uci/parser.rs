@@ -12,6 +12,7 @@ impl FromStr for Uci {
 }
 
 impl Uci {
+    #[must_use]
     pub fn parse(input: &str) -> Option<Self> {
         let mut tokens = Lexer::new(input);
 
@@ -42,8 +43,8 @@ impl Uci {
                         };
                         match token.as_str() {
                             "later" => break Some(Uci::Register(Registration::Later)),
-                            "name" => name = tokens.bump().map(String::from),
-                            "code" => code = tokens.bump().map(String::from),
+                            "name" => name = tokens.bump(),
+                            "code" => code = tokens.bump(),
                             _ => continue,
                         }
                     }
