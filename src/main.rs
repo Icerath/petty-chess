@@ -209,7 +209,8 @@ impl Application {
             print!(" {sq}");
         });
         println!();
-        println!("Direct Eval: {:?}", raw_evaluation(&self.engine.board));
+        println!("Endgame: {:?}", phase(board).endgame().as_float());
+        println!("Direct Eval: {:?}", raw_evaluation(board));
     }
 }
 

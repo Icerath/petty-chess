@@ -1,7 +1,7 @@
 use movegen::PAWN_ATTACKS;
 
 use super::mobility::raw_mobility_eval;
-use crate::prelude::*;
+use crate::{core::board::Pieces, prelude::*};
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
 
@@ -19,12 +19,14 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
 
-        // king safety
-        earlygame -= (enemy[Queen] & king.nearby3()).count() as i32 * 80;
-        earlygame -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 40;
-
-        earlygame -= (enemy[Queen] & king.nearby2()).count() as i32 * 80;
-        earlygame -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 30;
+        earlygame += king_safety(&enemy, king);
+        earlygame += punish_open_kings(king, &friendly, &enemy);
+        total += punish_double_pawns(&friendly);
+        total += reward_pawns_close_to_king(&friendly, king);
+        total += reward_outposts(side, &friendly, &enemy);
+        total += reward_rooks_on_open_file(&friendly, board);
+        total += reward_lined_up_rooks(&friendly, board);
+        total += has_bishop_pair(board, side) as i32 * 50;
 
         // punish pieces in front of enemy pawns
         let mut pawn_attacks = Bitboard::EMPTY;
@@ -33,22 +35,6 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
         total -= (pawn_attacks & non_pawns).count() as i32 * 40;
 
-        // punish kings adjacent to an open file
-        for pawns in [friendly[Pawn], enemy[Pawn]] {
-            let file = king.file();
-
-            let left_open = file.sub_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
-            let middle_open = (pawns & file.mask()).is_empty();
-            let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
-
-            let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-            earlygame -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file.usize()];
-        }
-        // punish double pawns
-        for file in File::ALL {
-            let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
-            total -= pawns_in_file.saturating_sub(1) * 25;
-        }
         friendly[Pawn].for_each(|sq| {
             // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
@@ -61,57 +47,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
         });
-        // reward outposts
-        (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-            if sq.rank().relative_to(side).u8() < 4 {
-                return;
-            }
-            let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
-            if is_outpost {
-                total += 20;
-            }
-        });
-        // reward pawns close to king
-        (friendly[Pawn] & king.nearby2() & (king.file().adjacency_mask() | king.file().mask()))
-            .for_each(|sq| {
-                const BONUSES: [[i32; 3]; 8] = [
-                    [18, 18, 14],
-                    [15, 15, 10],
-                    [13, 13, 9],
-                    [8, 8, 4],
-                    [8, 8, 4],
-                    [13, 13, 9],
-                    [15, 15, 10],
-                    [18, 18, 14],
-                ];
-                let dif_rank = sq.rank().u8().abs_diff(king.rank().u8());
-                unsafe { std::hint::assert_unchecked(dif_rank < 3) };
-                total += BONUSES[sq.file().usize()][dif_rank as usize];
-            });
-        // reward rooks on an open file
-        friendly[Rook].for_each(|sq| {
-            if (board[Pawn] & sq.file().mask()).is_empty() {
-                total += 20;
-            } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
-                total += 10;
-            }
-        });
-        if friendly[Rook].count() >= 2 {
-            let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
-            let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
 
-            let rook_attacks = rook_attacks(rook_a, board.all_pieces());
-            if rook_attacks.contains(rook_b) {
-                total += 20;
-                total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
-            }
-        }
-        total += has_bishop_pair(board, side) as i32 * 50;
         let [mg, eg] = material_and_square_table_values(board, side);
         earlygame += mg;
         endgame += eg;
-        total += earlygame * phase.earlygame() + endgame * phase.endgame();
 
+        total += earlygame * phase.earlygame() + endgame * phase.endgame();
         final_total += total * side.positive();
     }
     // mop up evaluation
@@ -127,6 +68,102 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         final_total += mop_up_score * phase.endgame();
     }
     final_total + raw_mobility_eval(board)
+}
+
+fn king_safety(enemy: &Pieces, king: Square) -> i32 {
+    let mut total = 0;
+    total -= (enemy[Queen] & king.nearby3()).count() as i32 * 80;
+    total -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 40;
+
+    total -= (enemy[Queen] & king.nearby2()).count() as i32 * 80;
+    total -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 30;
+    total
+}
+
+fn punish_open_kings(king: Square, friendly: &Pieces, enemy: &Pieces) -> i32 {
+    let mut total = 0;
+    for pawns in [friendly[Pawn], enemy[Pawn]] {
+        let file = king.file();
+
+        let left_open = file.sub_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
+        let middle_open = (pawns & file.mask()).is_empty();
+        let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
+
+        let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
+        total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file.usize()];
+    }
+    total
+}
+
+fn punish_double_pawns(friendly: &Pieces) -> i32 {
+    let mut total = 0;
+    for file in File::ALL {
+        let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
+        total -= pawns_in_file.saturating_sub(1) * 25;
+    }
+    total
+}
+
+fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
+    let mut total = 0;
+    (friendly[Pawn] & king.nearby2() & (king.file().adjacency_mask() | king.file().mask()))
+        .for_each(|sq| {
+            const BONUSES: [[i32; 3]; 8] = [
+                [18, 18, 14],
+                [15, 15, 10],
+                [13, 13, 9],
+                [8, 8, 4],
+                [8, 8, 4],
+                [13, 13, 9],
+                [15, 15, 10],
+                [18, 18, 14],
+            ];
+            let dif_rank = sq.rank().u8().abs_diff(king.rank().u8());
+            unsafe { std::hint::assert_unchecked(dif_rank < 3) };
+            total += BONUSES[sq.file().usize()][dif_rank as usize];
+        });
+    total
+}
+
+fn reward_outposts(side: Side, friendly: &Pieces, enemy: &Pieces) -> i32 {
+    let mut total = 0;
+    (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
+        if sq.rank().relative_to(side).u8() < 4 {
+            return;
+        }
+        let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
+        if is_outpost {
+            total += 20;
+        }
+    });
+    total
+}
+
+fn reward_rooks_on_open_file(friendly: &Pieces, board: &Board) -> i32 {
+    let mut total = 0;
+    friendly[Rook].for_each(|sq| {
+        if (board[Pawn] & sq.file().mask()).is_empty() {
+            total += 20;
+        } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
+            total += 10;
+        }
+    });
+    total
+}
+
+fn reward_lined_up_rooks(friendly: &Pieces, board: &Board) -> i32 {
+    let mut total = 0;
+    if friendly[Rook].count() >= 2 {
+        let rook_a = unsafe { friendly[Rook].bitscan_unchecked() };
+        let rook_b = unsafe { friendly[Rook].rbitscan_unchecked() };
+
+        let rook_attacks = rook_attacks(rook_a, board.all_pieces());
+        if rook_attacks.contains(rook_b) {
+            total += 20;
+            total += (rook_a.file() == rook_b.file()) as i32 * ROOK_SAME_FILE_BONUS;
+        }
+    }
+    total
 }
 
 fn material_and_square_table_values(board: &Board, side: Side) -> [i32; 2] {
