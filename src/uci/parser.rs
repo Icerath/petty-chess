@@ -28,7 +28,7 @@ impl Uci {
                     let "name" = tokens.bump()?.as_str() else { continue };
                     let id = tokens.bump()?;
                     let mut value = None;
-                    if tokens.bump() == Some("value".to_string()) {
+                    if tokens.bump().as_deref() == Some("value") {
                         value = Some(tokens.bump()?);
                     }
                     Some(Uci::Setoption { id, value })
