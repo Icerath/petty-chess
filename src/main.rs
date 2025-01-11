@@ -44,10 +44,15 @@ fn main() {
     let mut app = Application::default();
 
     if let Some(run) = args.message {
-        let Some(msg) = UciMessage::parse(run.trim()) else {
-            panic!("Invalid message: {run}");
-        };
-        app.process_message(msg, true);
+        for section in run.split(';').map(str::trim) {
+            if section.is_empty() {
+                continue;
+            }
+            let Some(msg) = UciMessage::parse(section.trim()) else {
+                panic!("Invalid message: '{section}'");
+            };
+            app.process_message(msg, true);
+        }
         return;
     }
 
