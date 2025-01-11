@@ -14,6 +14,19 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     pub const EMPTY: Self = Self(0);
 
+    #[must_use]
+    pub(crate) const fn from_bstr(bstr: &[u8; 64]) -> Self {
+        let mut sq = 0;
+        let mut bb = Bitboard::EMPTY;
+        while sq < 64 {
+            if bstr[sq as usize] == b'X' {
+                bb.insert(Square::from_int(sq).unwrap().invert_rank());
+            }
+            sq += 1;
+        }
+        bb
+    }
+
     pub const fn insert(&mut self, sq: Square) {
         self.0 |= 1 << sq.u8();
     }
@@ -237,4 +250,10 @@ fn test_iter() {
     assert_eq!(iter.next(), Some(Square::A1));
     assert_eq!(iter.next(), Some(Square::A2));
     assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_from_bstr() {
+    assert_eq!(Bitboard::from_bstr(&[0; 64]), Bitboard::EMPTY);
+    assert_eq!(Bitboard::from_bstr(&[b'X'; 64]), Bitboard::ALL);
 }

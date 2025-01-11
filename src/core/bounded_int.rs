@@ -115,6 +115,11 @@ macro_rules! bounded_int {
                 unsafe { ::std::hint::assert_unchecked(self.0 < $limit) };
                 self.0
             }
+            #[must_use]
+            /// Inverts self; computing `Self::MAX` - self
+            pub const fn invert(self) -> Self {
+                unsafe { Self::from_int_unchecked(Self::MAX.u8() - self.u8()) }
+            }
             impl_int_getters!(i8, i16, i32, i64, isize, u16, u32, u64, usize);
         }
         impl_into!($struct_name : u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);

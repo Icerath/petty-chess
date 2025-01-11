@@ -340,6 +340,11 @@ impl Square {
             bstr[0].checked_sub(b'a')?.checked_add((bstr[1].checked_sub(b'1')?).checked_mul(8)?)?;
         Square::from_int(square_int)
     }
+
+    #[must_use]
+    pub const fn invert_rank(self) -> Self {
+        Self::new(self.rank().invert(), self.file())
+    }
 }
 
 #[test]
@@ -376,4 +381,19 @@ fn test_rank_mask() {
             assert_eq!(rank.mask().count(), 8);
         }
     }
+}
+
+#[test]
+fn test_passed_pawn_mask() {
+    let expected = Bitboard::from_bstr(
+        b"...XXX..\
+          ...XXX..\
+          ...XXX..\
+          ...XXX..\
+          ...XXX..\
+          ...XXX..\
+          ........\
+          ........",
+    );
+    assert_eq!(Square::E2.passed_pawn_mask(White), expected);
 }
