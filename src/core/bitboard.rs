@@ -14,6 +14,7 @@ impl Bitboard {
     pub const ALL: Self = Self(u64::MAX);
     pub const EMPTY: Self = Self(0);
 
+    #[cfg(test)]
     #[must_use]
     pub(crate) const fn from_bstr(bstr: &[u8; 64]) -> Self {
         let mut sq = 0;
