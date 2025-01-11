@@ -5,9 +5,11 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
+    thread::JoinHandle,
     time::{Duration, Instant},
 };
 
+use clap::{arg, Parser};
 use petty_chess::{
     engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
     prelude::*,
@@ -19,7 +21,15 @@ use {
     tracing_appender::rolling::{RollingFileAppender, Rotation},
 };
 
+#[derive(clap::Parser)]
+struct Args {
+    #[arg(long = "run")]
+    message: Option<String>,
+}
+
 fn main() {
+    let args = Args::parse();
+
     #[cfg(feature = "tracing")]
     {
         let writer = RollingFileAppender::builder()
@@ -32,6 +42,15 @@ fn main() {
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
     let mut app = Application::default();
+
+    if let Some(run) = args.message {
+        let Some(msg) = UciMessage::parse(run.trim()) else {
+            panic!("Invalid message: {run}");
+        };
+        app.process_message(msg, true);
+        return;
+    }
+
     while app.running {
         line.clear();
         stdin.read_line(&mut line).unwrap();
@@ -43,7 +62,7 @@ fn main() {
         debug!("{line}");
 
         if let Some(message) = UciMessage::parse(line) {
-            app.process_message(message);
+            app.process_message(message, false);
         } else {
             #[cfg(feature = "tracing")]
             tracing::warn!("Unknown command: '{line}'");
@@ -68,7 +87,7 @@ impl Default for Application {
 
 #[expect(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
 impl Application {
-    fn process_message(&mut self, msg: UciMessage) {
+    fn process_message(&mut self, msg: UciMessage, wait: bool) {
         use UciMessage as Uci;
 
         match msg {
@@ -86,7 +105,8 @@ impl Application {
                     tracing::error!("Invalid fen position {fen}");
                 }
             }
-            Uci::Go(command) => self.go(command),
+            Uci::Go(command) if wait => self.go(command).join().unwrap(),
+            Uci::Go(command) => _ = self.go(command),
             Uci::Stop => self.kill.store(true, Ordering::Relaxed),
             Uci::PonderHit => {}
             Uci::Quit => self.running = false,
@@ -128,7 +148,7 @@ impl Application {
         self.engine.seen_positions.push(self.engine.board.zobrist);
     }
 
-    fn go(&mut self, command: GoCommand) {
+    fn go(&mut self, command: GoCommand) -> JoinHandle<()> {
         self.kill.store(true, Ordering::Relaxed);
         #[cfg(feature = "tracing")]
         let start = Instant::now();
@@ -137,7 +157,7 @@ impl Application {
         engine.kill = Arc::default();
         engine.time_available = time_available;
         self.kill = engine.kill.clone();
-        std::thread::spawn(move || {
+        let handle = std::thread::spawn(move || {
             let best_move = engine.search();
             println!("{}", UciResponse::Bestmove { mov: best_move, ponder: None });
             #[cfg(feature = "tracing")]
@@ -145,14 +165,14 @@ impl Application {
             #[cfg(feature = "tracing")]
             tracing::info!("Num transpositions: {}", engine.transposition_table.num_hits);
         });
-        if time_available == Duration::MAX {
-            return;
+        if time_available != Duration::MAX {
+            let kill = self.kill.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(time_available);
+                kill.store(true, Ordering::Relaxed);
+            });
         }
-        let kill = self.kill.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(time_available);
-            kill.store(true, Ordering::Relaxed);
-        });
+        handle
     }
 
     fn go_perft(&mut self, depth: u8) {
