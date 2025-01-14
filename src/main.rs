@@ -247,7 +247,7 @@ fn perft(board: &Board, depth: u8) -> u64 {
     let mut moves = board.gen_legal_moves();
 
     let mut table = TranspositionTable::default();
-    moves.sort_by_key(|mov| mov.from().u8() + mov.to().u8());
+    moves.sort();
 
     for mov in moves {
         let count = board.with_move(mov).run_perft_with_table(&mut table, depth - 1);
