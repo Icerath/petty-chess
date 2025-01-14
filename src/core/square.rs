@@ -178,6 +178,11 @@ impl Square {
         }
         bitboard
     }
+
+    #[must_use]
+    pub const fn mask(self) -> Bitboard {
+        Bitboard(1 << self.u8())
+    }
 }
 
 macro_rules! impl_file_rank {

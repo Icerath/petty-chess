@@ -29,16 +29,16 @@ impl Bitboard {
     }
 
     pub const fn insert(&mut self, sq: Square) {
-        self.0 |= 1 << sq.u8();
+        self.0 |= sq.mask().0;
     }
 
     pub const fn remove(&mut self, sq: Square) {
-        self.0 &= !(1 << sq.u8());
+        self.0 &= !sq.mask().0;
     }
 
     #[must_use]
     pub const fn contains(self, sq: Square) -> bool {
-        self.0 & (1 << sq.u8()) > 0
+        self.0 & sq.mask().0 > 0
     }
 
     #[must_use]
@@ -153,13 +153,13 @@ impl BitXor<Square> for Bitboard {
     type Output = Bitboard;
 
     fn bitxor(self, rhs: Square) -> Self::Output {
-        Self(self.0 ^ (1 << rhs.u8()))
+        Self(self.0 ^ rhs.mask().0)
     }
 }
 
 impl BitXorAssign<Square> for Bitboard {
     fn bitxor_assign(&mut self, rhs: Square) {
-        self.0 ^= 1 << rhs.u8();
+        self.0 ^= rhs.mask().0;
     }
 }
 
