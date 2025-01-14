@@ -10,33 +10,36 @@ static BISHOP_TABLES: [SquareTables<BISHOP>; 64] =
     unsafe { std::mem::transmute(*include_bytes!("magic_bishop_tables.bin")) };
 
 #[must_use]
-pub fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+pub const fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     ROOK_TABLES[sq.usize()].get_attacks(occupancy)
 }
 
 #[must_use]
-pub fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+pub const fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     BISHOP_TABLES[sq.usize()].get_attacks(occupancy)
 }
 
 #[must_use]
-pub fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
-    BISHOP_TABLES[sq.usize()].get_attacks(occupancy)
-        | ROOK_TABLES[sq.usize()].get_attacks(occupancy)
+pub const fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    Bitboard(
+        BISHOP_TABLES[sq.usize()].get_attacks(occupancy).0
+            | ROOK_TABLES[sq.usize()].get_attacks(occupancy).0,
+    )
 }
 
 #[repr(C)]
 struct SquareTables<const PIECE: usize> {
     magic: u64,
-    mask: u64,
+    mask: Bitboard,
     shift: u32,
-    attacks: [u64; PIECE],
+    attacks: [Bitboard; PIECE],
 }
 
 impl<const PIECE: usize> SquareTables<PIECE> {
-    fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
-        occupancy.0 &= self.mask;
+    const fn get_attacks(&self, mut occupancy: Bitboard) -> Bitboard {
+        occupancy.0 &= self.mask.0;
         let index = (occupancy.0.wrapping_mul(self.magic) >> self.shift) as usize;
-        Bitboard(unsafe { *self.attacks.get_unchecked(index) })
+        unsafe { std::hint::assert_unchecked(index < PIECE) };
+        self.attacks[index]
     }
 }
