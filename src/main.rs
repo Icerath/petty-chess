@@ -185,7 +185,7 @@ impl Application {
 
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
-        let total = perft(&mut self.engine.board, depth);
+        let total = perft(&self.engine.board, depth);
         eprintln!("\nTime taken: {:?}", start.elapsed());
         eprintln!("Nodes searched: {total}");
     }
@@ -242,7 +242,7 @@ impl Application {
     }
 }
 
-fn perft(board: &mut Board, depth: u8) -> u64 {
+fn perft(board: &Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.gen_legal_moves();
 
@@ -250,10 +250,8 @@ fn perft(board: &mut Board, depth: u8) -> u64 {
     moves.sort_by_key(|mov| mov.from().u8() + mov.to().u8());
 
     for mov in moves {
-        let unmake = board.make_move(mov);
-        let count = board.run_perft_with_table(&mut table, depth - 1);
+        let count = board.with_move(mov).run_perft_with_table(&mut table, depth - 1);
         total += count;
-        board.unmake_move(unmake);
         eprintln!("{mov}: {count}");
     }
     total

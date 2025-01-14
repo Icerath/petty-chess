@@ -4,11 +4,12 @@ use crate::{
 };
 
 impl Board {
-    pub fn run_perft(&mut self, depth: u8) -> u64 {
+    #[must_use]
+    pub fn run_perft(&self, depth: u8) -> u64 {
         self.run_perft_with_table(&mut TranspositionTable::default(), depth)
     }
 
-    pub fn run_perft_with_table(&mut self, table: &mut TranspositionTable<u64>, depth: u8) -> u64 {
+    pub fn run_perft_with_table(&self, table: &mut TranspositionTable<u64>, depth: u8) -> u64 {
         if depth == 0 {
             return 1;
         } else if let Some(entry) = table.get_entry(self, 0, 0, depth) {
@@ -21,9 +22,7 @@ impl Board {
         }
         let mut count = 0;
         for mov in self.gen_legal_moves() {
-            let unmake = self.make_move(mov);
-            count += self.run_perft_with_table(table, depth - 1);
-            self.unmake_move(unmake);
+            count += self.with_move(mov).run_perft_with_table(table, depth - 1);
         }
         table.insert(self, &[], depth, 0, Nodetype::Exact, count);
         count
