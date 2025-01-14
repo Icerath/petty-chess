@@ -15,7 +15,7 @@ pub mod prelude {
             fen,
             magic::{bishop_attacks, queen_attacks, rook_attacks},
             move_flags::{Castle, MoveFlags, Promotion},
-            movegen::{self, MoveGenerator, KNIGHT_MOVES},
+            movegen::{self, KNIGHT_MOVES},
             moves::Moves,
             piece::{Piece, PieceKind},
             r#move::Move,
