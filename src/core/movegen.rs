@@ -70,6 +70,11 @@ impl Board {
     pub fn gen_capture_moves(&self) -> Moves {
         gen_legal_moves::<CapturesOnly>(self)
     }
+
+    #[must_use]
+    pub fn is_valid(&self, mov: Move) -> bool {
+        self.gen_legal_moves().contains(&mov) && self.is_legal(mov)
+    }
 }
 
 fn push_squares<G: GenType>(board: &Board, from: Square, mut squares: Bitboard, moves: &mut Moves) {
@@ -199,6 +204,9 @@ impl Board {
     }
 
     #[must_use]
+    /// Checks whether a move generated from `Board::gen_pseudolegal_moves` is legal.
+    ///
+    /// Will not check if the move is entirely valid, use `Board::is_valid` instead
     pub fn is_legal(&self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.gen_attack_map();
