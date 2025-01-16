@@ -14,7 +14,7 @@ impl Engine {
         self.kill.store(false, Ordering::Release);
         self.transposition_table.num_hits = 0;
 
-        let mut best_move = *self.board.gen_legal_moves().first().unwrap_or(&Move::NULL);
+        let mut best_move = *self.board.legal_moves().first().unwrap_or(&Move::NULL);
 
         for depth in 1.. {
             self.only_pv_nodes = true;
@@ -109,7 +109,7 @@ impl Engine {
             }
         }
 
-        let mut moves = self.board.gen_pseudolegal_moves();
+        let mut moves = self.board.pseudolegal_moves();
         let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves, killer_move);
@@ -186,7 +186,7 @@ impl Engine {
         }
         alpha = alpha.max(eval);
 
-        let mut moves = self.board.gen_pseudolegal_capture_moves();
+        let mut moves = self.board.pseudolegal_capture_moves();
         self.order_moves(&mut moves, None);
 
         let mut encountered_legal_move = false;
@@ -213,7 +213,7 @@ impl Engine {
 
         if !encountered_legal_move {
             let legal_moves =
-                self.board.gen_pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
+                self.board.pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
             if !legal_moves {
                 return if self.board.in_check() { -Eval::MATE.0 } else { 0 };
             }

@@ -139,7 +139,7 @@ impl Application {
         self.engine.seen_positions = vec![position.zobrist];
         self.engine.board = position.clone();
         for mov in moves {
-            let legal_moves = self.engine.board.gen_legal_moves();
+            let legal_moves = self.engine.board.legal_moves();
             let Some(&mov) = legal_moves.iter().find(|m| {
                 (m.from(), m.to(), m.flags().promotion())
                     == (mov.from(), mov.to(), mov.flags().promotion())
@@ -244,7 +244,7 @@ impl Application {
 
 fn perft(board: &Board, depth: u8) -> u64 {
     let mut total = 0;
-    let mut moves = board.gen_legal_moves();
+    let mut moves = board.legal_moves();
 
     let mut table = TranspositionTable::default();
     moves.sort();

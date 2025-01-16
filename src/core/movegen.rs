@@ -52,28 +52,28 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
 
 impl Board {
     #[must_use]
-    pub fn gen_pseudolegal_moves(&self) -> Moves {
+    pub fn pseudolegal_moves(&self) -> Moves {
         gen_pseudolegal_moves::<FullGen>(self)
     }
 
     #[must_use]
-    pub fn gen_legal_moves(&self) -> Moves {
+    pub fn legal_moves(&self) -> Moves {
         gen_legal_moves::<FullGen>(self)
     }
 
     #[must_use]
-    pub fn gen_pseudolegal_capture_moves(&self) -> Moves {
+    pub fn pseudolegal_capture_moves(&self) -> Moves {
         gen_pseudolegal_moves::<CapturesOnly>(self)
     }
 
     #[must_use]
-    pub fn gen_capture_moves(&self) -> Moves {
+    pub fn capture_moves(&self) -> Moves {
         gen_legal_moves::<CapturesOnly>(self)
     }
 
     #[must_use]
     pub fn is_valid(&self, mov: Move) -> bool {
-        self.gen_legal_moves().contains(&mov) && self.is_legal(mov)
+        self.legal_moves().contains(&mov) && self.is_legal(mov)
     }
 }
 
@@ -204,7 +204,7 @@ impl Board {
     }
 
     #[must_use]
-    /// Checks whether a move generated from `Board::gen_pseudolegal_moves` is legal.
+    /// Checks whether a move generated from `Board::pseudolegal_moves` is legal.
     ///
     /// Will not check if the move is entirely valid, use `Board::is_valid` instead
     pub fn is_legal(&self, mov: Move) -> bool {
