@@ -119,7 +119,7 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
         }
     }
     if let Some(en_passant) = board.en_passant_target_square {
-        if en_passant.file().u8().abs_diff(from.file().u8()) <= 1
+        if en_passant.file().diff(from.file()) <= 1
             && from.rank().i8() == en_passant.rank().i8() - forward
         {
             moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));

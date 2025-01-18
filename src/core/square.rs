@@ -62,13 +62,13 @@ impl Square {
 
     #[must_use]
     pub const fn manhattan_distance(self, other: Self) -> u8 {
-        self.file().u8().abs_diff(other.file().u8()) + self.rank().u8().abs_diff(other.rank().u8())
+        self.file().diff(other.file()) + self.rank().diff(other.rank())
     }
 
     #[must_use]
     pub const fn square_distance(self, other: Self) -> u8 {
-        let file_diff = self.file().u8().abs_diff(other.file().u8());
-        let rank_diff = self.rank().u8().abs_diff(other.rank().u8());
+        let file_diff = self.file().diff(other.file());
+        let rank_diff = self.rank().diff(other.rank());
         if file_diff > rank_diff { file_diff } else { rank_diff }
     }
 

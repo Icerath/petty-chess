@@ -118,7 +118,7 @@ fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
                 [15, 15, 10],
                 [18, 18, 14],
             ];
-            let dif_rank = sq.rank().u8().abs_diff(king.rank().u8());
+            let dif_rank = sq.rank().diff(king.rank());
             unsafe { std::hint::assert_unchecked(dif_rank < 3) };
             total += BONUSES[sq.file().usize()][dif_rank as usize];
         });
