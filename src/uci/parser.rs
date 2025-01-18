@@ -45,7 +45,7 @@ impl Uci {
                             "later" => break Some(Uci::Register(Registration::Later)),
                             "name" => name = tokens.bump(),
                             "code" => code = tokens.bump(),
-                            _ => continue,
+                            _ => {}
                         }
                     }
                 }
@@ -111,7 +111,7 @@ impl Uci {
                 "mate" => command.mate = tokens.bump_spin().map(|i| i as u32).or(command.mate),
                 "nodes" => command.nodes = tokens.bump_spin().or(command.nodes),
                 "depth" => command.depth = tokens.bump_spin().map(|i| i as u32).or(command.depth),
-                _ => continue,
+                _ => {}
             }
         }
         command
