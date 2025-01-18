@@ -1,4 +1,4 @@
-use std::{sync::atomic::Ordering, time::Instant};
+use std::time::Instant;
 
 use super::{Engine, evaluation::evaluate, phase::phase, transposition::Nodetype};
 use crate::{
@@ -11,7 +11,6 @@ impl Engine {
     pub fn search(&mut self) -> Move {
         let time_started = Instant::now();
         self.total_nodes = 0;
-        self.kill.store(false, Ordering::Release);
         self.transposition_table.num_hits = 0;
 
         let mut best_move = *self.board.legal_moves().first().unwrap_or(&Move::NULL);
