@@ -1,6 +1,6 @@
 use std::{sync::atomic::Ordering, time::Instant};
 
-use super::{evaluation::evaluate, phase::phase, transposition::Nodetype, Engine};
+use super::{Engine, evaluation::evaluate, phase::phase, transposition::Nodetype};
 use crate::{
     engine::score::Eval,
     prelude::*,

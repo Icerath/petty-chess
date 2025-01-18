@@ -2,14 +2,14 @@ use std::{
     fmt::Write,
     io::BufRead as _,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     thread::JoinHandle,
     time::{Duration, Instant},
 };
 
-use clap::{arg, Parser};
+use clap::{Parser, arg};
 use petty_chess::{
     engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
     prelude::*,

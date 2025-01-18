@@ -14,15 +14,15 @@ pub mod prelude {
             can_castle::CanCastle,
             fen,
             magic::{bishop_attacks, queen_attacks, rook_attacks},
+            r#move::Move,
             move_flags::{Castle, MoveFlags, Promotion},
             movegen::{self, KNIGHT_MOVES},
             moves::Moves,
             piece::{Piece, PieceKind},
-            r#move::Move,
             side::Side,
             square::{File, Rank, Square},
             zobrist::Zobrist,
         },
-        engine::{phase, Engine, Eval, Phase},
+        engine::{Engine, Eval, Phase, phase},
     };
 }

@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry as HashEntry, HashMap},
+    collections::{HashMap, hash_map::Entry as HashEntry},
     hash::{BuildHasherDefault, Hasher},
 };
 

@@ -69,11 +69,7 @@ impl Square {
     pub const fn square_distance(self, other: Self) -> u8 {
         let file_diff = self.file().u8().abs_diff(other.file().u8());
         let rank_diff = self.rank().u8().abs_diff(other.rank().u8());
-        if file_diff > rank_diff {
-            file_diff
-        } else {
-            rank_diff
-        }
+        if file_diff > rank_diff { file_diff } else { rank_diff }
     }
 
     #[must_use]

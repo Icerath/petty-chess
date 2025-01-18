@@ -8,13 +8,13 @@ pub mod transposition;
 
 use std::{
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
 
-pub use phase::{phase, Phase};
+pub use phase::{Phase, phase};
 pub use score::Eval;
 use transposition::TranspositionTable;
 
