@@ -73,7 +73,7 @@ impl Engine {
 
         if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
             score += abs_piece_value(kind, phase);
-        };
+        }
 
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             score += 10;

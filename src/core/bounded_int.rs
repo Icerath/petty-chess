@@ -14,7 +14,6 @@ macro_rules! impl_int_getters {
 macro_rules! impl_into {
     ($struct_name: ident, $ty: ident) => {
         impl From<$struct_name> for $ty {
-            #[must_use]
             fn from(value: $struct_name) -> Self {
                 value.$ty()
             }
