@@ -50,12 +50,12 @@ impl MoveFlags {
         Some(Promotion::try_from(self as u8 & 0b0011).unwrap())
     }
 
-    fn is_promotion(self) -> bool {
+    const fn is_promotion(self) -> bool {
         (self as u8 & 0b1000) == 0b1000
     }
 
     #[must_use]
-    pub fn is_capture(self) -> bool {
+    pub const fn is_capture(self) -> bool {
         self as u8 & 0b0100 == 0b0100
     }
 }

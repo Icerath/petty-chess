@@ -47,7 +47,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    pub(crate) fn perft_kiwi() {
+    pub fn perft_kiwi() {
         #[cfg(miri)]
         let results = [1, 48];
         #[cfg(not(miri))]

@@ -28,10 +28,11 @@ impl Uci {
                 "setoption" => {
                     let "name" = tokens.bump()?.as_str() else { continue };
                     let id = tokens.bump()?;
-                    let mut value = None;
-                    if tokens.bump().as_deref() == Some("value") {
-                        value = Some(tokens.bump()?);
-                    }
+                    let value = if tokens.bump().as_deref() == Some("value") {
+                        Some(tokens.bump()?)
+                    } else {
+                        None
+                    };
                     Some(Uci::Setoption { id, value })
                 }
                 "register" => {

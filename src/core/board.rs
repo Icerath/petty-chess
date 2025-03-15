@@ -346,7 +346,7 @@ impl Default for Board {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Pieces(pub [Bitboard; 6]);
 
 impl Index<PieceKind> for Pieces {

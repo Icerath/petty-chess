@@ -11,7 +11,7 @@ impl Square {
         let mut all = [Self::A1; 64];
         let mut i = 0;
         while i < 64 {
-            all[i as usize] = Square::from_int(i).unwrap();
+            all[i as usize] = Self::from_int(i).unwrap();
             i += 1;
         }
         all
@@ -135,7 +135,7 @@ impl Square {
     }
 
     #[must_use]
-    pub(crate) fn nearby3(self) -> Bitboard {
+    pub(crate) const fn nearby3(self) -> Bitboard {
         const LUT: [Bitboard; 64] = {
             let mut lut = [Bitboard::EMPTY; 64];
             let mut sq = 0;
@@ -149,7 +149,7 @@ impl Square {
     }
 
     #[must_use]
-    pub(crate) fn nearby2(self) -> Bitboard {
+    pub(crate) const fn nearby2(self) -> Bitboard {
         const LUT: [Bitboard; 64] = {
             let mut lut = [Bitboard::EMPTY; 64];
             let mut sq = 0;
@@ -166,7 +166,7 @@ impl Square {
         let mut bitboard = Bitboard::EMPTY;
         let mut i = 0;
         while i < 64 {
-            let sq = Square::from_int(i).unwrap();
+            let sq = Self::from_int(i).unwrap();
             if sq.u8() != self.u8() && sq.square_distance(self) <= distance {
                 bitboard.insert(sq);
             }
@@ -339,7 +339,7 @@ impl Square {
     pub(crate) fn from_bstr(bstr: [u8; 2]) -> Option<Self> {
         let square_int =
             bstr[0].checked_sub(b'a')?.checked_add((bstr[1].checked_sub(b'1')?).checked_mul(8)?)?;
-        Square::from_int(square_int)
+        Self::from_int(square_int)
     }
 
     #[must_use]

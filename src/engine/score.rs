@@ -15,7 +15,7 @@ impl Eval {
 }
 
 impl Mul<f32> for Eval {
-    type Output = Eval;
+    type Output = Self;
 
     fn mul(self, rhs: f32) -> Self::Output {
         Self((self.0 as f32 * rhs) as i32)

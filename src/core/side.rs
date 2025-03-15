@@ -47,7 +47,7 @@ impl Side {
 #[rustfmt::skip]
 impl From<bool> for Side {
         fn from(value: bool) -> Self {
-        if value { Side::White } else { Side::Black }
+        if value { Self::White } else { Self::Black }
     }
 }
 
@@ -58,7 +58,7 @@ impl From<Side> for bool {
 }
 
 impl Not for Side {
-    type Output = Side;
+    type Output = Self;
 
     fn not(self) -> Self::Output {
         match self {

@@ -102,7 +102,7 @@ impl Board {
     }
 
     #[must_use]
-    pub fn from_fen<S: AsRef<[u8]>>(fen: S) -> Option<Board> {
+    pub fn from_fen<S: AsRef<[u8]>>(fen: S) -> Option<Self> {
         let mut fields = fen.as_ref().split(|&b| b == b' ');
 
         let mut board = parse_pieces(fields.next()?)?;

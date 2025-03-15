@@ -18,16 +18,16 @@ impl fmt::Display for CanCastle {
         if self.is_empty() {
             return write!(f, "-");
         }
-        if self.contains(CanCastle::WHITE_KING_SIDE) {
+        if self.contains(Self::WHITE_KING_SIDE) {
             write!(f, "K")?;
         }
-        if self.contains(CanCastle::WHITE_QUEEN_SIDE) {
+        if self.contains(Self::WHITE_QUEEN_SIDE) {
             write!(f, "Q")?;
         }
-        if self.contains(CanCastle::BLACK_KING_SIDE) {
+        if self.contains(Self::BLACK_KING_SIDE) {
             write!(f, "k")?;
         }
-        if self.contains(CanCastle::BLACK_QUEEN_SIDE) {
+        if self.contains(Self::BLACK_QUEEN_SIDE) {
             write!(f, "q")?;
         }
         Ok(())

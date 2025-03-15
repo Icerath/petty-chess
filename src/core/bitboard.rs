@@ -18,7 +18,7 @@ impl Bitboard {
     #[must_use]
     pub(crate) const fn from_bstr(bstr: &[u8; 64]) -> Self {
         let mut sq = 0;
-        let mut bb = Bitboard::EMPTY;
+        let mut bb = Self::EMPTY;
         while sq < 64 {
             if bstr[sq as usize] == b'X' {
                 bb.insert(Square::from_int(sq).unwrap().invert_rank());
@@ -150,7 +150,7 @@ impl BitOrAssign for Bitboard {
 }
 
 impl BitXor<Square> for Bitboard {
-    type Output = Bitboard;
+    type Output = Self;
 
     fn bitxor(self, rhs: Square) -> Self::Output {
         Self(self.0 ^ rhs.mask().0)

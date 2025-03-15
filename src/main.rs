@@ -137,7 +137,7 @@ impl Application {
 
     fn startpos_moves(&mut self, position: Board, moves: Vec<Move>) {
         self.engine.seen_positions = vec![position.zobrist];
-        self.engine.board = position.clone();
+        self.engine.board = position;
         for mov in moves {
             let legal_moves = self.engine.board.legal_moves();
             let Some(&mov) = legal_moves.iter().find(|m| {

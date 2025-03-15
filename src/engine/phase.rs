@@ -10,12 +10,12 @@ pub struct Phase(i32);
 
 impl Phase {
     #[must_use]
-    pub fn earlygame(self) -> Earlygame {
+    pub const fn earlygame(self) -> Earlygame {
         Earlygame(self.0)
     }
 
     #[must_use]
-    pub fn endgame(self) -> Endgame {
+    pub const fn endgame(self) -> Endgame {
         Endgame(UPPER - self.0)
     }
 }
@@ -31,7 +31,7 @@ pub fn phase(board: &Board) -> Phase {
 
 macro_rules! impl_stage {
     ($stage: ident) => {
-        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
         pub struct $stage(i32);
 
         impl $stage {

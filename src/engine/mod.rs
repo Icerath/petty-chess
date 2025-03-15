@@ -49,7 +49,7 @@ impl Engine {
         }
     }
 
-    pub(crate) fn is_cancelled(&mut self) -> bool {
+    pub(crate) fn is_cancelled(&self) -> bool {
         self.kill.load(Ordering::Relaxed)
     }
 }

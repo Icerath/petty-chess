@@ -67,12 +67,12 @@ impl Piece {
 
 impl Piece {
     #[must_use]
-    pub fn byte_symbol(self) -> u8 {
+    pub const fn byte_symbol(self) -> u8 {
         [b'p', b'P', b'n', b'N', b'b', b'B', b'r', b'R', b'q', b'Q', b'k', b'K'][self as usize]
     }
 
     #[must_use]
-    pub fn symbol(self) -> char {
+    pub const fn symbol(self) -> char {
         self.byte_symbol() as char
     }
 

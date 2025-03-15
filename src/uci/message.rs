@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum UciMessage {
     Uci,
     Debug(bool),
@@ -19,13 +19,13 @@ pub enum UciMessage {
     Display,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum Registration {
     Later,
     Now { name: Option<String>, code: Option<String> },
 }
 
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub struct GoCommand {
     pub searchmoves: Option<Vec<Move>>,
     pub time_control: TimeControl,
@@ -34,7 +34,7 @@ pub struct GoCommand {
     pub mate: Option<u32>,
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum TimeControl {
     Ponder,
     TimeLeft {

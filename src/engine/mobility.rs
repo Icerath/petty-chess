@@ -34,22 +34,22 @@ const EXPECTED_ROOK_MOVES: u8 = 10;
 // const MAX_QUEEN_MOVES: u8 = 27;
 const EXPECTED_QUEEN_MOVES: u8 = 20;
 
-fn knight_score(num_moves: u8) -> i32 {
+const fn knight_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
     num_moves / MAX_KNIGHT_MOVES as i32
 }
 
-fn bishop_score(num_moves: u8) -> i32 {
+const fn bishop_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
     num_moves / EXPECTED_BISHOP_MOVES as i32
 }
 
-fn rook_score(num_moves: u8) -> i32 {
+const fn rook_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
     num_moves / EXPECTED_ROOK_MOVES as i32
 }
 
-fn queen_score(num_moves: u8) -> i32 {
+const fn queen_score(num_moves: u8) -> i32 {
     let num_moves = num_moves as i32 * 1024;
     num_moves / EXPECTED_QUEEN_MOVES as i32
 }

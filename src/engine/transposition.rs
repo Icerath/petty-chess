@@ -11,7 +11,7 @@ pub struct TranspositionTable<T> {
     pub num_hits: u64,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Nodetype {
     Exact,
     Alpha,

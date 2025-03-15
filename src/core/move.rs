@@ -30,35 +30,35 @@ impl<'de> serde::Deserialize<'de> for Move {
 }
 
 impl Move {
-    pub const NULL: Move = Self(0);
+    pub const NULL: Self = Self(0);
 
     #[must_use]
-    pub fn rank_diff(self) -> u8 {
+    pub const fn rank_diff(self) -> u8 {
         self.from().rank().diff(self.to().rank())
     }
 
     #[must_use]
-    pub fn file_diff(self) -> u8 {
+    pub const fn file_diff(self) -> u8 {
         self.from().file().diff(self.to().file())
     }
 
     #[must_use]
-    pub fn with_flags(self, flags: MoveFlags) -> Self {
+    pub const fn with_flags(self, flags: MoveFlags) -> Self {
         Self::new(self.from(), self.to(), flags)
     }
 
     #[must_use]
-    pub fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
+    pub const fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
         Self(from.u16() | (to.u16() << 6) | ((flags as u16) << 12))
     }
 
     #[must_use]
-    pub fn from(self) -> Square {
+    pub const fn from(self) -> Square {
         unsafe { Square::from_int_unchecked((self.0 & 0b11_1111) as u8) }
     }
 
     #[must_use]
-    pub fn to(self) -> Square {
+    pub const fn to(self) -> Square {
         unsafe { Square::from_int_unchecked(((self.0 >> 6) & 0b11_1111) as u8) }
     }
 
@@ -108,7 +108,7 @@ impl FromStr for Move {
             Some(_) => return Err(()),
             None => MoveFlags::default(),
         };
-        Ok(Move::new(from, to, flags))
+        Ok(Self::new(from, to, flags))
     }
 }
 

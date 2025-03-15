@@ -15,7 +15,7 @@ pub struct Moves {
 
 impl Moves {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self { array: [MaybeUninit::uninit(); 256], len: 0 }
     }
 
@@ -37,13 +37,13 @@ impl Moves {
     }
 
     #[must_use]
-    pub fn as_slice(&self) -> &[Move] {
-        self
+    pub const fn as_slice(&self) -> &[Move] {
+        unsafe { std::slice::from_raw_parts(self.array.as_ptr().cast(), self.len as usize) }
     }
 
     #[must_use]
-    pub fn as_slice_mut(&mut self) -> &mut [Move] {
-        self
+    pub const fn as_slice_mut(&mut self) -> &mut [Move] {
+        unsafe { std::slice::from_raw_parts_mut(self.array.as_mut_ptr().cast(), self.len as usize) }
     }
 
     pub fn retain<F>(&mut self, mut f: F)
@@ -85,13 +85,13 @@ impl Deref for Moves {
     type Target = [Move];
 
     fn deref(&self) -> &Self::Target {
-        unsafe { std::slice::from_raw_parts(self.array.as_ptr().cast(), self.len as usize) }
+        self.as_slice()
     }
 }
 
 impl DerefMut for Moves {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { std::slice::from_raw_parts_mut(self.array.as_mut_ptr().cast(), self.len as usize) }
+        self.as_slice_mut()
     }
 }
 
