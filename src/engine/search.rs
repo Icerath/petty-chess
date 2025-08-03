@@ -78,10 +78,10 @@ impl Engine {
         if self.depth_from_root != 0 && self.seen_position() {
             return (0, None);
         }
-        if self.depth_from_root > 0 {
-            if let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth) {
-                return (eval, None);
-            }
+        if self.depth_from_root > 0
+            && let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth)
+        {
+            return (eval, None);
         }
         if depth == 0 {
             self.only_pv_nodes = false;

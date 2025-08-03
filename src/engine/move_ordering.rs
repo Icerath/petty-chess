@@ -48,15 +48,15 @@ impl Engine {
     ) -> i16 {
         let mut score = 0;
         if self.only_pv_nodes {
-            if let Some(&pv) = self.pv.get(self.depth_from_root as usize) {
-                if pv == mov {
-                    return i16::MAX;
-                }
-            }
-        } else if let Some(killer) = killer {
-            if killer == mov {
+            if let Some(&pv) = self.pv.get(self.depth_from_root as usize)
+                && pv == mov
+            {
                 return i16::MAX;
             }
+        } else if let Some(killer) = killer
+            && killer == mov
+        {
+            return i16::MAX;
         }
         let piece = unsafe { self.board.get_square_kind(mov.from()).unwrap_unchecked() };
 

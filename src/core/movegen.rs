@@ -94,36 +94,35 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
     let can_promote = (board.active_side == White && from.rank().u8() == 6)
         || (board.active_side == Black && from.rank().u8() == 1);
 
-    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(1) {
-        if board.is_side(to, !board.active_side) {
-            if can_promote {
-                moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-            } else {
-                moves.push(Move::new(from, to, MoveFlags::Capture));
-            }
+    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(1)
+        && board.is_side(to, !board.active_side)
+    {
+        if can_promote {
+            moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
+        } else {
+            moves.push(Move::new(from, to, MoveFlags::Capture));
         }
     }
-    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(-1) {
-        if board.is_side(to, !board.active_side) {
-            if can_promote {
-                moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-                moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-            } else {
-                moves.push(Move::new(from, to, MoveFlags::Capture));
-            }
+    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(-1)
+        && board.is_side(to, !board.active_side)
+    {
+        if can_promote {
+            moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
+            moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
+        } else {
+            moves.push(Move::new(from, to, MoveFlags::Capture));
         }
     }
-    if let Some(en_passant) = board.en_passant_target_square {
-        if en_passant.file().diff(from.file()) <= 1
-            && from.rank().i8() == en_passant.rank().i8() - forward
-        {
-            moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
-        }
+    if let Some(en_passant) = board.en_passant_target_square
+        && en_passant.file().diff(from.file()) <= 1
+        && from.rank().i8() == en_passant.rank().i8() - forward
+    {
+        moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
     }
 
     if G::CAPTURES_ONLY {

@@ -74,10 +74,10 @@ impl Board {
             }
         }
 
-        if !self.is_piece_at(Square::H1) {
-            if let dif @ 1.. = 8 - (prev.unwrap().file().u8() + 1) % 8 {
-                buf.push((dif + b'0') as char);
-            }
+        if !self.is_piece_at(Square::H1)
+            && let dif @ 1.. = 8 - (prev.unwrap().file().u8() + 1) % 8
+        {
+            buf.push((dif + b'0') as char);
         }
 
         buf.push(' ');
