@@ -9,7 +9,8 @@ pub struct Board {
     pub can_castle: CanCastle,
     pub en_passant_target_square: Option<Square>,
     pub zobrist: Zobrist,
-    pub pieces: [u64; 8],
+    pub side_pieces: [Bitboard; 2],
+    pub pieces: [Bitboard; 6],
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
 }
@@ -26,7 +27,8 @@ impl Board {
         halfmove_clock: 0,
         fullmove_counter: 1,
         zobrist: Zobrist::DEFAULT,
-        pieces: [0; 8],
+        side_pieces: [Bitboard::EMPTY; 2],
+        pieces: [Bitboard::EMPTY; 6],
     };
 
     pub fn swap_side(&mut self) {
@@ -238,8 +240,7 @@ impl Board {
 
     #[must_use]
     pub fn side_bitboards(&self, side: Side) -> Pieces {
-        let x: [u64; 6] = self.pieces[..6].try_into().unwrap();
-        Pieces(x.map(|bitboard| Bitboard(bitboard) & self[side]))
+        Pieces(self.pieces.map(|pieces| pieces & self[side]))
     }
 
     #[must_use]
@@ -366,13 +367,13 @@ impl Index<PieceKind> for Board {
     type Output = Bitboard;
 
     fn index(&self, kind: PieceKind) -> &Self::Output {
-        Bitboard::from_ref(&self.pieces[kind as usize])
+        &self.pieces[kind as usize]
     }
 }
 
 impl IndexMut<PieceKind> for Board {
     fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
-        Bitboard::from_mut(&mut self.pieces[kind as usize])
+        &mut self.pieces[kind as usize]
     }
 }
 
@@ -380,13 +381,13 @@ impl Index<Side> for Board {
     type Output = Bitboard;
 
     fn index(&self, side: Side) -> &Self::Output {
-        Bitboard::from_ref(&self.pieces[side as usize + 6])
+        &self.side_pieces[side as usize]
     }
 }
 
 impl IndexMut<Side> for Board {
     fn index_mut(&mut self, side: Side) -> &mut Self::Output {
-        Bitboard::from_mut(&mut self.pieces[side as usize + 6])
+        &mut self.side_pieces[side as usize]
     }
 }
 

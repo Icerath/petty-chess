@@ -9,7 +9,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use clap::{Parser, arg};
+use clap::Parser;
 use petty_chess::{
     engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
     prelude::*,
