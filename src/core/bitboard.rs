@@ -76,14 +76,14 @@ impl Bitboard {
         if self.is_empty() {
             return None;
         }
-        Some(unsafe { self.rbitscan_unchecked() })
+        unsafe { Some(self.rbitscan_unchecked()) }
     }
 
     #[must_use]
     /// # Safety
     /// bitboard must not be empty
     pub const unsafe fn rbitscan_unchecked(self) -> Square {
-        unsafe { Square::from_int_unchecked(self.0.leading_zeros() as u8) }
+        unsafe { Self(self.0.reverse_bits()).bitscan_unchecked().invert() }
     }
 
     pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
@@ -257,4 +257,10 @@ fn test_iter() {
 fn test_from_bstr() {
     assert_eq!(Bitboard::from_bstr(&[0; 64]), Bitboard::EMPTY);
     assert_eq!(Bitboard::from_bstr(&[b'X'; 64]), Bitboard::ALL);
+}
+
+#[test]
+fn test_rbitscan() {
+    let bitboard: Bitboard = [Square::A1, Square::A2, Square::G5].into_iter().collect();
+    assert_eq!(bitboard.rbitscan(), Some(Square::G5));
 }
