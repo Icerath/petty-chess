@@ -85,8 +85,7 @@ impl Uci {
         let mut wincr = Duration::ZERO;
         let mut bincr = Duration::ZERO;
         let mut moves_to_go = None;
-        loop {
-            let Some(token) = tokens.bump() else { break };
+        while let Some(token) = tokens.bump() {
             match token.as_str() {
                 "infinite" => command.time_control = TimeControl::Infinite,
                 "ponder" => command.time_control = TimeControl::Ponder,
@@ -152,8 +151,7 @@ impl<'a> Lexer<'a> {
 
     fn moves(&mut self) -> Vec<Move> {
         let mut moves = vec![];
-        loop {
-            let Some(token) = self.bump() else { break };
+        while let Some(token) = self.bump() {
             let Ok(mov) = token.parse() else { continue };
             moves.push(mov);
         }
