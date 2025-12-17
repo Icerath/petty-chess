@@ -21,10 +21,7 @@ pub const fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
 
 #[must_use]
 pub const fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
-    Bitboard(
-        BISHOP_TABLES[sq.usize()].get_attacks(occupancy).0
-            | ROOK_TABLES[sq.usize()].get_attacks(occupancy).0,
-    )
+    Bitboard(rook_attacks(sq, occupancy).0 | bishop_attacks(sq, occupancy).0) 
 }
 
 #[repr(C)]
