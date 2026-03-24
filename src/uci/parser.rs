@@ -223,10 +223,10 @@ fn test_uci_parsing() {
         "go depth wtime 10000 btime 10000 wincr 5000bincr 3000movestogo 5".parse(),
         Ok(Uci::Go(GoCommand {
             time_control: TimeControl::TimeLeft {
-                wtime: Duration::from_millis(10000),
-                btime: Duration::from_millis(10000),
-                wincr: Duration::from_millis(5000),
-                bincr: Duration::from_millis(3000),
+                wtime: Duration::from_secs(10),
+                btime: Duration::from_secs(10),
+                wincr: Duration::from_secs(5),
+                bincr: Duration::from_secs(3),
                 moves_to_go: Some(5),
             },
             ..GoCommand::default()

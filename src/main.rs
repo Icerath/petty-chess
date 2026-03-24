@@ -74,7 +74,7 @@ fn main() {
         } else {
             #[cfg(feature = "tracing")]
             tracing::warn!("Unknown command: '{line}'");
-            eprintln!("Unknown command: '{line}'. Type help for more information.",);
+            eprintln!("Unknown command: '{line}'. Type help for more information.");
         }
     }
 }
