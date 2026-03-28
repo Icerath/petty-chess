@@ -2,9 +2,20 @@ use std::{fmt, str::FromStr};
 
 use crate::prelude::*;
 
-bounded_int! { pub struct Square { 64 } }
-bounded_int! { pub struct Rank { 8 } }
-bounded_int! { pub struct File { 8 } }
+pod_enum! {
+    pub enum Square {
+        A1, B1, C1, D1, E1, F1, G1, H1,
+        A2, B2, C2, D2, E2, F2, G2, H2,
+        A3, B3, C3, D3, E3, F3, G3, H3,
+        A4, B4, C4, D4, E4, F4, G4, H4,
+        A5, B5, C5, D5, E5, F5, G5, H5,
+        A6, B6, C6, D6, E6, F6, G6, H6,
+        A7, B7, C7, D7, E7, F7, G7, H7,
+        A8, B8, C8, D8, E8, F8, G8, H8,
+    }
+}
+pod_enum! { pub enum Rank { _1, _2, _3, _4, _5, _6, _7, _8 } }
+pod_enum! { pub enum File { A, B, C, D, E, F, G, H } }
 
 impl Square {
     pub const ALL: [Self; 64] = {
@@ -19,7 +30,7 @@ impl Square {
 
     #[must_use]
     pub const fn new(rank: Rank, file: File) -> Self {
-        Self(file.u8() + rank.u8() * 8)
+        unsafe { Self::from_int_unchecked(file as u8 + rank as u8 * 8) }
     }
 
     #[must_use]
@@ -35,17 +46,17 @@ impl Square {
              8,  9, 10, 11, 12, 13, 14, 15,
              0,  1,  2,  3,  4,  5,  6,  7,
         ];
-        unsafe { Self::from_int_unchecked(FLIPPED[self.usize()]) }
+        unsafe { Self::from_int_unchecked(FLIPPED[self as usize]) }
     }
 
     #[must_use]
     pub const fn file(self) -> File {
-        File(self.u8() % 8)
+        unsafe { File::from_int_unchecked(self as u8 % 8) }
     }
 
     #[must_use]
     pub const fn rank(self) -> Rank {
-        Rank(self.u8() / 8)
+        unsafe { Rank::from_int_unchecked(self as u8 / 8) }
     }
 
     #[must_use]
@@ -83,7 +94,7 @@ impl Square {
             3, 2, 1, 1, 1, 1, 2, 3, //
             3, 2, 2, 2, 2, 2, 2, 3, //
             3, 3, 3, 3, 3, 3, 3, 3, //
-        ][self.usize()]
+        ][self as usize]
     }
 
     #[must_use]
@@ -106,7 +117,7 @@ impl Square {
             }
             [black_lut, white_lut]
         };
-        LUT[side as usize][self.usize()]
+        LUT[side as usize][self as usize]
     }
 
     #[must_use]
@@ -114,8 +125,8 @@ impl Square {
         let (file, rank) = (self.file(), self.rank());
         let mut mask = Bitboard(file.adjacency_mask().0 | file.mask().0);
         match side {
-            Side::White => mask.0 = mask.0.wrapping_shl(((rank.u8() + 1) * 8) as u32),
-            Side::Black => mask.0 = mask.0.wrapping_shr(((8 - rank.u8()) * 8) as u32),
+            Side::White => mask.0 = mask.0.wrapping_shl(((rank as u8 + 1) * 8) as u32),
+            Side::Black => mask.0 = mask.0.wrapping_shr(((8 - rank as u8) * 8) as u32),
         }
         mask
     }
@@ -125,8 +136,8 @@ impl Square {
         let (file, rank) = (self.file(), self.rank());
         let mask = file.adjacency_mask();
         let mask = match side {
-            Side::White => mask.0.checked_shl((rank.u32() + 1) * 8),
-            Side::Black => mask.0.checked_shr((8 - rank.u32()) * 8),
+            Side::White => mask.0.checked_shl((rank as u32 + 1) * 8),
+            Side::Black => mask.0.checked_shr((8 - rank as u32) * 8),
         };
         match mask {
             Some(mask) => Bitboard(mask),
@@ -145,7 +156,7 @@ impl Square {
             }
             lut
         };
-        LUT[self.usize()]
+        LUT[self as usize]
     }
 
     #[must_use]
@@ -159,7 +170,7 @@ impl Square {
             }
             lut
         };
-        LUT[self.usize()]
+        LUT[self as usize]
     }
 
     const fn compute_nearby(self, distance: u8) -> Bitboard {
@@ -167,7 +178,7 @@ impl Square {
         let mut i = 0;
         while i < 64 {
             let sq = Self::from_int(i).unwrap();
-            if sq.u8() != self.u8() && sq.square_distance(self) <= distance {
+            if sq as u8 != self as u8 && sq.square_distance(self) <= distance {
                 bitboard.insert(sq);
             }
             i += 1;
@@ -177,7 +188,7 @@ impl Square {
 
     #[must_use]
     pub const fn mask(self) -> Bitboard {
-        Bitboard(1 << self.u8())
+        Bitboard(1 << self as u8)
     }
 }
 
@@ -186,18 +197,18 @@ macro_rules! impl_file_rank {
         impl $ty {
             #[must_use]
             pub const fn distance_from_center(self) -> u8 {
-                [3, 2, 1, 0, 0, 1, 2, 3][self.usize()]
+                [3, 2, 1, 0, 0, 1, 2, 3][self as usize]
             }
             #[must_use]
             pub const fn relative_to(self, side: Side) -> Self {
                 match side {
                     Side::White => self,
-                    Side::Black => Self(7 - self.u8()),
+                    Side::Black => self.invert(),
                 }
             }
             #[must_use]
             pub const fn diff(self, other: Self) -> u8 {
-                self.u8().abs_diff(other.u8())
+                (self as u8).abs_diff(other as u8)
             }
 
             #[must_use]
@@ -211,7 +222,7 @@ macro_rules! impl_file_rank {
                     }
                     lut
                 };
-                LUT[self.usize()]
+                LUT[self as usize]
             }
 
             const fn compute_adjacency_mask(self) -> Bitboard {
@@ -237,7 +248,7 @@ impl_file_rank!(File, Rank);
 
 macro_rules! define_file_consts {
     ($name: ident = $num: literal) => {
-        pub const $name: Self = Self($num);
+        pub const $name: Self = unsafe { Self::from_int_unchecked($num) };
     };
     ($($name: ident $num: literal),+) => {
         $(define_file_consts!($name = $num);)+
@@ -252,7 +263,7 @@ impl File {
 
     #[must_use]
     pub const fn mask(self) -> Bitboard {
-        Bitboard(0x0101_0101_0101_0101 << self.u8())
+        Bitboard(0x0101_0101_0101_0101 << self as u8)
     }
 }
 
@@ -261,13 +272,13 @@ impl Rank {
 
     #[must_use]
     pub const fn mask(self) -> Bitboard {
-        Bitboard(0x0000_0000_0000_00FF << (self.u8() * 8))
+        Bitboard(0x0000_0000_0000_00FF << (self as u8 * 8))
     }
 }
 
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Self::SQUARES[self.usize()])
+        write!(f, "{}", Self::SQUARES[*self as usize])
     }
 }
 
@@ -297,15 +308,6 @@ impl FromStr for Square {
     }
 }
 
-macro_rules! define_consts {
-    ($name: ident = $num: literal) => {
-        pub const $name: Self = Self($num);
-    };
-    ($($name: ident $num: literal),+,) => {
-        $(define_consts!($name = $num);)+
-    };
-}
-
 impl Square {
     #[rustfmt::skip]
     pub const SQUARES: [&'static str; 64] = [
@@ -319,20 +321,9 @@ impl Square {
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
     ];
 
-    define_consts!(
-        A1  0, B1  1, C1  2, D1  3, E1  4, F1  5, G1  6, H1  7,
-        A2  8, B2  9, C2 10, D2 11, E2 12, F2 13, G2 14, H2 15,
-        A3 16, B3 17, C3 18, D3 19, E3 20, F3 21, G3 22, H3 23,
-        A4 24, B4 25, C4 26, D4 27, E4 28, F4 29, G4 30, H4 31,
-        A5 32, B5 33, C5 34, D5 35, E5 36, F5 37, G5 38, H5 39,
-        A6 40, B6 41, C6 42, D6 43, E6 44, F6 45, G6 46, H6 47,
-        A7 48, B7 49, C7 50, D7 51, E7 52, F7 53, G7 54, H7 55,
-        A8 56, B8 57, C8 58, D8 59, E8 60, F8 61, G8 62, H8 63,
-    );
-
     #[must_use]
     pub const fn algebraic(self) -> &'static str {
-        Self::SQUARES[self.usize()]
+        Self::SQUARES[self as usize]
     }
 
     #[must_use]
@@ -357,7 +348,7 @@ fn test_manhattan_distance() {
 #[test]
 fn test_square_flip() {
     for sq in Square::ALL {
-        assert_eq!(Square::new(Rank(7 - sq.rank().u8()), sq.file()), sq.flip());
+        assert_eq!(Square::new(sq.rank().invert(), sq.file()), sq.flip());
     }
 }
 

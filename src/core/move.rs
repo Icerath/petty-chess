@@ -49,7 +49,7 @@ impl Move {
 
     #[must_use]
     pub const fn new(from: Square, to: Square, flags: MoveFlags) -> Self {
-        Self(from.u16() | (to.u16() << 6) | ((flags as u16) << 12))
+        Self(from as u16 | ((to as u16) << 6) | ((flags as u16) << 12))
     }
 
     #[must_use]

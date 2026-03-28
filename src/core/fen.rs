@@ -49,20 +49,21 @@ impl Board {
         for sq in Square::ALL {
             if let Some(piece) = self.get_square(sq.flip()) {
                 if let Some(prev) = prev {
-                    if let Some(dif @ 1..) = sq.file().u8().checked_sub((prev.file().u8() + 1) % 8)
+                    if let Some(dif @ 1..) =
+                        (sq.file() as u8).checked_sub((prev.file() as u8 + 1) % 8)
                     {
                         buf.push((dif + b'0') as char);
                     }
-                } else if sq.file().u8() != 0 {
-                    buf.push((sq.file().u8() + b'0') as char);
+                } else if sq.file() as u8 != 0 {
+                    buf.push((sq.file() as u8 + b'0') as char);
                 }
                 buf.push(piece.symbol());
                 prev = Some(sq);
             }
-            if sq != Square::H8 && sq.file().u8() == 7 {
+            if sq != Square::H8 && sq.file() as u8 == 7 {
                 if !self.is_piece_at(sq.flip()) {
                     if let Some(prev) = prev {
-                        if let dif @ 1.. = 8 - (prev.file().u8() + 1) % 8 {
+                        if let dif @ 1.. = 8 - (prev.file() as u8 + 1) % 8 {
                             buf.push((dif + b'0') as char);
                         }
                     } else {
@@ -75,7 +76,7 @@ impl Board {
         }
 
         if !self.is_piece_at(Square::H1)
-            && let dif @ 1.. = 8 - (prev.unwrap().file().u8() + 1) % 8
+            && let dif @ 1.. = 8 - (prev.unwrap().file() as u8 + 1) % 8
         {
             buf.push((dif + b'0') as char);
         }

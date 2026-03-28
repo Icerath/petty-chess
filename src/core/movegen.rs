@@ -37,7 +37,7 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
     }
     pieces[Pawn].for_each(|from| gen_pawn_moves::<G>(board, from, &mut moves));
     pieces[Knight]
-        .for_each(|from| push_squares::<G>(board, from, KNIGHT_MOVES[from.usize()], &mut moves));
+        .for_each(|from| push_squares::<G>(board, from, KNIGHT_MOVES[from as usize], &mut moves));
     pieces[Bishop].for_each(|from| {
         push_squares::<G>(board, from, bishop_attacks(from, all_pieces), &mut moves);
     });
@@ -91,8 +91,8 @@ fn push_squares<G: GenType>(board: &Board, from: Square, mut squares: Bitboard, 
 fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
     let forward = board.active_side.forward();
 
-    let can_promote = (board.active_side == White && from.rank().u8() == 6)
-        || (board.active_side == Black && from.rank().u8() == 1);
+    let can_promote = (board.active_side == White && from.rank() as u8 == 6)
+        || (board.active_side == Black && from.rank() as u8 == 1);
 
     if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(1)
         && board.is_side(to, !board.active_side)
@@ -120,7 +120,7 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
     }
     if let Some(en_passant) = board.en_passant_target_square
         && en_passant.file().diff(from.file()) <= 1
-        && from.rank().i8() == en_passant.rank().i8() - forward
+        && from.rank() as i8 == en_passant.rank() as i8 - forward
     {
         moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
     }
@@ -130,8 +130,8 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
     }
     let to = from.add_int_signed(forward * 8).unwrap();
     if !board.is_piece_at(to) {
-        let can_double_push = (board.active_side == White && from.rank().u8() == 1)
-            || (board.active_side == Black && from.rank().u8() == 6);
+        let can_double_push = (board.active_side == White && from.rank() as u8 == 1)
+            || (board.active_side == Black && from.rank() as u8 == 6);
 
         if !can_promote {
             moves.push(Move::new(from, to, MoveFlags::Quiet));
@@ -152,7 +152,7 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
 }
 
 fn gen_king_moves<G: GenType>(board: &Board, from: Square, checkers: Bitboard, moves: &mut Moves) {
-    push_squares::<G>(board, from, KING_MOVES[from.usize()], moves);
+    push_squares::<G>(board, from, KING_MOVES[from as usize], moves);
     if G::CAPTURES_ONLY || !checkers.is_empty() {
         return;
     }
@@ -193,11 +193,11 @@ impl Board {
         let mut bb = Bitboard::EMPTY;
         let occupancy = self.all_pieces();
         let Some(king) = self.get_king_square(side) else { return bb };
-        bb |= PAWN_ATTACKS[side as usize][king.usize()] & self[Pawn];
-        bb |= KNIGHT_MOVES[king.usize()] & self[Knight];
+        bb |= PAWN_ATTACKS[side as usize][king as usize] & self[Pawn];
+        bb |= KNIGHT_MOVES[king as usize] & self[Knight];
         bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
         bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
-        bb |= KING_MOVES[king.usize()] & (self[King]);
+        bb |= KING_MOVES[king as usize] & (self[King]);
 
         bb & self[!side]
     }
@@ -231,14 +231,14 @@ impl Board {
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| output |= PAWN_ATTACKS[side as usize][from.usize()]);
-        enemy_pieces[Knight].for_each(|from| output |= KNIGHT_MOVES[from.usize()]);
+        enemy_pieces[Pawn].for_each(|from| output |= PAWN_ATTACKS[side as usize][from as usize]);
+        enemy_pieces[Knight].for_each(|from| output |= KNIGHT_MOVES[from as usize]);
         enemy_pieces[Bishop].for_each(|from| output |= bishop_attacks(from, all_pieces));
         enemy_pieces[Rook].for_each(|from| output |= rook_attacks(from, all_pieces));
         enemy_pieces[Queen].for_each(|from| output |= queen_attacks(from, all_pieces));
 
         if let Some(king) = self.inactive_king() {
-            output |= KING_MOVES[king.usize()];
+            output |= KING_MOVES[king as usize];
         }
         output
     }
@@ -247,7 +247,7 @@ impl Board {
     pub fn pawn_attacks(&self, side: Side) -> Bitboard {
         (self.get(side + Pawn))
             .into_iter()
-            .fold(Bitboard::EMPTY, |acc, from| acc | PAWN_ATTACKS[side as usize][from.usize()])
+            .fold(Bitboard::EMPTY, |acc, from| acc | PAWN_ATTACKS[side as usize][from as usize])
     }
 }
 
@@ -259,10 +259,10 @@ const fn compute_pawn_moves() -> [[Bitboard; 64]; 2] {
     while index < 64 {
         let sq = Square::from_int(index as u8).unwrap();
 
-        let num_up = sq.rank().i8();
-        let num_down = 7 - sq.rank().i8();
-        let num_left = sq.file().i8();
-        let num_right = 7 - sq.file().i8();
+        let num_up = sq.rank() as i8;
+        let num_down = 7 - sq.rank() as i8;
+        let num_left = sq.file() as i8;
+        let num_right = 7 - sq.file() as i8;
 
         let up = -8;
         let down = -up;
@@ -295,10 +295,10 @@ const fn compute_knight_moves() -> [Bitboard; 64] {
     while index < 64 {
         let sq = unsafe { Square::from_int_unchecked(index as u8) };
 
-        let num_up = 7 - sq.rank().i8();
-        let num_down = sq.rank().i8();
-        let num_left = sq.file().i8();
-        let num_right = 7 - sq.file().i8();
+        let num_up = 7 - sq.rank() as i8;
+        let num_down = sq.rank() as i8;
+        let num_left = sq.file() as i8;
+        let num_right = 7 - sq.file() as i8;
 
         let mut bitboard = Bitboard(0);
 
@@ -334,14 +334,14 @@ const fn compute_king_moves() -> [Bitboard; 64] {
     while index < 64 {
         let sq = Square::from_int(index as u8).unwrap();
 
-        let num_up = 7 - sq.rank().i8();
-        let num_down = sq.rank().i8();
-        let num_left = sq.file().i8();
-        let num_right = 7 - sq.file().i8();
+        let num_up = 7 - sq.rank() as i8;
+        let num_down = sq.rank() as i8;
+        let num_left = sq.file() as i8;
+        let num_right = 7 - sq.file() as i8;
 
         let mut bitboard = Bitboard(0);
 
-        let up = 8;
+        let up = 8i32;
         let down = -up;
         let left = -1;
         let right = -left;

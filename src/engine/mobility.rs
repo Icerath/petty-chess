@@ -5,7 +5,7 @@ pub fn raw_mobility_eval(board: &Board) -> i32 {
     let mut final_total = 0;
     for side in [White, Black] {
         let knight_total: i32 = (board.get(side + Knight).into_iter())
-            .map(|sq| knight_score((KNIGHT_MOVES[sq.usize()]).count()))
+            .map(|sq| knight_score((KNIGHT_MOVES[sq as usize]).count()))
             .sum();
         let bishop_total: i32 = (board.get(side + Bishop).into_iter())
             .map(|sq| bishop_score((bishop_attacks(sq, occupancy)).count()))

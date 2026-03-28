@@ -30,7 +30,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
 
         // punish pieces in front of enemy pawns
         let mut pawn_attacks = Bitboard::EMPTY;
-        enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq.usize()]);
+        enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq as usize]);
 
         let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
         total -= (pawn_attacks & non_pawns).count() as i32 * 40;
@@ -38,12 +38,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         friendly[Pawn].for_each(|sq| {
             // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
-                total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file().usize()];
+                total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file() as usize];
             }
             // reward passed pawns
             let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
             if is_passed_pawn {
-                let offset = sq.rank().relative_to(side).usize();
+                let offset = sq.rank().relative_to(side) as usize;
                 total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
         });
@@ -90,7 +90,7 @@ fn punish_open_kings(king: Square, friendly: &Pieces, enemy: &Pieces) -> i32 {
         let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
 
         let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-        total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file.usize()];
+        total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file as usize];
     }
     total
 }
@@ -120,7 +120,7 @@ fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
             ];
             let dif_rank = sq.rank().diff(king.rank());
             unsafe { std::hint::assert_unchecked(dif_rank < 3) };
-            total += BONUSES[sq.file().usize()][dif_rank as usize];
+            total += BONUSES[sq.file() as usize][dif_rank as usize];
         });
     total
 }
@@ -128,7 +128,7 @@ fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
 fn reward_outposts(side: Side, friendly: &Pieces, enemy: &Pieces) -> i32 {
     let mut total = 0;
     (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-        if sq.rank().relative_to(side).u8() < 4 {
+        if (sq.rank().relative_to(side) as u8) < 4 {
             return;
         }
         let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
@@ -190,14 +190,14 @@ fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
         let piece = side + piecekind;
         board.get(piece).for_each(|sq| {
             let index = if side.is_white() { sq.flip() } else { sq };
-            mg += square_tables::MG[piecekind as usize][index.usize()];
-            eg += square_tables::EG[piecekind as usize][index.usize()];
+            mg += square_tables::MG[piecekind as usize][index as usize];
+            eg += square_tables::EG[piecekind as usize][index as usize];
         });
     }
     let king_square = board.get_king_square(side).unwrap();
     let index = if side.is_white() { king_square.flip() } else { king_square };
-    mg += square_tables::MG[King as usize][index.usize()];
-    eg += square_tables::EG[King as usize][index.usize()];
+    mg += square_tables::MG[King as usize][index as usize];
+    eg += square_tables::EG[King as usize][index as usize];
     [mg, eg]
 }
 
@@ -220,8 +220,8 @@ pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
 #[must_use]
 pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     let index = if piece.is_white() { sq.flip() } else { sq };
-    let mg = square_tables::MG[piece.kind() as usize][index.usize()];
-    let eg = square_tables::EG[piece.kind() as usize][index.usize()];
+    let mg = square_tables::MG[piece.kind() as usize][index as usize];
+    let eg = square_tables::EG[piece.kind() as usize][index as usize];
 
     mg * phase.earlygame() + eg * phase.endgame()
 }

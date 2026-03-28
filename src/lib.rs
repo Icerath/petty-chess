@@ -1,3 +1,5 @@
+#![feature(macro_metavar_expr)]
+
 pub mod core;
 pub mod engine;
 pub mod uci;
