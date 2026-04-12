@@ -77,15 +77,13 @@ impl Board {
     }
 }
 
-fn push_squares<G: GenType>(board: &Board, from: Square, mut squares: Bitboard, moves: &mut Moves) {
-    squares &= !board[board.active_side];
-    squares.for_each(|sq| {
-        if board.is_piece_at(sq) {
-            moves.push(Move::new(from, sq, MoveFlags::Capture));
-        } else if !G::CAPTURES_ONLY {
-            moves.push(Move::new(from, sq, MoveFlags::Quiet));
-        }
-    });
+fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, moves: &mut Moves) {
+    let captures = squares & board[!board.active_side];
+    captures.for_each(|sq| moves.push(Move::new(from, sq, MoveFlags::Capture)));
+    if !G::CAPTURES_ONLY {
+        let noncaptures = squares & !board[!board.active_side] & !board[board.active_side];
+        noncaptures.for_each(|sq| moves.push(Move::new(from, sq, MoveFlags::Quiet)));
+    }
 }
 
 fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
