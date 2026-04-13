@@ -66,6 +66,12 @@ impl Square {
     }
 
     #[must_use]
+    #[expect(clippy::missing_safety_doc, reason = "lazy")]
+    pub const unsafe fn add_rank_unchecked(self, rank: i8) -> Self {
+        unsafe { self.add_int_signed_unchecked(rank * 8) }
+    }
+
+    #[must_use]
     pub const fn add_file(self, file: i8) -> Option<Self> {
         let Some(_) = self.file().add_int_signed(file) else { return None };
         Some(unsafe { self.add_int_signed_unchecked(file) })

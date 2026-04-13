@@ -35,7 +35,10 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
     if checkers.count() >= 2 {
         return moves;
     }
-    pieces[Pawn].for_each(|from| gen_pawn_moves::<G>(board, from, &mut moves));
+    pieces[Pawn].for_each(|from| gen_pawn_moves(board, from, &mut moves));
+    if !G::CAPTURES_ONLY {
+        gen_pawn_push(board, &mut moves);
+    }
     pieces[Knight]
         .for_each(|from| push_squares::<G>(board, from, KNIGHT_MOVES[from as usize], &mut moves));
     pieces[Bishop].for_each(|from| {
@@ -48,6 +51,47 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
         push_squares::<G>(board, from, queen_attacks(from, all_pieces), &mut moves);
     });
     moves
+}
+
+fn gen_pawn_push(board: &Board, moves: &mut Moves) {
+    let blocked_pawns = board.all_pieces().shift_forward(!board.active_side);
+    let pawns = board[Pawn] & board[board.active_side] & !blocked_pawns;
+    let promoting_row = (if board.active_side.is_white() { Rank::_7 } else { Rank::_2 }).mask();
+    let double_move_row = (if board.active_side.is_white() { Rank::_2 } else { Rank::_7 }).mask();
+    let promoting_pawns = pawns & promoting_row;
+    let nonpromoting_pawns = pawns & !promoting_row;
+
+    promoting_pawns.for_each(|sq| {
+        for flags in [
+            MoveFlags::QueenPromotion,
+            MoveFlags::KnightPromotion,
+            MoveFlags::BishopPromotion,
+            MoveFlags::RookPromotion,
+        ] {
+            moves.push(Move::new(
+                sq,
+                unsafe { sq.add_rank_unchecked(board.active_side.forward()) },
+                flags,
+            ));
+        }
+    });
+
+    let pawns2 = pawns & double_move_row & !blocked_pawns.shift_forward(!board.active_side);
+    pawns2.for_each(|sq| {
+        moves.push(Move::new(
+            sq,
+            unsafe { sq.add_rank_unchecked(board.active_side.forward() * 2) },
+            MoveFlags::DoublePawnPush,
+        ));
+    });
+
+    nonpromoting_pawns.for_each(|sq| {
+        moves.push(Move::new(
+            sq,
+            unsafe { sq.add_rank_unchecked(board.active_side.forward()) },
+            MoveFlags::Quiet,
+        ));
+    });
 }
 
 impl Board {
@@ -86,7 +130,7 @@ fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, move
     }
 }
 
-fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
+fn gen_pawn_moves(board: &Board, from: Square, moves: &mut Moves) {
     let forward = board.active_side.forward();
 
     let can_promote = (board.active_side == White && from.rank() as u8 == 6)
@@ -121,31 +165,6 @@ fn gen_pawn_moves<G: GenType>(board: &Board, from: Square, moves: &mut Moves) {
         && from.rank() as i8 == en_passant.rank() as i8 - forward
     {
         moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
-    }
-
-    if G::CAPTURES_ONLY {
-        return;
-    }
-    let to = from.add_int_signed(forward * 8).unwrap();
-    if !board.is_piece_at(to) {
-        let can_double_push = (board.active_side == White && from.rank() as u8 == 1)
-            || (board.active_side == Black && from.rank() as u8 == 6);
-
-        if !can_promote {
-            moves.push(Move::new(from, to, MoveFlags::Quiet));
-        }
-
-        if can_double_push {
-            let to = from.add_int_signed(forward * 16).unwrap();
-            if !board.is_piece_at(to) {
-                moves.push(Move::new(from, to, MoveFlags::DoublePawnPush));
-            }
-        } else if can_promote {
-            moves.push(Move::new(from, to, MoveFlags::QueenPromotion));
-            moves.push(Move::new(from, to, MoveFlags::KnightPromotion));
-            moves.push(Move::new(from, to, MoveFlags::BishopPromotion));
-            moves.push(Move::new(from, to, MoveFlags::RookPromotion));
-        }
     }
 }
 

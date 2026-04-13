@@ -111,6 +111,14 @@ impl Bitboard {
     pub const fn from_mut(int: &mut u64) -> &mut Self {
         unsafe { &mut *std::ptr::from_mut(int).cast::<Self>() }
     }
+
+    #[must_use]
+    pub const fn shift_forward(self, side: Side) -> Self {
+        match side {
+            Side::White => Self(self.0 << 8),
+            Side::Black => Self(self.0 >> 8),
+        }
+    }
 }
 
 impl Not for Bitboard {
