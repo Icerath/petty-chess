@@ -186,7 +186,7 @@ impl Application {
 
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
-        let total = perft(&self.engine.board, depth);
+        let total = perft(&mut self.engine.board, depth);
         eprintln!("\nTime taken: {:?}", start.elapsed());
         eprintln!("Nodes searched: {total}");
     }
@@ -243,7 +243,7 @@ impl Application {
     }
 }
 
-fn perft(board: &Board, depth: u8) -> u64 {
+fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.legal_moves();
 

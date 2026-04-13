@@ -5,11 +5,11 @@ use crate::{
 
 impl Board {
     #[must_use]
-    pub fn run_perft(&self, depth: u8) -> u64 {
+    pub fn run_perft(&mut self, depth: u8) -> u64 {
         self.run_perft_with_table(&mut TranspositionTable::default(), depth)
     }
 
-    pub fn run_perft_with_table(&self, table: &mut TranspositionTable<u64>, depth: u8) -> u64 {
+    pub fn run_perft_with_table(&mut self, table: &mut TranspositionTable<u64>, depth: u8) -> u64 {
         if depth == 0 {
             return 1;
         } else if let Some(entry) = table.get_entry(self, 0, 0, depth)

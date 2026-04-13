@@ -18,7 +18,7 @@ impl GenType for FullGen {
     const CAPTURES_ONLY: bool = false;
 }
 
-fn gen_legal_moves<G: GenType>(board: &Board) -> Moves {
+fn gen_legal_moves<G: GenType>(board: &mut Board) -> Moves {
     let mut moves = gen_pseudolegal_moves::<G>(board);
     moves.retain(|mov| board.is_legal(*mov));
     moves
@@ -57,7 +57,7 @@ impl Board {
     }
 
     #[must_use]
-    pub fn legal_moves(&self) -> Moves {
+    pub fn legal_moves(&mut self) -> Moves {
         gen_legal_moves::<FullGen>(self)
     }
 
@@ -67,13 +67,13 @@ impl Board {
     }
 
     #[must_use]
-    pub fn capture_moves(&self) -> Moves {
+    pub fn capture_moves(&mut self) -> Moves {
         gen_legal_moves::<CapturesOnly>(self)
     }
 
     #[must_use]
-    pub fn is_valid(&self, mov: Move) -> bool {
-        self.legal_moves().contains(&mov) && self.is_legal(mov)
+    pub fn is_valid(&mut self, mov: Move) -> bool {
+        self.pseudolegal_moves().contains(&mov) && self.is_legal(mov)
     }
 }
 
@@ -204,7 +204,7 @@ impl Board {
     /// Checks whether a move generated from `Board::pseudolegal_moves` is legal.
     ///
     /// Will not check if the move is entirely valid, use `Board::is_valid` instead
-    pub fn is_legal(&self, mov: Move) -> bool {
+    pub fn is_legal(&mut self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
             let map = self.gen_attack_map();
             let squares = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {
