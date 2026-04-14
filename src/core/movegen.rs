@@ -35,6 +35,7 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
     if checkers.count() >= 2 {
         return moves;
     }
+    gen_pawn_captures(board, &mut moves);
     pieces[Pawn].for_each(|from| gen_pawn_moves(board, from, &mut moves));
     if !G::CAPTURES_ONLY {
         gen_pawn_push(board, &mut moves);
@@ -51,6 +52,34 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
         push_squares::<G>(board, from, queen_attacks(from, all_pieces), &mut moves);
     });
     moves
+}
+
+fn gen_pawn_captures(board: &Board, moves: &mut Moves) {
+    let promoting_row = (if board.active_side.is_white() { Rank::_7 } else { Rank::_2 }).mask();
+    let pawns = board[Pawn] & board[board.active_side];
+    let enemy_pieces = board[!board.active_side].shift_back(board.active_side);
+    (enemy_pieces.shift_left() & pawns & promoting_row).for_each(|sq| {
+        let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).add_int_unchecked(1) };
+        moves.push(Move::new(sq, to, MoveFlags::QueenPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::KnightPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::BishopPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::RookPromotionCapture));
+    });
+    (enemy_pieces.shift_right() & pawns & promoting_row).for_each(|sq| {
+        let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).sub_int_unchecked(1) };
+        moves.push(Move::new(sq, to, MoveFlags::QueenPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::KnightPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::BishopPromotionCapture));
+        moves.push(Move::new(sq, to, MoveFlags::RookPromotionCapture));
+    });
+    (enemy_pieces.shift_left() & pawns & !promoting_row).for_each(|sq| {
+        let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).add_int_unchecked(1) };
+        moves.push(Move::new(sq, to, MoveFlags::Capture));
+    });
+    (enemy_pieces.shift_right() & pawns & !promoting_row).for_each(|sq| {
+        let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).sub_int_unchecked(1) };
+        moves.push(Move::new(sq, to, MoveFlags::Capture));
+    });
 }
 
 fn gen_pawn_push(board: &Board, moves: &mut Moves) {
@@ -133,33 +162,6 @@ fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, move
 fn gen_pawn_moves(board: &Board, from: Square, moves: &mut Moves) {
     let forward = board.active_side.forward();
 
-    let can_promote = (board.active_side == White && from.rank() as u8 == 6)
-        || (board.active_side == Black && from.rank() as u8 == 1);
-
-    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(1)
-        && board.is_side(to, !board.active_side)
-    {
-        if can_promote {
-            moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-        } else {
-            moves.push(Move::new(from, to, MoveFlags::Capture));
-        }
-    }
-    if let Some(to) = from.add_int_signed(forward * 8).unwrap().add_file(-1)
-        && board.is_side(to, !board.active_side)
-    {
-        if can_promote {
-            moves.push(Move::new(from, to, MoveFlags::KnightPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::QueenPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::BishopPromotionCapture));
-            moves.push(Move::new(from, to, MoveFlags::RookPromotionCapture));
-        } else {
-            moves.push(Move::new(from, to, MoveFlags::Capture));
-        }
-    }
     if let Some(en_passant) = board.en_passant_target_square
         && en_passant.file().diff(from.file()) <= 1
         && from.rank() as i8 == en_passant.rank() as i8 - forward

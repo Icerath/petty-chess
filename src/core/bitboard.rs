@@ -119,6 +119,24 @@ impl Bitboard {
             Side::Black => Self(self.0 >> 8),
         }
     }
+
+    #[must_use]
+    pub const fn shift_back(self, side: Side) -> Self {
+        match side {
+            Side::White => self.shift_forward(Side::Black),
+            Side::Black => self.shift_forward(Side::White),
+        }
+    }
+
+    #[must_use]
+    pub const fn shift_left(self) -> Self {
+        Self(Self((self.0 & !File::A.mask().0) >> 1).0)
+    }
+
+    #[must_use]
+    pub const fn shift_right(self) -> Self {
+        Self(Self((self.0 & !File::H.mask().0) << 1).0)
+    }
 }
 
 impl Not for Bitboard {
@@ -271,4 +289,16 @@ fn test_from_bstr() {
 fn test_rbitscan() {
     let bitboard: Bitboard = [Square::A1, Square::A2, Square::G5].into_iter().collect();
     assert_eq!(bitboard.rbitscan(), Some(Square::G5));
+}
+
+#[test]
+fn test_shift_forward() {
+    assert!((Bitboard::ALL.shift_forward(Side::White) & Rank::_1.mask()).is_empty());
+    assert_eq!((Bitboard::ALL.shift_forward(Side::White) | Rank::_1.mask()), Bitboard::ALL);
+}
+
+#[test]
+fn test_shift_left() {
+    assert!((Bitboard::ALL.shift_left() & File::H.mask()).is_empty());
+    assert_eq!((Bitboard::ALL.shift_left() | File::H.mask()), Bitboard::ALL);
 }
