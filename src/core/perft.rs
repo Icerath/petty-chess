@@ -17,12 +17,13 @@ impl Board {
         {
             return entry.extra;
         }
-        if depth == 1 {
-            return self.legal_moves().len() as u64;
-        }
         let mut count = 0;
-        for mov in self.legal_moves() {
-            count += self.with_move(mov).run_perft_with_table(table, depth - 1);
+        if depth == 1 {
+            count = self.legal_moves().len() as u64;
+        } else {
+            for mov in self.legal_moves() {
+                count += self.with_move(mov).run_perft_with_table(table, depth - 1);
+            }
         }
         table.insert(self, &[], depth, 0, Nodetype::Exact, count);
         count
