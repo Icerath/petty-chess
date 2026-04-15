@@ -36,7 +36,6 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
         return moves;
     }
     gen_pawn_captures(board, &mut moves);
-    pieces[Pawn].for_each(|from| gen_pawn_moves(board, from, &mut moves));
     if !G::CAPTURES_ONLY {
         gen_pawn_push(board, &mut moves);
     }
@@ -80,6 +79,14 @@ fn gen_pawn_captures(board: &Board, moves: &mut Moves) {
         let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).sub_int_unchecked(1) };
         moves.push(Move::new(sq, to, MoveFlags::Capture));
     });
+    if let Some(en_passant) = board.en_passant_target_square {
+        let en_passant_pawns = (en_passant.mask().shift_left() | en_passant.mask().shift_right())
+            .shift_back(board.active_side)
+            & pawns;
+        en_passant_pawns.for_each(|sq| {
+            moves.push(Move::new(sq, en_passant, MoveFlags::EnPassant));
+        });
+    }
 }
 
 fn gen_pawn_push(board: &Board, moves: &mut Moves) {
@@ -156,17 +163,6 @@ fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, move
     if !G::CAPTURES_ONLY {
         let noncaptures = squares & !board[!board.active_side] & !board[board.active_side];
         noncaptures.for_each(|sq| moves.push(Move::new(from, sq, MoveFlags::Quiet)));
-    }
-}
-
-fn gen_pawn_moves(board: &Board, from: Square, moves: &mut Moves) {
-    let forward = board.active_side.forward();
-
-    if let Some(en_passant) = board.en_passant_target_square
-        && en_passant.file().diff(from.file()) <= 1
-        && from.rank() as i8 == en_passant.rank() as i8 - forward
-    {
-        moves.push(Move::new(from, en_passant, MoveFlags::EnPassant));
     }
 }
 
