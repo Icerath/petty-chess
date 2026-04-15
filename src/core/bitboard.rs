@@ -114,9 +114,14 @@ impl Bitboard {
 
     #[must_use]
     pub const fn shift_forward(self, side: Side) -> Self {
+        self.shift_forward_n(side, 1)
+    }
+
+    #[must_use]
+    pub const fn shift_forward_n(self, side: Side, n: u8) -> Self {
         match side {
-            Side::White => Self(self.0 << 8),
-            Side::Black => Self(self.0 >> 8),
+            Side::White => Self(self.0 << (8 * n)),
+            Side::Black => Self(self.0 >> (8 * n)),
         }
     }
 

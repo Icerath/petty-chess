@@ -127,15 +127,14 @@ fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
 
 fn reward_outposts(side: Side, friendly: &Pieces, enemy: &Pieces) -> i32 {
     let mut total = 0;
-    (friendly[Knight] | friendly[Bishop]).for_each(|sq| {
-        if (sq.rank().relative_to(side) as u8) < 4 {
-            return;
-        }
-        let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
-        if is_outpost {
-            total += 20;
-        }
-    });
+    (Bitboard::ALL.shift_forward_n(side, 4) & (friendly[Knight] | friendly[Bishop])).for_each(
+        |sq| {
+            let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
+            if is_outpost {
+                total += 20;
+            }
+        },
+    );
     total
 }
 
