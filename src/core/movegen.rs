@@ -260,9 +260,8 @@ impl Board {
 
     #[must_use]
     pub fn pawn_attacks(&self, side: Side) -> Bitboard {
-        (self.get(side + Pawn))
-            .into_iter()
-            .fold(Bitboard::EMPTY, |acc, from| acc | PAWN_ATTACKS[side as usize][from as usize])
+        let pawns = (self[side] & self[Pawn]).shift_forward(side);
+        pawns.shift_left() | pawns.shift_right()
     }
 }
 
