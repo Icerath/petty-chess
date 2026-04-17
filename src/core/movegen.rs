@@ -223,6 +223,7 @@ impl Board {
     /// Will not check if the move is entirely valid, use `Board::is_valid` instead
     pub fn is_legal(&mut self, mov: Move) -> bool {
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+            std::hint::cold_path();
             let map = self.gen_attack_map();
             let squares = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {
                 (Side::White, true) => [Square::F1, Square::G1],
@@ -254,6 +255,9 @@ impl Board {
 
         if let Some(king) = self.inactive_king() {
             output |= KING_MOVES[king as usize];
+        } else {
+            std::hint::cold_path();
+
         }
         output
     }
