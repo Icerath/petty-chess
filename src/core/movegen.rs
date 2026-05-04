@@ -257,7 +257,6 @@ impl Board {
             output |= KING_MOVES[king as usize];
         } else {
             std::hint::cold_path();
-
         }
         output
     }
