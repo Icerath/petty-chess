@@ -86,12 +86,6 @@ impl Bitboard {
         unsafe { Self(self.0.reverse_bits()).bitscan_unchecked().invert() }
     }
 
-    pub fn for_each<F: FnMut(Square)>(mut self, mut f: F) {
-        while !self.is_empty() {
-            f(unsafe { self.bitscan_pop_unchecked() });
-        }
-    }
-
     #[must_use]
     pub const fn count(self) -> u8 {
         self.0.count_ones() as u8
@@ -246,13 +240,6 @@ impl Iterator for IntoIter {
 
     fn count(self) -> usize {
         self.len()
-    }
-
-    fn for_each<F>(self, f: F)
-    where
-        F: FnMut(Self::Item),
-    {
-        self.0.for_each(f);
     }
 
     fn fold<B, F>(mut self, init: B, mut f: F) -> B

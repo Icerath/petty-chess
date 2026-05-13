@@ -234,9 +234,9 @@ impl Application {
         println!("Fen: {}", board.to_fen());
         println!("Key: {:?}", board.zobrist);
         print!("Checkers: ");
-        board.gen_checkers(board.active_side).for_each(|sq| {
+        for sq in board.gen_checkers(board.active_side) {
             print!(" {sq}");
-        });
+        }
         println!();
         println!("Endgame: {:?}", phase(board).endgame().as_float());
         println!("Direct Eval: {:?}", raw_evaluation(board));

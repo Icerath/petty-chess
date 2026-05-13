@@ -39,17 +39,18 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
     if !G::CAPTURES_ONLY {
         gen_pawn_push(board, &mut moves);
     }
-    pieces[Knight]
-        .for_each(|from| push_squares::<G>(board, from, KNIGHT_MOVES[from as usize], &mut moves));
-    pieces[Bishop].for_each(|from| {
+    for from in pieces[Knight] {
+        push_squares::<G>(board, from, KNIGHT_MOVES[from as usize], &mut moves);
+    }
+    for from in pieces[Bishop] {
         push_squares::<G>(board, from, bishop_attacks(from, all_pieces), &mut moves);
-    });
-    pieces[Rook].for_each(|from| {
+    }
+    for from in pieces[Rook] {
         push_squares::<G>(board, from, rook_attacks(from, all_pieces), &mut moves);
-    });
-    pieces[Queen].for_each(|from| {
+    }
+    for from in pieces[Queen] {
         push_squares::<G>(board, from, queen_attacks(from, all_pieces), &mut moves);
-    });
+    }
     moves
 }
 
@@ -57,35 +58,35 @@ fn gen_pawn_captures(board: &Board, moves: &mut Moves) {
     let promoting_row = (if board.active_side.is_white() { Rank::_7 } else { Rank::_2 }).mask();
     let pawns = board[Pawn] & board[board.active_side];
     let enemy_pieces = board[!board.active_side].shift_back(board.active_side);
-    (enemy_pieces.shift_left() & pawns & promoting_row).for_each(|sq| {
+    for sq in enemy_pieces.shift_left() & pawns & promoting_row {
         let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).add_int_unchecked(1) };
         moves.push(Move::new(sq, to, MoveFlags::QueenPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::KnightPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::BishopPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::RookPromotionCapture));
-    });
-    (enemy_pieces.shift_right() & pawns & promoting_row).for_each(|sq| {
+    }
+    for sq in enemy_pieces.shift_right() & pawns & promoting_row {
         let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).sub_int_unchecked(1) };
         moves.push(Move::new(sq, to, MoveFlags::QueenPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::KnightPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::BishopPromotionCapture));
         moves.push(Move::new(sq, to, MoveFlags::RookPromotionCapture));
-    });
-    (enemy_pieces.shift_left() & pawns & !promoting_row).for_each(|sq| {
+    }
+    for sq in enemy_pieces.shift_left() & pawns & !promoting_row {
         let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).add_int_unchecked(1) };
         moves.push(Move::new(sq, to, MoveFlags::Capture));
-    });
-    (enemy_pieces.shift_right() & pawns & !promoting_row).for_each(|sq| {
+    }
+    for sq in enemy_pieces.shift_right() & pawns & !promoting_row {
         let to = unsafe { sq.add_rank_unchecked(board.active_side.forward()).sub_int_unchecked(1) };
         moves.push(Move::new(sq, to, MoveFlags::Capture));
-    });
+    }
     if let Some(en_passant) = board.en_passant_target_square {
         let en_passant_pawns = (en_passant.mask().shift_left() | en_passant.mask().shift_right())
             .shift_back(board.active_side)
             & pawns;
-        en_passant_pawns.for_each(|sq| {
+        for sq in en_passant_pawns {
             moves.push(Move::new(sq, en_passant, MoveFlags::EnPassant));
-        });
+        }
     }
 }
 
@@ -97,7 +98,7 @@ fn gen_pawn_push(board: &Board, moves: &mut Moves) {
     let promoting_pawns = pawns & promoting_row;
     let nonpromoting_pawns = pawns & !promoting_row;
 
-    promoting_pawns.for_each(|sq| {
+    for sq in promoting_pawns {
         for flags in [
             MoveFlags::QueenPromotion,
             MoveFlags::KnightPromotion,
@@ -110,24 +111,24 @@ fn gen_pawn_push(board: &Board, moves: &mut Moves) {
                 flags,
             ));
         }
-    });
+    }
 
     let pawns2 = pawns & double_move_row & !blocked_pawns.shift_forward(!board.active_side);
-    pawns2.for_each(|sq| {
+    for sq in pawns2 {
         moves.push(Move::new(
             sq,
             unsafe { sq.add_rank_unchecked(board.active_side.forward() * 2) },
             MoveFlags::DoublePawnPush,
         ));
-    });
+    }
 
-    nonpromoting_pawns.for_each(|sq| {
+    for sq in nonpromoting_pawns {
         moves.push(Move::new(
             sq,
             unsafe { sq.add_rank_unchecked(board.active_side.forward()) },
             MoveFlags::Quiet,
         ));
-    });
+    }
 }
 
 impl Board {
@@ -159,10 +160,14 @@ impl Board {
 
 fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, moves: &mut Moves) {
     let captures = squares & board[!board.active_side];
-    captures.for_each(|sq| moves.push(Move::new(from, sq, MoveFlags::Capture)));
+    for sq in captures {
+        moves.push(Move::new(from, sq, MoveFlags::Capture));
+    }
     if !G::CAPTURES_ONLY {
         let noncaptures = squares & !board[!board.active_side] & !board[board.active_side];
-        noncaptures.for_each(|sq| moves.push(Move::new(from, sq, MoveFlags::Quiet)));
+        for sq in noncaptures {
+            moves.push(Move::new(from, sq, MoveFlags::Quiet));
+        }
     }
 }
 
@@ -247,11 +252,21 @@ impl Board {
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
 
-        enemy_pieces[Pawn].for_each(|from| output |= PAWN_ATTACKS[side as usize][from as usize]);
-        enemy_pieces[Knight].for_each(|from| output |= KNIGHT_MOVES[from as usize]);
-        enemy_pieces[Bishop].for_each(|from| output |= bishop_attacks(from, all_pieces));
-        enemy_pieces[Rook].for_each(|from| output |= rook_attacks(from, all_pieces));
-        enemy_pieces[Queen].for_each(|from| output |= queen_attacks(from, all_pieces));
+        for from in enemy_pieces[Pawn] {
+            output |= PAWN_ATTACKS[side as usize][from as usize];
+        }
+        for from in enemy_pieces[Knight] {
+            output |= KNIGHT_MOVES[from as usize];
+        }
+        for from in enemy_pieces[Bishop] {
+            output |= bishop_attacks(from, all_pieces);
+        }
+        for from in enemy_pieces[Rook] {
+            output |= rook_attacks(from, all_pieces);
+        }
+        for from in enemy_pieces[Queen] {
+            output |= queen_attacks(from, all_pieces);
+        }
 
         if let Some(king) = self.inactive_king() {
             output |= KING_MOVES[king as usize];

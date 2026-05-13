@@ -30,12 +30,14 @@ pub fn raw_evaluation(board: &Board) -> i32 {
 
         // punish pieces in front of enemy pawns
         let mut pawn_attacks = Bitboard::EMPTY;
-        enemy[Pawn].for_each(|sq| pawn_attacks |= PAWN_ATTACKS[!side as usize][sq as usize]);
+        for sq in enemy[Pawn] {
+            pawn_attacks |= PAWN_ATTACKS[!side as usize][sq as usize];
+        }
 
         let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
         total -= (pawn_attacks & non_pawns).count() as i32 * 40;
 
-        friendly[Pawn].for_each(|sq| {
+        for sq in friendly[Pawn] {
             // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
                 total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file() as usize];
@@ -46,7 +48,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 let offset = sq.rank().relative_to(side) as usize;
                 total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
-        });
+        }
 
         let [mg, eg] = material_and_square_table_values(board, side);
         earlygame += mg;
@@ -106,47 +108,46 @@ fn punish_double_pawns(friendly: &Pieces) -> i32 {
 
 fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
     let mut total = 0;
-    (friendly[Pawn] & king.nearby2() & (king.file().adjacency_mask() | king.file().mask()))
-        .for_each(|sq| {
-            const BONUSES: [[i32; 3]; 8] = [
-                [18, 18, 14],
-                [15, 15, 10],
-                [13, 13, 9],
-                [8, 8, 4],
-                [8, 8, 4],
-                [13, 13, 9],
-                [15, 15, 10],
-                [18, 18, 14],
-            ];
-            let dif_rank = sq.rank().diff(king.rank());
-            unsafe { std::hint::assert_unchecked(dif_rank < 3) };
-            total += BONUSES[sq.file() as usize][dif_rank as usize];
-        });
+    for sq in friendly[Pawn] & king.nearby2() & (king.file().adjacency_mask() | king.file().mask())
+    {
+        const BONUSES: [[i32; 3]; 8] = [
+            [18, 18, 14],
+            [15, 15, 10],
+            [13, 13, 9],
+            [8, 8, 4],
+            [8, 8, 4],
+            [13, 13, 9],
+            [15, 15, 10],
+            [18, 18, 14],
+        ];
+        let dif_rank = sq.rank().diff(king.rank());
+        unsafe { std::hint::assert_unchecked(dif_rank < 3) };
+        total += BONUSES[sq.file() as usize][dif_rank as usize];
+    }
     total
 }
 
 fn reward_outposts(side: Side, friendly: &Pieces, enemy: &Pieces) -> i32 {
     let mut total = 0;
-    (Bitboard::ALL.shift_forward_n(side, 4) & (friendly[Knight] | friendly[Bishop])).for_each(
-        |sq| {
-            let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
-            if is_outpost {
-                total += 20;
-            }
-        },
-    );
+    for sq in Bitboard::ALL.shift_forward_n(side, 4) & (friendly[Knight] | friendly[Bishop]) {
+        let is_outpost = (sq.outpost_mask(side) & enemy[Pawn]).is_empty();
+        if is_outpost {
+            total += 20;
+        }
+    }
+
     total
 }
 
 fn reward_rooks_on_open_file(friendly: &Pieces, board: &Board) -> i32 {
     let mut total = 0;
-    friendly[Rook].for_each(|sq| {
+    for sq in friendly[Rook] {
         if (board[Pawn] & sq.file().mask()).is_empty() {
             total += 20;
         } else if (friendly[Pawn] & (sq.file().mask())).is_empty() {
             total += 10;
         }
-    });
+    }
     total
 }
 
@@ -187,11 +188,11 @@ fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
     let mut eg = 0;
     for piecekind in [Pawn, Knight, Bishop, Rook, Queen] {
         let piece = side + piecekind;
-        board.get(piece).for_each(|sq| {
+        for sq in board.get(piece) {
             let index = if side.is_white() { sq.flip() } else { sq };
             mg += square_tables::MG[piecekind as usize][index as usize];
             eg += square_tables::EG[piecekind as usize][index as usize];
-        });
+        }
     }
     let king_square = board.get_king_square(side).unwrap();
     let index = if side.is_white() { king_square.flip() } else { king_square };
