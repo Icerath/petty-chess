@@ -104,14 +104,6 @@ impl Engine {
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
-                self.transposition_table.insert(
-                    &self.board,
-                    &self.seen_positions,
-                    depth - 2,
-                    beta,
-                    Nodetype::Beta,
-                    None,
-                );
                 return beta;
             }
         }
