@@ -18,7 +18,6 @@ impl Engine {
         let mut best_move = *self.board.legal_moves().first().unwrap_or(&Move::NULL);
 
         for depth in 1.. {
-            self.only_pv_nodes = true;
             let mut new_pv = Moves::new();
             let score = self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv);
             self.total_nodes -= 1;
@@ -92,7 +91,6 @@ impl Engine {
             }
         }
         if depth == 0 {
-            self.only_pv_nodes = false;
             return self.negamax_search_all_captures(alpha, beta);
         }
         self.total_nodes += 1;

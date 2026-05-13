@@ -31,7 +31,6 @@ pub struct Engine {
     pub depth_from_root: u16,
     pub total_nodes: u64,
     pub transposition_table: TranspositionTable<Option<Move>>,
-    pub only_pv_nodes: bool,
     pub killer: Vec<Option<Move>>,
 }
 
@@ -47,7 +46,6 @@ impl Engine {
             seen_positions: vec![],
             total_nodes: 0,
             transposition_table: TranspositionTable::default(),
-            only_pv_nodes: false,
             killer: vec![],
         }
     }
