@@ -10,13 +10,13 @@ pod_enum! {
 
 impl Side {
     #[must_use]
-    pub fn is_black(self) -> bool {
-        self == Self::Black
+    pub const fn is_black(self) -> bool {
+        matches!(self, Self::Black)
     }
 
     #[must_use]
-    pub fn is_white(self) -> bool {
-        self == Self::White
+    pub const fn is_white(self) -> bool {
+        matches!(self, Self::White)
     }
 
     #[must_use]

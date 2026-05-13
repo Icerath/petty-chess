@@ -1,6 +1,6 @@
 use std::{hint::assert_unchecked, mem::MaybeUninit};
 
-use super::evaluation::{abs_piece_square_value, abs_piece_value};
+use super::psqt;
 use crate::prelude::*;
 
 const MVV_LVA: [[u8; 6]; 6] = [
@@ -60,8 +60,7 @@ impl Engine {
         }
         let piece = unsafe { self.board.get_square_kind(mov.from()).unwrap_unchecked() };
 
-        let piece_sq_diff = abs_piece_square_value(mov.to(), piece + self.board.active_side, phase)
-            - abs_piece_square_value(mov.from(), piece + self.board.active_side, phase);
+        let piece_sq_diff = psqt::MG[piece + White][mov.to()] - psqt::MG[piece + White][mov.from()];
         score += piece_sq_diff * (200 * phase.earlygame()) / 1024;
 
         if let Some(target_piece) = self.board.get_square_kind(mov.to()) {
@@ -72,7 +71,8 @@ impl Engine {
         }
 
         if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-            score += abs_piece_value(kind, phase);
+            score += psqt::PIECE_MG[kind] * phase.earlygame();
+            score += psqt::PIECE_EG[kind] * phase.endgame();
         }
 
         if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {

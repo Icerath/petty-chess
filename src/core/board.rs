@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::{Index, IndexMut};
+use std::ops::Index;
 
 use crate::prelude::*;
 
@@ -13,6 +13,8 @@ pub struct Board {
     pub pieces: [Bitboard; 6],
     pub halfmove_clock: u8,
     pub fullmove_counter: u16,
+    pub mg_psqt: i32,
+    pub eg_psqt: i32,
 }
 
 pub struct Unmake {
@@ -29,6 +31,8 @@ impl Board {
         zobrist: Zobrist::DEFAULT,
         side_pieces: [Bitboard::EMPTY; 2],
         pieces: [Bitboard::EMPTY; 6],
+        mg_psqt: 0,
+        eg_psqt: 0,
     };
 
     pub fn swap_side(&mut self) {
@@ -41,35 +45,30 @@ impl Board {
     /// This will not remove other pieces from this square and
     /// calling/ this when a piece is already present will produce an invalid zobrist hash
     pub fn insert_piece(&mut self, sq: Square, piece: Piece) {
-        self[piece.kind()].insert(sq);
-        self[piece.side()].insert(sq);
+        self.insert_piece_no_zobrist(sq, piece);
         self.zobrist.xor_piece(sq, piece);
+        self.mg_psqt += crate::engine::psqt::MG[piece][sq];
+        self.eg_psqt += crate::engine::psqt::EG[piece][sq];
     }
 
     /// removes a piece from the board's bitboards
     ///
     /// calling this when a piece is not present will produce an invalid zobrist hash
     pub fn remove_piece(&mut self, sq: Square, piece: Piece) {
-        self[piece.kind()].remove(sq);
-        self[piece.side()].remove(sq);
+        self.remove_piece_no_zobrist(sq, piece);
         self.zobrist.xor_piece(sq, piece);
+        self.mg_psqt -= crate::engine::psqt::MG[piece][sq];
+        self.eg_psqt -= crate::engine::psqt::EG[piece][sq];
     }
 
     pub fn insert_piece_no_zobrist(&mut self, sq: Square, piece: Piece) {
-        self[piece.kind()].insert(sq);
-        self[piece.side()].insert(sq);
+        self.pieces[piece.kind()].insert(sq);
+        self.side_pieces[piece.side()].insert(sq);
     }
 
     pub fn remove_piece_no_zobrist(&mut self, sq: Square, piece: Piece) {
-        self[piece.kind()].remove(sq);
-        self[piece.side()].remove(sq);
-    }
-
-    /// inserts a piece at sq if it doesn't exist or removes it if it does exist.
-    pub fn xor_piece(&mut self, sq: Square, piece: Piece) {
-        self[piece.kind()] ^= sq;
-        self[piece.side()] ^= sq;
-        self.zobrist.xor_piece(sq, piece);
+        self.pieces[piece.kind()].remove(sq);
+        self.side_pieces[piece.side()].remove(sq);
     }
 
     /// # Panics
@@ -358,11 +357,6 @@ impl Index<PieceKind> for Pieces {
     }
 }
 
-impl IndexMut<PieceKind> for Pieces {
-    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
-        &mut self.0[kind as usize]
-    }
-}
 impl Index<PieceKind> for Board {
     type Output = Bitboard;
 
@@ -371,23 +365,11 @@ impl Index<PieceKind> for Board {
     }
 }
 
-impl IndexMut<PieceKind> for Board {
-    fn index_mut(&mut self, kind: PieceKind) -> &mut Self::Output {
-        &mut self.pieces[kind as usize]
-    }
-}
-
 impl Index<Side> for Board {
     type Output = Bitboard;
 
     fn index(&self, side: Side) -> &Self::Output {
         &self.side_pieces[side as usize]
-    }
-}
-
-impl IndexMut<Side> for Board {
-    fn index_mut(&mut self, side: Side) -> &mut Self::Output {
-        &mut self.side_pieces[side as usize]
     }
 }
 

@@ -54,13 +54,13 @@ impl Piece {
     }
 
     #[must_use]
-    pub fn kind(self) -> PieceKind {
+    pub const fn kind(self) -> PieceKind {
         PieceKind::from_int(self as u8 / 2).unwrap()
     }
 
     #[must_use]
-    pub fn side(self) -> Side {
-        Side::from(self as u8 % 2 == 1)
+    pub const fn side(self) -> Side {
+        if (self as u8).is_multiple_of(2) { Side::Black } else { Side::White }
     }
 }
 
@@ -76,7 +76,7 @@ impl Piece {
     }
 
     #[must_use]
-    pub fn is_white(self) -> bool {
+    pub const fn is_white(self) -> bool {
         self.side().is_white()
     }
 
