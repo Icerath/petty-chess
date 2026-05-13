@@ -13,13 +13,15 @@ impl Engine {
         self.total_nodes = 0;
         self.transposition_table.num_hits = 0;
 
+        self.killer.clear();
+        self.killer.extend([None; 64]);
+
         let mut best_move = *self.board.legal_moves().first().unwrap_or(&Move::NULL);
 
         for depth in 1.. {
             self.only_pv_nodes = true;
             let mut new_pv = Moves::new();
-            let score =
-                self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv, None).0;
+            let score = self.negamax(-Eval::INFINITY.0, Eval::INFINITY.0, depth, &mut new_pv);
             self.total_nodes -= 1;
             if self.is_cancelled() {
                 break;
@@ -73,26 +75,25 @@ impl Engine {
         beta: i32,
         depth: u8,
         pline: &mut Moves,
-        killer_move: Option<Move>,
-    ) -> (i32, Option<Move>) {
+    ) -> i32 {
         if self.depth_from_root != 0 && self.seen_position() {
-            return (0, None);
+            return 0;
         }
         if self.depth_from_root > 0
             && let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth)
         {
-            return (eval, None);
+            return eval;
         }
         if depth == 0 {
             self.only_pv_nodes = false;
-            return (self.negamax_search_all_captures(alpha, beta), None);
+            return self.negamax_search_all_captures(alpha, beta);
         }
         self.total_nodes += 1;
 
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
-            let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new(), None).0;
+            let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new());
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
@@ -104,18 +105,20 @@ impl Engine {
                     Nodetype::Beta,
                     (),
                 );
-                return (beta, None);
+                return beta;
             }
         }
 
         let mut moves = self.board.pseudolegal_moves();
         let mut encountered_legal_move = false;
 
-        self.order_moves(&mut moves, killer_move);
+        self.order_moves(&mut moves, self.killer[self.depth_from_root as usize]);
         let mut nodetype = Nodetype::Alpha;
 
-        let mut killer_move = None;
         for mov in moves {
+            if self.is_cancelled() {
+                return 0;
+            }
             if !self.board.is_legal(mov) {
                 continue;
             }
@@ -127,18 +130,12 @@ impl Engine {
 
             let extension = self.board.in_check() as u8;
 
-            let (score, chosen_move) =
-                self.negamax(-beta, -alpha, depth - 1 + extension, &mut line, killer_move);
-            let score = -score;
-            killer_move = chosen_move;
+            let score = -self.negamax(-beta, -alpha, depth - 1 + extension, &mut line);
 
             self.depth_from_root -= 1;
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
 
-            if self.is_cancelled() {
-                return (0, None);
-            }
             if score > alpha {
                 line.push(mov);
                 *pline = line;
@@ -146,6 +143,7 @@ impl Engine {
                 nodetype = Nodetype::Exact;
             }
             if score >= beta {
+                self.killer[self.depth_from_root as usize] = Some(mov);
                 self.transposition_table.insert(
                     &self.board,
                     &self.seen_positions,
@@ -154,15 +152,15 @@ impl Engine {
                     Nodetype::Beta,
                     (),
                 );
-                return (beta, Some(mov));
+                return beta;
             }
         }
 
         if !encountered_legal_move {
             if self.board.in_check() {
-                return (-Eval::MATE.0, None);
+                return -Eval::MATE.0;
             }
-            return (0, None);
+            return 0;
         }
 
         self.transposition_table.insert(
@@ -173,7 +171,7 @@ impl Engine {
             nodetype,
             (),
         );
-        (alpha, None)
+        alpha
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: i32, beta: i32) -> i32 {
