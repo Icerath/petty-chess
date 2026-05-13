@@ -8,7 +8,6 @@ use crate::prelude::*;
 #[derive(Default, Clone)]
 pub struct TranspositionTable<T> {
     inner: HashMap<Zobrist, Entry<T>, BuildHasherDefault<NoHasher>>,
-    pub num_hits: u64,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -25,30 +24,8 @@ impl<T> TranspositionTable<T> {
     }
 
     #[must_use]
-    pub fn get(&mut self, board: &Board, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
-        self.get_entry(board, alpha, beta, depth).map(|entry| entry.eval)
-    }
-
-    #[must_use]
-    pub fn get_entry(
-        &mut self,
-        board: &Board,
-        alpha: i32,
-        beta: i32,
-        depth: u8,
-    ) -> Option<&Entry<T>> {
-        let entry = self.inner.get(&board.zobrist)?;
-        if entry.depth < depth {
-            return None;
-        }
-        if (entry.nodetype == Nodetype::Exact)
-            || (entry.nodetype == Nodetype::Alpha && entry.eval <= alpha)
-            || (entry.nodetype == Nodetype::Beta && entry.eval >= beta)
-        {
-            self.num_hits += 1;
-            return Some(entry);
-        }
-        None
+    pub fn get(&mut self, board: &Board) -> Option<&Entry<T>> {
+        self.inner.get(&board.zobrist)
     }
 
     pub fn insert(
@@ -84,6 +61,21 @@ pub struct Entry<T> {
     pub nodetype: Nodetype,
     pub depth: u8,
     pub extra: T,
+}
+
+impl<T> Entry<T> {
+    pub fn score(&self, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
+        if self.depth < depth {
+            return None;
+        }
+        if (self.nodetype == Nodetype::Exact)
+            || (self.nodetype == Nodetype::Alpha && self.eval <= alpha)
+            || (self.nodetype == Nodetype::Beta && self.eval >= beta)
+        {
+            return Some(self.eval);
+        }
+        None
+    }
 }
 
 #[derive(Default)]

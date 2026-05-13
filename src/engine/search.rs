@@ -11,7 +11,6 @@ impl Engine {
     pub fn search(&mut self) -> Move {
         let time_started = Instant::now();
         self.total_nodes = 0;
-        self.transposition_table.num_hits = 0;
 
         self.killer.clear();
         self.killer.extend([None; 64]);
@@ -79,10 +78,18 @@ impl Engine {
         if self.depth_from_root != 0 && self.seen_position() {
             return 0;
         }
+
+        let mut tt_move = None;
         if self.depth_from_root > 0
-            && let Some(eval) = self.transposition_table.get(&self.board, alpha, beta, depth)
+            && let Some(entry) = self.transposition_table.get(&self.board)
         {
-            return eval;
+            tt_move = entry.extra;
+            if let Some(score) = entry.score(alpha, beta, depth) {
+                if let Some(tt_move) = tt_move {
+                    pline.push(tt_move);
+                }
+                return score;
+            }
         }
         if depth == 0 {
             self.only_pv_nodes = false;
@@ -103,7 +110,7 @@ impl Engine {
                     depth - 2,
                     beta,
                     Nodetype::Beta,
-                    (),
+                    None,
                 );
                 return beta;
             }
@@ -112,9 +119,10 @@ impl Engine {
         let mut moves = self.board.pseudolegal_moves();
         let mut encountered_legal_move = false;
 
-        self.order_moves(&mut moves, self.killer[self.depth_from_root as usize]);
+        self.order_moves(&mut moves, self.killer[self.depth_from_root as usize], tt_move);
         let mut nodetype = Nodetype::Alpha;
 
+        let mut best_move = None;
         for mov in moves {
             if self.is_cancelled() {
                 return 0;
@@ -141,6 +149,7 @@ impl Engine {
                 *pline = line;
                 alpha = score;
                 nodetype = Nodetype::Exact;
+                best_move = Some(mov);
             }
             if score >= beta {
                 self.killer[self.depth_from_root as usize] = Some(mov);
@@ -150,7 +159,7 @@ impl Engine {
                     depth,
                     beta,
                     Nodetype::Beta,
-                    (),
+                    Some(mov),
                 );
                 return beta;
             }
@@ -169,7 +178,7 @@ impl Engine {
             depth,
             alpha,
             nodetype,
-            (),
+            best_move,
         );
         alpha
     }
@@ -184,7 +193,7 @@ impl Engine {
         alpha = alpha.max(eval);
 
         let mut moves = self.board.pseudolegal_capture_moves();
-        self.order_moves(&mut moves, None);
+        self.order_moves(&mut moves, None, None);
 
         let mut encountered_legal_move = false;
         for mov in moves {

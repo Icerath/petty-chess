@@ -171,7 +171,6 @@ impl Application {
             #[cfg(feature = "tracing")]
             {
                 tracing::info!("Time taken: {:?}", start.elapsed());
-                tracing::info!("Num transpositions: {}", engine.transposition_table.num_hits);
             }
         });
         if time_available != Duration::MAX {

@@ -30,7 +30,7 @@ pub struct Engine {
     pub pv: Vec<Move>,
     pub depth_from_root: u16,
     pub total_nodes: u64,
-    pub transposition_table: TranspositionTable<()>,
+    pub transposition_table: TranspositionTable<Option<Move>>,
     pub only_pv_nodes: bool,
     pub killer: Vec<Option<Move>>,
 }

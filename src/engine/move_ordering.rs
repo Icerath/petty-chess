@@ -33,30 +33,31 @@ where
 }
 
 impl Engine {
-    pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>) {
+    pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>, tt_move: Option<Move>) {
         let pawn_attacks = self.board.pawn_attacks(!self.board.active_side);
         let phase = phase(&self.board);
-        sort_by_cached_key(moves, |mov| -self.move_order(mov, killer, phase, pawn_attacks));
+        sort_by_cached_key(moves, |mov| {
+            -self.move_order(mov, killer, tt_move, phase, pawn_attacks)
+        });
     }
 
     fn move_order(
         &mut self,
         mov: Move,
         killer: Option<Move>,
+        tt_move: Option<Move>,
         phase: Phase,
         pawn_attacks: Bitboard,
     ) -> i16 {
         let mut score = 0;
-        if self.only_pv_nodes {
-            if let Some(&pv) = self.pv.get(self.depth_from_root as usize)
-                && pv == mov
-            {
-                return i16::MAX;
-            }
+        if let Some(tt_move) = tt_move
+            && tt_move == mov
+        {
+            return i16::MAX;
         } else if let Some(killer) = killer
             && killer == mov
         {
-            return i16::MAX;
+            return i16::MAX - 1;
         }
         let piece = unsafe { self.board.get_square_kind(mov.from()).unwrap_unchecked() };
 
