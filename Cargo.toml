@@ -10,7 +10,6 @@ arrayvec = "0.7.6"
 atoi = "2.0.0"
 bitflags = "2.6.0"
 clap = { version = "4.5.25", features = ["derive"] }
-derive-try-from-primitive = "1.0.0"
 konst = "0.4.3"
 serde = { version = "1.0.217", optional = true }
 tracing = { version = "0.1.40", optional = true }

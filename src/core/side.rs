@@ -1,10 +1,11 @@
 use core::ops::Not;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(u8)]
-pub enum Side {
-    Black = 0,
-    White = 1,
+pod_enum! {
+    #[derive(Debug)]
+    pub enum Side {
+        Black,
+        White,
+    }
 }
 
 impl Side {
@@ -44,9 +45,8 @@ impl Side {
     }
 }
 
-#[rustfmt::skip]
 impl From<bool> for Side {
-        fn from(value: bool) -> Self {
+    fn from(value: bool) -> Self {
         if value { Self::White } else { Self::Black }
     }
 }

@@ -64,7 +64,7 @@ impl Move {
 
     #[must_use]
     pub fn flags(self) -> MoveFlags {
-        unsafe { MoveFlags::try_from((self.0 >> 12) as u8).unwrap_unchecked() }
+        unsafe { std::mem::transmute((self.0 >> 12) as u8) }
     }
 }
 

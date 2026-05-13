@@ -1,11 +1,9 @@
 use std::str::FromStr;
 
-use derive_try_from_primitive::TryFromPrimitive;
-
 use crate::prelude::*;
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, TryFromPrimitive)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MoveFlags {
     #[default]
     Quiet = 0b0000,
@@ -32,7 +30,7 @@ pub enum Castle {
     QueenSide,
 }
 
-#[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum Promotion {
     Knight,
@@ -47,7 +45,7 @@ impl MoveFlags {
         if !self.is_promotion() {
             return None;
         }
-        Some(Promotion::try_from(self as u8 & 0b0011).unwrap())
+        Some(unsafe { std::mem::transmute::<u8, Promotion>(self as u8 & 0b0011) })
     }
 
     const fn is_promotion(self) -> bool {

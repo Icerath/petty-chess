@@ -1,36 +1,35 @@
 use core::fmt;
 use std::ops::Add;
 
-use derive_try_from_primitive::TryFromPrimitive;
-
 use crate::prelude::*;
 
-#[derive(TryFromPrimitive, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(u8)]
-pub enum Piece {
-    BlackPawn,
-    WhitePawn,
-    BlackKnight,
-    WhiteKnight,
-    BlackBishop,
-    WhiteBishop,
-    BlackRook,
-    WhiteRook,
-    BlackQueen,
-    WhiteQueen,
-    BlackKing,
-    WhiteKing,
+pod_enum! {
+    pub enum Piece {
+        BlackPawn,
+        WhitePawn,
+        BlackKnight,
+        WhiteKnight,
+        BlackBishop,
+        WhiteBishop,
+        BlackRook,
+        WhiteRook,
+        BlackQueen,
+        WhiteQueen,
+        BlackKing,
+        WhiteKing,
+    }
 }
 
-#[derive(TryFromPrimitive, Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PieceKind {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
+pod_enum! {
+    #[derive(Debug)]
+    pub enum PieceKind {
+        Pawn,
+        Knight,
+        Bishop,
+        Rook,
+        Queen,
+        King,
+    }
 }
 
 impl Piece {
@@ -51,12 +50,12 @@ impl Piece {
 
     #[must_use]
     pub fn new(side: Side, kind: PieceKind) -> Self {
-        Self::try_from(kind as u8 * 2 + side as u8).unwrap()
+        Self::from_int(kind as u8 * 2 + side as u8).unwrap()
     }
 
     #[must_use]
     pub fn kind(self) -> PieceKind {
-        PieceKind::try_from(self as u8 / 2).unwrap()
+        PieceKind::from_int(self as u8 / 2).unwrap()
     }
 
     #[must_use]

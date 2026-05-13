@@ -40,7 +40,7 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
         gen_pawn_push(board, &mut moves);
     }
     for from in pieces[Knight] {
-        push_squares::<G>(board, from, KNIGHT_MOVES[from as usize], &mut moves);
+        push_squares::<G>(board, from, KNIGHT_MOVES[from], &mut moves);
     }
     for from in pieces[Bishop] {
         push_squares::<G>(board, from, bishop_attacks(from, all_pieces), &mut moves);
@@ -172,7 +172,7 @@ fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, move
 }
 
 fn gen_king_moves<G: GenType>(board: &Board, from: Square, checkers: Bitboard, moves: &mut Moves) {
-    push_squares::<G>(board, from, KING_MOVES[from as usize], moves);
+    push_squares::<G>(board, from, KING_MOVES[from], moves);
     if G::CAPTURES_ONLY || !checkers.is_empty() {
         return;
     }
@@ -213,11 +213,11 @@ impl Board {
         let mut bb = Bitboard::EMPTY;
         let occupancy = self.all_pieces();
         let Some(king) = self.get_king_square(side) else { return bb };
-        bb |= PAWN_ATTACKS[side as usize][king as usize] & self[Pawn];
-        bb |= KNIGHT_MOVES[king as usize] & self[Knight];
+        bb |= PAWN_ATTACKS[side][king] & self[Pawn];
+        bb |= KNIGHT_MOVES[king] & self[Knight];
         bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
         bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
-        bb |= KING_MOVES[king as usize] & (self[King]);
+        bb |= KING_MOVES[king] & (self[King]);
 
         bb & self[!side]
     }
@@ -253,10 +253,10 @@ impl Board {
         let all_pieces = self.all_pieces();
 
         for from in enemy_pieces[Pawn] {
-            output |= PAWN_ATTACKS[side as usize][from as usize];
+            output |= PAWN_ATTACKS[side][from];
         }
         for from in enemy_pieces[Knight] {
-            output |= KNIGHT_MOVES[from as usize];
+            output |= KNIGHT_MOVES[from];
         }
         for from in enemy_pieces[Bishop] {
             output |= bishop_attacks(from, all_pieces);
@@ -269,7 +269,7 @@ impl Board {
         }
 
         if let Some(king) = self.inactive_king() {
-            output |= KING_MOVES[king as usize];
+            output |= KING_MOVES[king];
         } else {
             std::hint::cold_path();
         }

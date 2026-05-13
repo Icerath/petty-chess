@@ -31,7 +31,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         // punish pieces in front of enemy pawns
         let mut pawn_attacks = Bitboard::EMPTY;
         for sq in enemy[Pawn] {
-            pawn_attacks |= PAWN_ATTACKS[!side as usize][sq as usize];
+            pawn_attacks |= PAWN_ATTACKS[!side][sq];
         }
 
         let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
@@ -40,12 +40,12 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         for sq in friendly[Pawn] {
             // reward non-isolated pawns
             if !(sq.file().adjacency_mask() & friendly[Pawn]).is_empty() {
-                total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file() as usize];
+                total += [15, 18, 23, 25, 25, 23, 18, 15][sq.file()];
             }
             // reward passed pawns
             let is_passed_pawn = (sq.passed_pawn_mask(side) & enemy[Pawn]).is_empty();
             if is_passed_pawn {
-                let offset = sq.rank().relative_to(side) as usize;
+                let offset = sq.rank().relative_to(side);
                 total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
         }
@@ -92,7 +92,7 @@ fn punish_open_kings(king: Square, friendly: &Pieces, enemy: &Pieces) -> i32 {
         let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
 
         let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
-        total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file as usize];
+        total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file];
     }
     total
 }
@@ -122,7 +122,7 @@ fn reward_pawns_close_to_king(friendly: &Pieces, king: Square) -> i32 {
         ];
         let dif_rank = sq.rank().diff(king.rank());
         unsafe { std::hint::assert_unchecked(dif_rank < 3) };
-        total += BONUSES[sq.file() as usize][dif_rank as usize];
+        total += BONUSES[sq.file()][dif_rank as usize];
     }
     total
 }
@@ -177,8 +177,8 @@ fn material_values(board: &Board, side: Side) -> [i32; 2] {
     let mut eg = 0;
     for piece in [Pawn, Knight, Bishop, Rook, Queen] {
         let count = board.get(piece + side).count() as i32;
-        mg += count * MG_PIECE_VALUES[piece as usize];
-        eg += count * EG_PIECE_VALUES[piece as usize];
+        mg += count * MG_PIECE_VALUES[piece];
+        eg += count * EG_PIECE_VALUES[piece];
     }
     [mg, eg]
 }
@@ -190,14 +190,14 @@ fn square_table_values(board: &Board, side: Side) -> [i32; 2] {
         let piece = side + piecekind;
         for sq in board.get(piece) {
             let index = if side.is_white() { sq.flip() } else { sq };
-            mg += square_tables::MG[piecekind as usize][index as usize];
-            eg += square_tables::EG[piecekind as usize][index as usize];
+            mg += square_tables::MG[piecekind][index];
+            eg += square_tables::EG[piecekind][index];
         }
     }
     let king_square = board.get_king_square(side).unwrap();
     let index = if side.is_white() { king_square.flip() } else { king_square };
-    mg += square_tables::MG[King as usize][index as usize];
-    eg += square_tables::EG[King as usize][index as usize];
+    mg += square_tables::MG[King][index];
+    eg += square_tables::EG[King][index];
     [mg, eg]
 }
 
@@ -213,15 +213,14 @@ pub fn evaluate(board: &Board) -> i32 {
 
 #[must_use]
 pub fn abs_piece_value(piece: PieceKind, phase: Phase) -> i32 {
-    MG_PIECE_VALUES[piece as usize] * phase.earlygame()
-        + EG_PIECE_VALUES[piece as usize] * phase.endgame()
+    MG_PIECE_VALUES[piece] * phase.earlygame() + EG_PIECE_VALUES[piece] * phase.endgame()
 }
 
 #[must_use]
 pub fn abs_piece_square_value(sq: Square, piece: Piece, phase: Phase) -> i32 {
     let index = if piece.is_white() { sq.flip() } else { sq };
-    let mg = square_tables::MG[piece.kind() as usize][index as usize];
-    let eg = square_tables::EG[piece.kind() as usize][index as usize];
+    let mg = square_tables::MG[piece.kind()][index];
+    let eg = square_tables::EG[piece.kind()][index];
 
     mg * phase.earlygame() + eg * phase.endgame()
 }

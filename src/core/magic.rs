@@ -10,17 +10,17 @@ static BISHOP_TABLES: [SquareTables<BISHOP>; 64] =
     unsafe { std::mem::transmute(*include_bytes!("magic_bishop_tables.bin")) };
 
 #[must_use]
-pub const fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
-    ROOK_TABLES[sq as usize].get_attacks(occupancy)
+pub fn rook_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    ROOK_TABLES[sq].get_attacks(occupancy)
 }
 
 #[must_use]
-pub const fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
-    BISHOP_TABLES[sq as usize].get_attacks(occupancy)
+pub fn bishop_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+    BISHOP_TABLES[sq].get_attacks(occupancy)
 }
 
 #[must_use]
-pub const fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
+pub fn queen_attacks(sq: Square, occupancy: Bitboard) -> Bitboard {
     Bitboard(rook_attacks(sq, occupancy).0 | bishop_attacks(sq, occupancy).0)
 }
 

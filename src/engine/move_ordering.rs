@@ -66,9 +66,9 @@ impl Engine {
 
         if let Some(target_piece) = self.board.get_square_kind(mov.to()) {
             unsafe { assert_unchecked(target_piece != PieceKind::King) };
-            score += MVV_LVA[target_piece as usize][piece as usize] as i32 * 4;
+            score += MVV_LVA[target_piece][piece] as i32 * 4;
         } else if mov.flags() == MoveFlags::EnPassant {
-            score += MVV_LVA[Pawn as usize][Pawn as usize] as i32 * 4;
+            score += MVV_LVA[Pawn][Pawn] as i32 * 4;
         }
 
         if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {

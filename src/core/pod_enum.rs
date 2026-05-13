@@ -1,6 +1,15 @@
 macro_rules! pod_enum {
     (pub enum $struct_name: ident { $($variant:ident),* $(,)? }) => {
-        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pod_enum! {
+            #[derive()]
+            pub enum $struct_name {
+                $($variant),*
+            }
+        }
+    };
+    (#[derive($($derive:ident),*)]pub enum $struct_name: ident { $($variant:ident),* $(,)? }) => {
+        #[derive($($derive,)* Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[repr(u8)]
         pub enum $struct_name {
             $($variant),*
         }
@@ -65,5 +74,17 @@ macro_rules! pod_enum {
                 unsafe { Self::from_int_unchecked(Self::MAX as u8 - self as u8) }
             }
         }
-    };
-}
+
+    impl<T> ::core::ops::Index<$struct_name> for [T; $struct_name::LEN] {
+        type Output = T;
+        fn index(&self, index: $struct_name) -> &T {
+            unsafe { self.get_unchecked(index as usize) }
+        }
+    }
+
+    impl<T> ::core::ops::IndexMut<$struct_name> for [T; $struct_name::LEN] {
+        fn index_mut(&mut self, index: $struct_name) -> &mut T {
+            unsafe { self.get_unchecked_mut(index as usize) }
+        }
+    }
+}}
