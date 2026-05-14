@@ -92,6 +92,8 @@ impl Board {
     fn make_move_inner(&mut self, mov: Move) {
         let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
+        let reset_counter = from_piece.kind() == Pawn || self.is_piece_at(mov.to());
+
         if let Some(sq) = self.en_passant_target_square {
             self.zobrist.xor_en_passant(sq);
         }
@@ -153,6 +155,9 @@ impl Board {
                 self.insert_piece(mov.to(), piece);
             }
             _ => unreachable!("{:?}", mov.flags()),
+        }
+        if reset_counter {
+            self.fullmove_counter = 0;
         }
         self.increment_ply();
     }
