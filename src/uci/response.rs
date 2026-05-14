@@ -47,12 +47,6 @@ pub struct Info {
     pub currline: Option<(Option<u32>, Vec<Move>)>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Score {
-    Centipawns { cp: i32, bounds: Option<Bound> },
-    Mate { mate: i32 },
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Bound {
     Lower,
@@ -135,17 +129,6 @@ impl fmt::Display for Info {
         }
 
         write!(f, "{}", Maybe(" str", &self.string))
-    }
-}
-
-impl fmt::Display for Score {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Centipawns { cp, bounds: Some(Bound::Upper) } => write!(f, "cp {cp} upperbound"),
-            Self::Centipawns { cp, bounds: Some(Bound::Lower) } => write!(f, "cp {cp} lowerbound"),
-            Self::Centipawns { cp, bounds: None } => write!(f, "cp {cp}"),
-            Self::Mate { mate } => write!(f, "mate {mate}"),
-        }
     }
 }
 

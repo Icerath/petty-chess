@@ -171,8 +171,8 @@ fn has_bishop_pair(board: &Board, side: Side) -> bool {
 }
 
 #[must_use]
-pub fn evaluate(board: &Board) -> i32 {
-    raw_evaluation(board) * board.active_side.positive()
+pub fn evaluate(board: &Board) -> Score {
+    Score(raw_evaluation(board) * board.active_side.positive())
 }
 
 #[test]

@@ -33,13 +33,10 @@ impl<T> TranspositionTable<T> {
         board: &Board,
         seen_positions: &[Zobrist],
         depth: u8,
-        eval: i32,
+        eval: Score,
         nodetype: Nodetype,
         extra: T,
     ) {
-        if eval.abs() == Eval::MATE.0 {
-            return;
-        }
         if seen_positions.iter().filter(|&&sq| sq == board.zobrist).count() > 1 {
             return;
         }
@@ -57,14 +54,14 @@ impl<T> TranspositionTable<T> {
 
 #[derive(Clone)]
 pub struct Entry<T> {
-    pub eval: i32,
+    pub eval: Score,
     pub nodetype: Nodetype,
     pub depth: u8,
     pub extra: T,
 }
 
 impl<T> Entry<T> {
-    pub fn score(&self, alpha: i32, beta: i32, depth: u8) -> Option<i32> {
+    pub fn score(&self, alpha: Score, beta: Score, depth: u8) -> Option<Score> {
         if self.depth < depth {
             return None;
         }

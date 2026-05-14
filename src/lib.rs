@@ -25,6 +25,6 @@ pub mod prelude {
             square::{File, Rank, Square},
             zobrist::Zobrist,
         },
-        engine::{Engine, Eval, Phase, phase},
+        engine::{Engine, Phase, Score, phase},
     };
 }

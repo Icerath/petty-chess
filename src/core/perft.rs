@@ -25,7 +25,7 @@ impl Board {
                 count += self.with_move(mov).run_perft_with_table(table, depth - 1);
             }
         }
-        table.insert(self, &[], depth, 0, Nodetype::Exact, count);
+        table.insert(self, &[], depth, Score(0), Nodetype::Exact, count);
         count
     }
 }

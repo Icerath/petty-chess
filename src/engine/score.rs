@@ -5,16 +5,30 @@ use std::{
 
 // A Eval in centipawns
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct Eval(pub i32);
+pub struct Score(pub i32);
 
-impl Eval {
-    pub const INFINITY: Self = Self(i32::MAX - 1);
-    pub const MATE: Self = Self(i32::MAX);
-    const NEG_INF: Self = Self(-Self::INFINITY.0);
+impl Score {
+    const MATE: Self = Self(i32::MAX - 1);
+    pub const MAX: Self = Self(i32::MAX);
+    const MIN: Self = Self(-Self::MAX.0);
+    pub const MIN_MATE: Self = Self(i32::MAX - i16::MAX as i32);
     const NEG_MATE: Self = Self(-Self::MATE.0);
+
+    #[must_use]
+    pub fn mate_in_moves(moves: i16) -> Self {
+        Self(Self::MATE.0 - i32::from(moves))
+    }
+
+    #[must_use]
+    pub fn mate(self) -> Option<i16> {
+        if !(Self::MIN_MATE.0..=Self::MATE.0).contains(&self.0.abs()) {
+            return None;
+        }
+        Some(((Self::MATE.0 - self.0.abs()) * self.0.signum()) as i16)
+    }
 }
 
-impl Mul<f32> for Eval {
+impl Mul<f32> for Score {
     type Output = Self;
 
     fn mul(self, rhs: f32) -> Self::Output {
@@ -22,7 +36,7 @@ impl Mul<f32> for Eval {
     }
 }
 
-impl Neg for Eval {
+impl Neg for Score {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -30,16 +44,25 @@ impl Neg for Eval {
     }
 }
 
-impl fmt::Debug for Eval {
+impl fmt::Debug for Score {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut tuple = f.debug_tuple("Eval");
         match *self {
-            Self::INFINITY => tuple.field(&"infinity"),
-            Self::NEG_INF => tuple.field(&"-infinity"),
+            Self::MAX => tuple.field(&"max"),
+            Self::MIN => tuple.field(&"-min"),
             Self::MATE => tuple.field(&"mate"),
             Self::NEG_MATE => tuple.field(&"-mate"),
             _ => tuple.field(&self.0),
         }
         .finish()
+    }
+}
+
+impl fmt::Display for Score {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.mate() {
+            Some(moves) => write!(f, "mate {moves}"),
+            None => write!(f, "cp {}", self.0),
+        }
     }
 }

@@ -16,7 +16,7 @@ use std::{
 };
 
 pub use phase::{Phase, phase};
-pub use score::Eval;
+pub use score::Score;
 use transposition::TranspositionTable;
 
 use crate::prelude::*;
