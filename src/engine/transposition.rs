@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
 #[derive(Clone)]
-pub struct TranspositionTable<T> {
-    inner: Box<[Option<Entry<T>>]>,
+pub struct TranspositionTable {
+    inner: Box<[Option<Entry>]>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -12,25 +12,25 @@ pub enum Nodetype {
     Beta,
 }
 
-impl<T> TranspositionTable<T> {
+impl TranspositionTable {
     #[must_use]
     pub fn from_mb(mb: usize) -> Self {
         Self {
             inner: std::iter::repeat_with(|| None)
-                .take(mb * 1024 * 1024 / size_of::<Entry<T>>())
+                .take(mb * 1024 * 1024 / size_of::<Entry>())
                 .collect(),
         }
     }
 
     #[must_use]
-    pub fn get(&self, zobrist: Zobrist) -> Option<&Entry<T>> {
+    pub fn get(&self, zobrist: Zobrist) -> Option<&Entry> {
         self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
             .as_ref()
             .and_then(|entry| (entry.zobrist == zobrist).then_some(entry))
     }
 
     #[must_use]
-    fn get_mut(&mut self, zobrist: Zobrist) -> &mut Option<Entry<T>> {
+    fn get_mut(&mut self, zobrist: Zobrist) -> &mut Option<Entry> {
         &mut self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
     }
 
@@ -40,9 +40,9 @@ impl<T> TranspositionTable<T> {
         depth: u8,
         eval: Score,
         nodetype: Nodetype,
-        extra: T,
+        mov: Option<Move>,
     ) {
-        let entry = Entry { zobrist, eval, nodetype, depth, extra };
+        let entry = Entry { zobrist, eval, nodetype, depth, mov: Move::from_opt(mov) };
         match self.get_mut(zobrist) {
             Some(occupied) => {
                 if occupied.depth <= depth {
@@ -54,16 +54,20 @@ impl<T> TranspositionTable<T> {
     }
 }
 
+const _: () = assert!(size_of::<Option<Entry>>() == 16);
+
+#[repr(align(16))]
 #[derive(Clone)]
-pub struct Entry<T> {
+pub struct Entry {
     pub zobrist: Zobrist,
     pub eval: Score,
     pub nodetype: Nodetype,
     pub depth: u8,
-    pub extra: T,
+    pub mov: Move,
 }
 
-impl<T> Entry<T> {
+impl Entry {
+    #[must_use]
     pub fn score(&self, alpha: Score, beta: Score, depth: u8) -> Option<Score> {
         if self.depth < depth {
             return None;

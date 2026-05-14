@@ -63,6 +63,16 @@ impl Move {
     }
 
     #[must_use]
+    pub fn opt(self) -> Option<Self> {
+        if self == Move::NULL { None } else { Some(self) }
+    }
+
+    #[must_use]
+    pub fn from_opt(opt: Option<Self>) -> Self {
+        opt.unwrap_or(Self::NULL)
+    }
+
+    #[must_use]
     pub fn flags(self) -> MoveFlags {
         unsafe { std::mem::transmute((self.0 >> 12) as u8) }
     }

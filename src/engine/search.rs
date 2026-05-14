@@ -75,7 +75,7 @@ impl Engine {
         if self.depth_from_root > 0
             && let Some(entry) = self.transposition_table.get(self.board.zobrist)
         {
-            tt_move = entry.extra;
+            tt_move = entry.mov.opt();
             if let Some(score) = entry.score(alpha, beta, depth) {
                 if let Some(tt_move) = tt_move {
                     pline.push(tt_move);
