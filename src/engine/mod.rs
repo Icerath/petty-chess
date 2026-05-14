@@ -12,7 +12,7 @@ use std::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 pub use phase::{Phase, phase};
@@ -25,6 +25,7 @@ use crate::prelude::*;
 pub struct Engine {
     pub board: Board,
     pub seen_positions: Vec<Zobrist>,
+    pub time_started: Instant,
     pub time_available: Duration,
     pub kill: Arc<AtomicBool>,
     pub pv: Vec<Move>,
@@ -32,6 +33,7 @@ pub struct Engine {
     pub total_nodes: u64,
     pub transposition_table: TranspositionTable<Option<Move>>,
     pub killer: Vec<Option<Move>>,
+    pub cancel_check: u32,
 }
 
 impl Engine {
@@ -39,6 +41,7 @@ impl Engine {
     pub fn new(board: Board) -> Self {
         Self {
             kill: Arc::default(),
+            time_started: Instant::now(),
             time_available: Duration::MAX,
             board,
             pv: vec![],
@@ -47,10 +50,21 @@ impl Engine {
             total_nodes: 0,
             transposition_table: TranspositionTable::default(),
             killer: vec![],
+            cancel_check: 0,
         }
     }
 
-    pub(crate) fn is_cancelled(&self) -> bool {
-        self.kill.load(Ordering::Relaxed)
+    pub(crate) fn is_cancelled(&mut self) -> bool {
+        if self.cancel_check < 1024 {
+            self.cancel_check += 1;
+            return false;
+        }
+        std::hint::cold_path();
+        if self.kill.load(Ordering::Relaxed) || self.time_started.elapsed() > self.time_available {
+            true
+        } else {
+            self.cancel_check = 0;
+            false
+        }
     }
 }

@@ -4,60 +4,32 @@ use std::{
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
+        mpsc::Sender,
     },
-    thread::JoinHandle,
     time::{Duration, Instant},
 };
 
-use clap::Parser;
 use petty_chess::{
     engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
-use tracing::level_filters::LevelFilter;
-#[cfg(feature = "tracing")]
-use {
-    tracing::debug,
-    tracing_appender::rolling::{RollingFileAppender, Rotation},
-};
-
-#[derive(clap::Parser)]
-struct Args {
-    #[arg(long = "run")]
-    message: Option<String>,
-    #[arg(long, default_value = "OFF")]
-    log_level: LevelFilter,
-}
 
 fn main() {
-    let args = Args::parse();
-
-    #[cfg(feature = "tracing")]
-    if args.log_level != LevelFilter::OFF {
-        let writer = RollingFileAppender::builder()
-            .rotation(Rotation::DAILY)
-            .filename_suffix("log")
-            .build("./logs")
-            .unwrap();
-        tracing_subscriber::fmt().with_max_level(args.log_level).with_writer(writer).init();
-    }
     let mut line = String::new();
     let mut stdin = std::io::stdin().lock();
-    let mut app = Application::default();
 
-    if let Some(run) = args.message {
-        for section in run.split(';').map(str::trim) {
-            if section.is_empty() {
-                continue;
-            }
-            let Some(msg) = UciMessage::parse(section.trim()) else {
-                panic!("Invalid message: '{section}'");
-            };
-            app.process_message(msg, true);
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    let mut app = Application::new(tx);
+
+    std::thread::spawn(move || {
+        for (mut engine, command) in rx {
+            engine.kill.store(false, Ordering::Release);
+            engine.time_available = get_time_available(&engine.board, command.time_control);
+            engine.search();
         }
-        return;
-    }
+    });
 
     while app.running {
         line.clear();
@@ -66,36 +38,31 @@ fn main() {
         if line.is_empty() {
             continue;
         }
-        #[cfg(feature = "tracing")]
-        debug!("{line}");
 
         if let Some(message) = UciMessage::parse(line) {
-            app.process_message(message, false);
+            app.process_message(message);
         } else {
-            #[cfg(feature = "tracing")]
-            tracing::warn!("Unknown command: '{line}'");
             eprintln!("Unknown command: '{line}'. Type help for more information.");
         }
     }
 }
 
 pub struct Application {
+    tx: Sender<(Engine, GoCommand)>,
     kill: Arc<AtomicBool>,
     engine: Engine,
     running: bool,
     debug: bool,
 }
 
-impl Default for Application {
-    fn default() -> Self {
-        let engine = Engine::new(Board::start_pos());
-        Self { kill: engine.kill.clone(), engine, running: true, debug: false }
-    }
-}
-
 #[expect(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
 impl Application {
-    fn process_message(&mut self, msg: UciMessage, wait: bool) {
+    fn new(tx: Sender<(Engine, GoCommand)>) -> Self {
+        let engine = Engine::new(Board::start_pos());
+        Self { kill: engine.kill.clone(), engine, running: true, debug: false, tx }
+    }
+
+    fn process_message(&mut self, msg: UciMessage) {
         use UciMessage as Uci;
 
         match msg {
@@ -104,17 +71,16 @@ impl Application {
             Uci::Setoption { .. } => {}
             Uci::Debug(on) => self.debug = on,
             Uci::Register(_reg) => {}
-            Uci::Ucinewgame => *self = Self::default(),
+            Uci::Ucinewgame => *self = Self::new(self.tx.clone()),
             Uci::Position { fen, moves } => {
                 if let Some(board) = Board::from_fen(&fen) {
                     self.startpos_moves(board, moves);
-                } else {
-                    #[cfg(feature = "tracing")]
-                    tracing::error!("Invalid fen position {fen}");
                 }
             }
-            Uci::Go(command) if wait => self.go(command).join().unwrap(),
-            Uci::Go(command) => _ = self.go(command),
+            Uci::Go(command) => {
+                _ = self.tx.send((self.engine.clone(), command));
+            }
+
             Uci::Stop => self.kill.store(true, Ordering::Relaxed),
             Uci::PonderHit => {}
             Uci::Quit => self.running = false,
@@ -156,60 +122,11 @@ impl Application {
         self.engine.seen_positions.push(self.engine.board.zobrist);
     }
 
-    fn go(&mut self, command: GoCommand) -> JoinHandle<()> {
-        self.kill.store(true, Ordering::Relaxed);
-        #[cfg(feature = "tracing")]
-        let start = Instant::now();
-        let time_available = self.get_time_available(command.time_control);
-        let mut engine = self.engine.clone();
-        engine.kill = Arc::default();
-        engine.time_available = time_available;
-        self.kill = engine.kill.clone();
-        let handle = std::thread::spawn(move || {
-            let best_move = engine.search();
-            println!("{}", UciResponse::Bestmove { mov: best_move, ponder: None });
-            #[cfg(feature = "tracing")]
-            {
-                tracing::info!("Time taken: {:?}", start.elapsed());
-            }
-        });
-        if time_available != Duration::MAX {
-            let kill = self.kill.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(time_available);
-                kill.store(true, Ordering::Relaxed);
-            });
-        }
-        handle
-    }
-
     fn go_perft(&mut self, depth: u8) {
         let start = Instant::now();
         let total = perft(&mut self.engine.board, depth);
         eprintln!("\nTime taken: {:?}", start.elapsed());
         eprintln!("Nodes searched: {total}");
-    }
-
-    fn get_time_available(&self, time_control: TimeControl) -> Duration {
-        match time_control {
-            // TODO - ponder
-            TimeControl::Ponder => Duration::MAX,
-            TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
-                let (total, incr) = if self.engine.board.active_side == White {
-                    (wtime, wincr)
-                } else {
-                    (btime, bincr)
-                };
-                let estimated_total_moves =
-                    i32::from(30.max(self.engine.board.fullmove_counter + 10));
-                let moves_to_end =
-                    estimated_total_moves - i32::from(self.engine.board.fullmove_counter);
-                let time_per_move = total.div_f32(moves_to_end as f32);
-                (time_per_move + incr).min(total)
-            }
-            TimeControl::MoveTime(time) => time,
-            TimeControl::Infinite => Duration::MAX,
-        }
     }
 
     fn display(&mut self) {
@@ -255,4 +172,22 @@ fn perft(board: &mut Board, depth: u8) -> u64 {
         eprintln!("{mov}: {count}");
     }
     total
+}
+
+#[expect(clippy::match_same_arms)]
+fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
+    match time_control {
+        // TODO - ponder
+        TimeControl::Ponder => Duration::MAX,
+        TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
+            let (total, incr) =
+                if board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
+            let estimated_total_moves = 30.max(board.halfmove_clock as i32 * 2 + 10);
+            let moves_to_end = estimated_total_moves - board.halfmove_clock as i32 * 2;
+            let time_per_move = total.div_f32(moves_to_end as f32);
+            (time_per_move + incr).min(total)
+        }
+        TimeControl::MoveTime(time) => time,
+        TimeControl::Infinite => Duration::MAX,
+    }
 }

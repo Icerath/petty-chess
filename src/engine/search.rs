@@ -8,8 +8,8 @@ use crate::{
 };
 
 impl Engine {
-    pub fn search(&mut self) -> Move {
-        let time_started = Instant::now();
+    pub fn search(&mut self) {
+        self.time_started = Instant::now();
         self.total_nodes = 0;
 
         self.killer.clear();
@@ -29,7 +29,7 @@ impl Engine {
 
             let mate = score.mate();
 
-            let time_taken = time_started.elapsed();
+            let time_taken = self.time_started.elapsed();
             let info = Info {
                 depth: Some(depth as u32),
                 score: Some(score),
@@ -39,8 +39,6 @@ impl Engine {
                 pv: Some(self.pv.clone()),
                 ..Info::default()
             };
-            #[cfg(feature = "tracing")]
-            tracing::info!("{info}");
             println!("{}", UciResponse::Info(Box::new(info)));
 
             if mate.is_some() {
@@ -48,13 +46,11 @@ impl Engine {
             }
 
             let skip_time = 2.8 - phase(&self.board).endgame().as_float();
-            if time_started.elapsed().mul_f32(skip_time) > self.time_available {
+            if self.time_started.elapsed().mul_f32(skip_time) > self.time_available {
                 break;
             }
         }
-        #[cfg(feature = "tracing")]
-        tracing::info!("Tablesize: {}Mb", self.transposition_table.mb());
-        best_move
+        println!("{}", UciResponse::Bestmove { mov: best_move, ponder: None });
     }
 
     fn seen_position(&self) -> bool {
