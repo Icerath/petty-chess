@@ -101,12 +101,12 @@ impl Engine {
         }
 
         let mut moves = self.board.pseudolegal_moves();
-        let mut encountered_legal_move = false;
 
         self.order_moves(&mut moves, self.killer[self.depth_from_root as usize], tt_move);
         let mut nodetype = Nodetype::Alpha;
 
         let mut best_move = None;
+        let mut move_count = 0;
         for mov in moves {
             if self.is_cancelled() {
                 return Score(0);
@@ -114,15 +114,30 @@ impl Engine {
             if !self.board.is_legal(mov) {
                 continue;
             }
-            let mut line = Moves::new();
-            encountered_legal_move = true;
+            move_count += 1;
+
             let unmake = self.board.make_move(mov);
             self.seen_positions.push(self.board.zobrist);
 
-            let extension = self.board.in_check() as u8;
+            let mut next_depth = depth - 1;
+
+            let late_move_reduction = depth > 2 && move_count >= 2;
+
+            if late_move_reduction {
+                next_depth -= 1;
+            }
+            if self.board.in_check() {
+                next_depth += 1;
+            }
 
             self.depth_from_root += 1;
-            let score = -self.negamax(-beta, -alpha, depth - 1 + extension, &mut line);
+            let mut line = Moves::new();
+            let mut score = -self.negamax(-beta, -alpha, next_depth, &mut line);
+
+            if score >= beta && late_move_reduction {
+                score = -self.negamax(-beta, -alpha, next_depth + 1, &mut line);
+            }
+
             self.depth_from_root -= 1;
 
             self.seen_positions.pop();
@@ -149,7 +164,7 @@ impl Engine {
             }
         }
 
-        if !encountered_legal_move {
+        if move_count == 0 {
             if self.board.in_check() {
                 return -Score::mate_in_moves(self.depth_from_root.cast_signed() / 2 + 1);
             }
