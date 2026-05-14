@@ -63,7 +63,56 @@ impl Keys {
         let mut rng = Rng(0);
         Self {
             side: rng.next(),
-            castle: konst::array::from_fn!(|_| rng.next()),
+            castle: {
+                let mut array = [0; 16];
+                array[0] = rng.next();
+                array[CanCastle::WHITE_KING_SIDE.bits() as usize] = rng.next();
+                array[CanCastle::WHITE_QUEEN_SIDE.bits() as usize] = rng.next();
+                array[CanCastle::BLACK_KING_SIDE.bits() as usize] = rng.next();
+                array[CanCastle::BLACK_QUEEN_SIDE.bits() as usize] = rng.next();
+
+                macro_rules! combine {
+                    ($($castle:expr),* $(,)?) => {
+                        array[($($castle.bits())|*) as usize] = $(array[$castle.bits() as usize])^*;
+                    };
+                }
+
+                combine!(CanCastle::WHITE_KING_SIDE, CanCastle::WHITE_QUEEN_SIDE);
+                combine!(CanCastle::BLACK_KING_SIDE, CanCastle::BLACK_QUEEN_SIDE);
+                combine!(CanCastle::WHITE_KING_SIDE, CanCastle::BLACK_KING_SIDE);
+                combine!(CanCastle::WHITE_QUEEN_SIDE, CanCastle::BLACK_QUEEN_SIDE);
+                combine!(CanCastle::WHITE_KING_SIDE, CanCastle::BLACK_QUEEN_SIDE);
+                combine!(CanCastle::BLACK_KING_SIDE, CanCastle::WHITE_QUEEN_SIDE);
+
+                combine!(
+                    CanCastle::BLACK_KING_SIDE,
+                    CanCastle::BLACK_QUEEN_SIDE,
+                    CanCastle::WHITE_KING_SIDE,
+                );
+                combine!(
+                    CanCastle::BLACK_KING_SIDE,
+                    CanCastle::BLACK_QUEEN_SIDE,
+                    CanCastle::WHITE_QUEEN_SIDE,
+                );
+                combine!(
+                    CanCastle::WHITE_KING_SIDE,
+                    CanCastle::WHITE_QUEEN_SIDE,
+                    CanCastle::BLACK_KING_SIDE,
+                );
+                combine!(
+                    CanCastle::WHITE_KING_SIDE,
+                    CanCastle::WHITE_QUEEN_SIDE,
+                    CanCastle::BLACK_QUEEN_SIDE,
+                );
+                combine!(
+                    CanCastle::BLACK_KING_SIDE,
+                    CanCastle::BLACK_QUEEN_SIDE,
+                    CanCastle::WHITE_KING_SIDE,
+                    CanCastle::WHITE_QUEEN_SIDE,
+                );
+
+                array
+            },
             en_passant: konst::array::from_fn!(|_| rng.next()),
             piece: konst::array::from_fn!(|_| konst::array::from_fn!(|_| rng.next())),
         }
