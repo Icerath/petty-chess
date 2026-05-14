@@ -69,7 +69,7 @@ impl Engine {
         pline: &mut Moves,
     ) -> Score {
         if self.depth_from_root != 0 && self.seen_position() {
-            return Score(0);
+            return if self.depth_from_root.is_multiple_of(2) { -Score(20) } else { Score(20) };
         }
 
         let mut tt_move = None;
@@ -154,7 +154,6 @@ impl Engine {
                 self.killer[self.depth_from_root as usize] = Some(mov);
                 self.transposition_table.insert(
                     &self.board,
-                    &self.seen_positions,
                     depth,
                     beta,
                     Nodetype::Beta,
@@ -171,14 +170,7 @@ impl Engine {
             return Score(0);
         }
 
-        self.transposition_table.insert(
-            &self.board,
-            &self.seen_positions,
-            depth,
-            alpha,
-            nodetype,
-            best_move,
-        );
+        self.transposition_table.insert(&self.board, depth, alpha, nodetype, best_move);
         alpha
     }
 

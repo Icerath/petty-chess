@@ -28,18 +28,7 @@ impl<T> TranspositionTable<T> {
         self.inner.get(&board.zobrist)
     }
 
-    pub fn insert(
-        &mut self,
-        board: &Board,
-        seen_positions: &[Zobrist],
-        depth: u8,
-        eval: Score,
-        nodetype: Nodetype,
-        extra: T,
-    ) {
-        if seen_positions.iter().filter(|&&sq| sq == board.zobrist).count() > 1 {
-            return;
-        }
+    pub fn insert(&mut self, board: &Board, depth: u8, eval: Score, nodetype: Nodetype, extra: T) {
         let entry = Entry { eval, nodetype, depth, extra };
         match self.inner.entry(board.zobrist) {
             HashEntry::Occupied(mut occupied) => {
