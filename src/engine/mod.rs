@@ -48,7 +48,7 @@ impl Engine {
             depth_from_root: 0,
             seen_positions: vec![],
             total_nodes: 0,
-            transposition_table: TranspositionTable::default(),
+            transposition_table: TranspositionTable::from_mb(0),
             killer: vec![],
             cancel_check: 0,
         }

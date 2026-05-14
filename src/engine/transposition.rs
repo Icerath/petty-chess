@@ -1,13 +1,8 @@
-use std::{
-    collections::{HashMap, hash_map::Entry as HashEntry},
-    hash::{BuildHasherDefault, Hasher},
-};
-
 use crate::prelude::*;
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct TranspositionTable<T> {
-    inner: HashMap<Zobrist, Entry<T>, BuildHasherDefault<NoHasher>>,
+    inner: Box<[Option<Entry<T>>]>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -19,30 +14,49 @@ pub enum Nodetype {
 
 impl<T> TranspositionTable<T> {
     #[must_use]
-    pub fn mb(&self) -> usize {
-        (self.inner.capacity() * (size_of::<Zobrist>() + size_of::<Entry<T>>())) / 1_000_000
+    pub fn from_mb(mb: usize) -> Self {
+        Self {
+            inner: std::iter::repeat_with(|| None)
+                .take(mb * 1024 * 1024 / size_of::<Entry<T>>())
+                .collect(),
+        }
     }
 
     #[must_use]
-    pub fn get(&mut self, board: &Board) -> Option<&Entry<T>> {
-        self.inner.get(&board.zobrist)
+    pub fn get(&self, zobrist: Zobrist) -> Option<&Entry<T>> {
+        self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
+            .as_ref()
+            .and_then(|entry| (entry.zobrist == zobrist).then_some(entry))
     }
 
-    pub fn insert(&mut self, board: &Board, depth: u8, eval: Score, nodetype: Nodetype, extra: T) {
-        let entry = Entry { eval, nodetype, depth, extra };
-        match self.inner.entry(board.zobrist) {
-            HashEntry::Occupied(mut occupied) => {
-                if occupied.get().depth <= depth {
-                    occupied.insert(entry);
+    #[must_use]
+    fn get_mut(&mut self, zobrist: Zobrist) -> &mut Option<Entry<T>> {
+        &mut self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
+    }
+
+    pub fn insert(
+        &mut self,
+        zobrist: Zobrist,
+        depth: u8,
+        eval: Score,
+        nodetype: Nodetype,
+        extra: T,
+    ) {
+        let entry = Entry { zobrist, eval, nodetype, depth, extra };
+        match self.get_mut(zobrist) {
+            Some(occupied) => {
+                if occupied.depth <= depth {
+                    *occupied = entry;
                 }
             }
-            HashEntry::Vacant(vacant) => _ = vacant.insert(entry),
+            vacant @ None => *vacant = Some(entry),
         }
     }
 }
 
 #[derive(Clone)]
 pub struct Entry<T> {
+    pub zobrist: Zobrist,
     pub eval: Score,
     pub nodetype: Nodetype,
     pub depth: u8,
@@ -61,22 +75,5 @@ impl<T> Entry<T> {
             return Some(self.eval);
         }
         None
-    }
-}
-
-#[derive(Default)]
-struct NoHasher(u64);
-
-impl Hasher for NoHasher {
-    fn finish(&self) -> u64 {
-        self.0
-    }
-
-    fn write(&mut self, _bytes: &[u8]) {
-        unreachable!();
-    }
-
-    fn write_u64(&mut self, i: u64) {
-        self.0 = i;
     }
 }

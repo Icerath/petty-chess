@@ -1,31 +1,19 @@
-use crate::{
-    engine::transposition::{Nodetype, TranspositionTable},
-    prelude::*,
-};
+use crate::prelude::*;
 
 impl Board {
     #[must_use]
     pub fn run_perft(&mut self, depth: u8) -> u64 {
-        self.run_perft_with_table(&mut TranspositionTable::default(), depth)
-    }
-
-    pub fn run_perft_with_table(&mut self, table: &mut TranspositionTable<u64>, depth: u8) -> u64 {
         if depth == 0 {
             return 1;
-        } else if let Some(entry) = table.get(self)
-            && depth == entry.depth
-        {
-            return entry.extra;
         }
         let mut count = 0;
         if depth == 1 {
             count = self.legal_moves().len() as u64;
         } else {
             for mov in self.legal_moves() {
-                count += self.with_move(mov).run_perft_with_table(table, depth - 1);
+                count += self.with_move(mov).run_perft(depth - 1);
             }
         }
-        table.insert(self, depth, Score(0), Nodetype::Exact, count);
         count
     }
 }

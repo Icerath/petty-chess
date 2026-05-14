@@ -3,7 +3,7 @@ use std::{fmt, hint::assert_unchecked};
 use crate::prelude::*;
 
 #[derive(Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub struct Zobrist(u64);
+pub struct Zobrist(pub u64);
 
 impl Zobrist {
     pub const DEFAULT: Self = Self(0);

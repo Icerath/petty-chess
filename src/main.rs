@@ -24,7 +24,7 @@ fn main() {
     let mut app = Application::new(tx);
 
     std::thread::spawn(move || {
-        let mut ttable = TranspositionTable::default();
+        let mut ttable = TranspositionTable::from_mb(256);
         for (mut engine, command) in rx {
             std::mem::swap(&mut engine.transposition_table, &mut ttable);
             engine.kill.store(false, Ordering::Release);
@@ -166,11 +166,9 @@ fn perft(board: &mut Board, depth: u8) -> u64 {
     let mut total = 0;
     let mut moves = board.legal_moves();
 
-    let mut table = TranspositionTable::default();
     moves.sort();
-
     for mov in moves {
-        let count = board.with_move(mov).run_perft_with_table(&mut table, depth - 1);
+        let count = board.with_move(mov).run_perft(depth - 1);
         total += count;
         eprintln!("{mov}: {count}");
     }

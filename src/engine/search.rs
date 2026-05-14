@@ -73,7 +73,7 @@ impl Engine {
 
         let mut tt_move = None;
         if self.depth_from_root > 0
-            && let Some(entry) = self.transposition_table.get(&self.board)
+            && let Some(entry) = self.transposition_table.get(self.board.zobrist)
         {
             tt_move = entry.extra;
             if let Some(score) = entry.score(alpha, beta, depth) {
@@ -152,7 +152,7 @@ impl Engine {
             if score >= beta {
                 self.killer[self.depth_from_root as usize] = Some(mov);
                 self.transposition_table.insert(
-                    &self.board,
+                    self.board.zobrist,
                     depth,
                     beta,
                     Nodetype::Beta,
@@ -169,7 +169,7 @@ impl Engine {
             return Score(0);
         }
 
-        self.transposition_table.insert(&self.board, depth, alpha, nodetype, best_move);
+        self.transposition_table.insert(self.board.zobrist, depth, alpha, nodetype, best_move);
         alpha
     }
 
