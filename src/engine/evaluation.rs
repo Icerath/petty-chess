@@ -55,8 +55,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         total += earlygame * phase.earlygame() + endgame * phase.endgame();
         final_total += total * side.positive();
     }
-    let psqt = board.mg_psqt * phase.earlygame() + board.eg_psqt * phase.endgame();
-    final_total += psqt;
+    final_total += board.mg_psqt * phase.earlygame() + board.eg_psqt * phase.endgame();
 
     // mop up evaluation
     let mop_up_side = match final_total {
@@ -70,7 +69,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
         final_total += mop_up_score * phase.endgame();
     }
-    final_total + raw_mobility_eval(board) + psqt
+    final_total + raw_mobility_eval(board)
 }
 
 fn king_safety(board: &Board, side: Side, enemy: &Pieces, king: Square) -> i32 {
