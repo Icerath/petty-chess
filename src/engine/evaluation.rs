@@ -19,7 +19,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let friendly = board.side_bitboards(side);
         let enemy = board.side_bitboards(!side);
 
-        earlygame += king_safety(&enemy, king);
+        earlygame += king_safety(board, side, &enemy, king);
         earlygame += punish_open_kings(king, &friendly, &enemy);
         total += punish_double_pawns(&friendly);
         total += reward_pawns_close_to_king(&friendly, king);
@@ -71,7 +71,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
     final_total + raw_mobility_eval(board) + psqt
 }
 
-fn king_safety(enemy: &Pieces, king: Square) -> i32 {
+fn king_safety(board: &Board, side: Side, enemy: &Pieces, king: Square) -> i32 {
     let mut total = 0;
     total -= (enemy[Queen] & king.nearby3()).count() as i32 * 30;
     total -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 15;
@@ -80,6 +80,8 @@ fn king_safety(enemy: &Pieces, king: Square) -> i32 {
     total -= (enemy[Queen] & king.nearby2()).count() as i32 * 30;
     total -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 15;
     total -= (enemy[Rook] | enemy[Rook] & king.nearby3()).count() as i32 * 20;
+
+    total -= i32::from(queen_attacks(king, board.all_pieces() & !board[side]).count()) * 5;
     total
 }
 
