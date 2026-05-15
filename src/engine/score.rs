@@ -11,20 +11,25 @@ impl Score {
     const MATE: Self = Self(i32::MAX - 1);
     pub const MAX: Self = Self(i32::MAX);
     const MIN: Self = Self(-Self::MAX.0);
-    pub const MIN_MATE: Self = Self(i32::MAX - i16::MAX as i32);
+    const MIN_MATE: Self = Self(i32::MAX - u16::MAX as i32);
     const NEG_MATE: Self = Self(-Self::MATE.0);
 
     #[must_use]
-    pub fn mate_in_moves(moves: i16) -> Self {
-        Self(Self::MATE.0 - i32::from(moves))
+    pub fn mate_in_ply(ply: u16) -> Self {
+        Self(Self::MATE.0 - i32::from(ply))
     }
 
     #[must_use]
-    pub fn mate(self) -> Option<i16> {
+    pub fn mate_ply(self) -> Option<i16> {
         if !(Self::MIN_MATE.0..=Self::MATE.0).contains(&self.0.abs()) {
             return None;
         }
         Some(((Self::MATE.0 - self.0.abs()) * self.0.signum()) as i16)
+    }
+
+    #[must_use]
+    pub fn mate_moves(self) -> Option<i16> {
+        self.mate_ply().map(|ply| ply / 2 + 1)
     }
 }
 
@@ -60,7 +65,7 @@ impl fmt::Debug for Score {
 
 impl fmt::Display for Score {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.mate() {
+        match self.mate_moves() {
             Some(moves) => write!(f, "mate {moves}"),
             None => write!(f, "cp {}", self.0),
         }

@@ -27,7 +27,7 @@ impl Engine {
             self.pv = new_pv.iter().copied().rev().collect();
             best_move = *self.pv.first().unwrap_or(&best_move);
 
-            let mate = score.mate();
+            let mate = score.mate_moves();
 
             let time_taken = self.time_started.elapsed();
             let info = Info {
@@ -41,7 +41,9 @@ impl Engine {
             };
             println!("{}", UciResponse::Info(Box::new(info)));
 
-            if mate.is_some() {
+            if let Some(mate) = mate
+                && (mate * 4) < depth as i16
+            {
                 break;
             }
 
@@ -100,18 +102,19 @@ impl Engine {
         }
 
         let mut moves = self.board.pseudolegal_moves();
-
         self.order_moves(&mut moves, self.killer[self.depth_from_root as usize], tt_move);
-        let mut nodetype = Nodetype::Alpha;
 
+        let alpha_orig = alpha;
+
+        let mut best_score = -Score::MAX;
         let mut best_move = None;
         let mut move_count = 0;
         for mov in moves {
-            if self.is_cancelled() {
-                return Score(0);
-            }
             if !self.board.is_legal(mov) {
                 continue;
+            }
+            if self.is_cancelled() {
+                return Score(0);
             }
             move_count += 1;
 
@@ -134,6 +137,7 @@ impl Engine {
             let mut score = -self.negamax(-beta, -alpha, next_depth, &mut line);
 
             if score >= beta && late_move_reduction {
+                line.clear();
                 score = -self.negamax(-beta, -alpha, next_depth + 1, &mut line);
             }
 
@@ -142,45 +146,45 @@ impl Engine {
             self.seen_positions.pop();
             self.board.unmake_move(unmake);
 
-            if score > alpha {
+            if score > best_score {
                 line.push(mov);
                 *pline = line;
-                alpha = score;
-                nodetype = Nodetype::Exact;
+                best_score = score;
                 best_move = Some(mov);
             }
+            alpha = alpha.max(best_score);
+
             if score >= beta {
                 self.killer[self.depth_from_root as usize] = Some(mov);
-                self.transposition_table.insert(
-                    self.board.zobrist,
-                    depth,
-                    beta,
-                    Nodetype::Beta,
-                    Some(mov),
-                );
-                return beta;
+                break;
             }
         }
 
         if move_count == 0 {
-            if self.board.in_check() {
-                return -Score::mate_in_moves(self.depth_from_root.cast_signed() / 2 + 1);
-            }
-            return Score(0);
+            return if self.board.in_check() {
+                -Score::mate_in_ply(self.depth_from_root)
+            } else {
+                Score(0)
+            };
         }
-
-        self.transposition_table.insert(self.board.zobrist, depth, alpha, nodetype, best_move);
-        alpha
+        let nodetype = if best_score <= alpha_orig {
+            Nodetype::Alpha
+        } else if best_score >= beta {
+            Nodetype::Beta
+        } else {
+            Nodetype::Exact
+        };
+        self.transposition_table.insert(self.board.zobrist, depth, best_score, nodetype, best_move);
+        best_score
     }
 
     fn negamax_search_all_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
         self.total_nodes += 1;
 
-        let eval = evaluate(&self.board);
-        if eval >= beta {
+        alpha = alpha.max(evaluate(&self.board));
+        if alpha >= beta {
             return beta;
         }
-        alpha = alpha.max(eval);
 
         let mut moves = self.board.pseudolegal_capture_moves();
         self.order_moves(&mut moves, None, None);
@@ -200,10 +204,11 @@ impl Engine {
             self.depth_from_root -= 1;
             self.board.unmake_move(unmake);
 
-            if score >= beta {
-                return beta;
-            }
             alpha = alpha.max(score);
+
+            if score >= beta {
+                break;
+            }
         }
 
         if !encountered_legal_move {
@@ -211,13 +216,12 @@ impl Engine {
                 self.board.pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
             if !legal_moves {
                 return if self.board.in_check() {
-                    -Score::mate_in_moves(self.depth_from_root.cast_signed() / 2 + 1)
+                    -Score::mate_in_ply(self.depth_from_root)
                 } else {
                     Score(0)
                 };
             }
         }
-
         alpha
     }
 
