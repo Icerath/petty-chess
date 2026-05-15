@@ -26,6 +26,13 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         total += reward_lined_up_rooks(&friendly, board);
         total += has_bishop_pair(board, side) as i32 * 50;
 
+        // reward castling rights
+        if (side == Side::White && (board.can_castle & CanCastle::BOTH_WHITE).bits() > 0)
+            || (side == Side::Black && (board.can_castle & CanCastle::BOTH_BLACK).bits() > 0)
+        {
+            total += 20;
+        }
+
         // punish pieces in front of enemy pawns
         let pawn_attacks = board.pawn_attacks(!side);
 
