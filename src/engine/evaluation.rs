@@ -99,8 +99,8 @@ fn punish_open_kings(king: Square, friendly: &Pieces, enemy: &Pieces) -> i32 {
 fn punish_double_pawns(friendly: &Pieces) -> i32 {
     let mut total = 0;
     for file in File::ALL {
-        let pawns_in_file = (friendly[Pawn] & file.mask()).count() as i32;
-        total -= pawns_in_file.saturating_sub(1) * 25;
+        let pawns_in_file = (friendly[Pawn] & file.mask()).count();
+        total -= i32::from(pawns_in_file.saturating_sub(1)) * 25;
     }
     total
 }
