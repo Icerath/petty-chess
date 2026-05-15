@@ -73,11 +73,13 @@ pub fn raw_evaluation(board: &Board) -> i32 {
 
 fn king_safety(enemy: &Pieces, king: Square) -> i32 {
     let mut total = 0;
-    total -= (enemy[Queen] & king.nearby3()).count() as i32 * 80;
-    total -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 40;
+    total -= (enemy[Queen] & king.nearby3()).count() as i32 * 30;
+    total -= (enemy[Knight] | enemy[Bishop] & king.nearby3()).count() as i32 * 15;
+    total -= (enemy[Rook] & king.nearby3()).count() as i32 * 20;
 
-    total -= (enemy[Queen] & king.nearby2()).count() as i32 * 80;
-    total -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 30;
+    total -= (enemy[Queen] & king.nearby2()).count() as i32 * 30;
+    total -= (enemy[Knight] | enemy[Bishop] & king.nearby2()).count() as i32 * 15;
+    total -= (enemy[Rook] | enemy[Rook] & king.nearby3()).count() as i32 * 20;
     total
 }
 
@@ -91,6 +93,7 @@ fn punish_open_kings(king: Square, friendly: &Pieces, enemy: &Pieces) -> i32 {
         let right_open = file.add_int(1).is_some_and(|file| (pawns & file.mask()).is_empty());
 
         let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
+
         total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file];
     }
     total
