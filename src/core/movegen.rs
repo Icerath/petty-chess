@@ -248,13 +248,10 @@ impl Board {
     // Generate attack map for enemy pieces
     fn gen_attack_map(&self) -> Bitboard {
         let mut output = Bitboard(0);
-        let side = !self.active_side;
         let enemy_pieces = self.enemy_bitboards();
         let all_pieces = self.all_pieces();
 
-        for from in enemy_pieces[Pawn] {
-            output |= PAWN_ATTACKS[side][from];
-        }
+        output |= self.pawn_attacks(!self.active_side);
         for from in enemy_pieces[Knight] {
             output |= KNIGHT_MOVES[from];
         }
