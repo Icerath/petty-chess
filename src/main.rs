@@ -183,8 +183,8 @@ fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
         TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
             let (total, incr) =
                 if board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
-            let estimated_total_moves = 30.max(board.halfmove_clock as i32 * 2 + 10);
-            let moves_to_end = estimated_total_moves - board.halfmove_clock as i32 * 2;
+            let estimated_total_moves = 30.max(board.fullmove_counter as i32 + 10);
+            let moves_to_end = estimated_total_moves - board.fullmove_counter as i32;
             let time_per_move = total.div_f32(moves_to_end as f32);
             (time_per_move + incr).min(total)
         }

@@ -11,7 +11,7 @@ pub struct Board {
     pub zobrist: Zobrist,
     pub side_pieces: [Bitboard; 2],
     pub pieces: [Bitboard; 6],
-    pub halfmove_clock: u8,
+    pub halfmove_clock: u16,
     pub fullmove_counter: u16,
     pub mg_psqt: i32,
     pub eg_psqt: i32,
@@ -92,7 +92,7 @@ impl Board {
     fn make_move_inner(&mut self, mov: Move) {
         let from_piece = self.active_side + self.get_square_kind(mov.from()).unwrap();
 
-        let reset_counter = from_piece.kind() == Pawn || self.is_piece_at(mov.to());
+        let reset_halfmove_clock = from_piece.kind() == Pawn || self.is_piece_at(mov.to());
 
         if let Some(sq) = self.en_passant_target_square {
             self.zobrist.xor_en_passant(sq);
@@ -156,10 +156,10 @@ impl Board {
             }
             _ => unreachable!("{:?}", mov.flags()),
         }
-        if reset_counter {
-            self.fullmove_counter = 0;
-        }
         self.increment_ply();
+        if reset_halfmove_clock {
+            self.halfmove_clock = 0;
+        }
     }
 
     pub(crate) fn make_move_no_update(&mut self, mov: Move) {
@@ -231,15 +231,15 @@ impl Board {
     }
 
     pub fn increment_ply(&mut self) {
-        self.fullmove_counter += self.active_side.is_black() as u16;
         self.halfmove_clock += 1;
+        self.fullmove_counter += self.active_side.is_black() as u16;
         self.swap_side();
     }
 
     pub fn decrement_ply(&mut self) {
         self.swap_side();
-        self.halfmove_clock -= 1;
         self.fullmove_counter -= self.active_side.is_black() as u16;
+        self.halfmove_clock -= 1;
     }
 
     #[must_use]

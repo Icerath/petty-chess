@@ -27,8 +27,6 @@ impl Engine {
             self.pv = new_pv.iter().copied().rev().collect();
             best_move = *self.pv.first().unwrap_or(&best_move);
 
-            let mate = score.mate_moves();
-
             let time_taken = self.time_started.elapsed();
             let info = Info {
                 depth: Some(depth as u32),
@@ -41,9 +39,7 @@ impl Engine {
             };
             println!("{}", UciResponse::Info(Box::new(info)));
 
-            if let Some(mate) = mate
-                && (mate * 4) < depth as i16
-            {
+            if score.mate_ply().is_some() {
                 break;
             }
 
@@ -69,7 +65,7 @@ impl Engine {
         if self.depth_from_root != 0 && self.seen_position() {
             return if self.depth_from_root.is_multiple_of(2) { -Score(20) } else { Score(20) };
         }
-        if self.depth_from_root != 0 && self.board.fullmove_counter >= 50 {
+        if self.depth_from_root != 0 && self.board.halfmove_clock >= 50 {
             return Score(0);
         }
 
