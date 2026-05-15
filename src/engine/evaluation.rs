@@ -1,5 +1,3 @@
-use movegen::PAWN_ATTACKS;
-
 use super::mobility::raw_mobility_eval;
 use crate::{core::board::Pieces, prelude::*};
 
@@ -29,10 +27,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         total += has_bishop_pair(board, side) as i32 * 50;
 
         // punish pieces in front of enemy pawns
-        let mut pawn_attacks = Bitboard::EMPTY;
-        for sq in enemy[Pawn] {
-            pawn_attacks |= PAWN_ATTACKS[!side][sq];
-        }
+        let pawn_attacks = board.pawn_attacks(!side);
 
         let non_pawns = friendly[Knight] | friendly[Bishop] | friendly[Rook] | friendly[Queen];
         total -= (pawn_attacks & non_pawns).count() as i32 * 40;

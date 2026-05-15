@@ -393,3 +393,8 @@ const fn compute_king_moves() -> [Bitboard; 64] {
     }
     squares
 }
+
+#[test]
+fn test_pawn_attacks() {
+    assert_eq!(Board::start_pos().pawn_attacks(White), Rank::_3.mask());
+}
