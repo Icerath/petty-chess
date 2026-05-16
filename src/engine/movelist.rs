@@ -11,8 +11,9 @@ pub struct MoveList {
 enum State {
     #[default]
     Hash,
+    Capture,
     Killer,
-    Moves,
+    Quiet,
     Finished,
 }
 
@@ -29,28 +30,30 @@ impl MoveList {
             }
             match self.state {
                 State::Hash => {
-                    self.state = State::Killer;
+                    self.state = State::Capture;
                     if let Some(mov) = tt_move
                         && board.is_pseudolegal(mov)
                     {
                         break Some(mov);
                     }
                 }
+                State::Capture => {
+                    self.state = if CAPTURES_ONLY { State::Finished } else { State::Killer };
+                    self.moves = board.pseudolegal_capture_moves();
+                    self.remove_tt_killer(tt_move, killer);
+                    order_moves(board, &mut self.moves);
+                }
                 State::Killer => {
-                    self.state = State::Moves;
+                    self.state = State::Quiet;
                     if let Some(mov) = killer
                         && board.is_pseudolegal(mov)
                     {
                         break Some(mov);
                     }
                 }
-                State::Moves => {
+                State::Quiet => {
                     self.state = State::Finished;
-                    self.moves = if CAPTURES_ONLY {
-                        board.pseudolegal_capture_moves()
-                    } else {
-                        board.pseudolegal_moves()
-                    };
+                    self.moves = board.pseudolegal_quiet_moves();
                     self.remove_tt_killer(tt_move, killer);
                     order_moves(board, &mut self.moves);
                 }
