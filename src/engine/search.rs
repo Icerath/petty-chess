@@ -1,6 +1,8 @@
 use std::time::Instant;
 
-use super::{Engine, evaluation::evaluate, phase::phase, transposition::Nodetype};
+use super::{
+    Engine, evaluation::evaluate, movelist::MoveList, phase::phase, transposition::Nodetype,
+};
 use crate::{
     engine::score::Score,
     prelude::*,
@@ -97,15 +99,14 @@ impl Engine {
             }
         }
 
-        let mut moves = self.board.pseudolegal_moves();
-        self.order_moves(&mut moves, self.killer[self.depth_from_root as usize], tt_move);
-
+        let mut moves = MoveList::default();
         let alpha_orig = alpha;
 
         let mut best_score = -Score::MAX;
         let mut best_move = None;
         let mut move_count = 0;
-        for mov in moves {
+        let killer = self.killer[self.depth_from_root as usize];
+        while let Some(mov) = moves.next::<false>(&mut self.board, tt_move, killer) {
             if !self.board.is_legal(mov) {
                 continue;
             }
@@ -182,11 +183,10 @@ impl Engine {
             return beta;
         }
 
-        let mut moves = self.board.pseudolegal_capture_moves();
-        self.order_moves(&mut moves, None, None);
-
         let mut encountered_legal_move = false;
-        for mov in moves {
+        let mut moves = MoveList::default();
+
+        while let Some(mov) = moves.next::<true>(&mut self.board, None, None) {
             if !self.board.is_legal(mov) {
                 continue;
             }

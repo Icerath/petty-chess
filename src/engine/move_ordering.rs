@@ -32,58 +32,39 @@ where
     }
 }
 
-impl Engine {
-    pub fn order_moves(&mut self, moves: &mut [Move], killer: Option<Move>, tt_move: Option<Move>) {
-        let pawn_attacks = self.board.pawn_attacks(!self.board.active_side);
-        let phase = phase(&self.board);
-        sort_by_cached_key(moves, |mov| {
-            -self.move_order(mov, killer, tt_move, phase, pawn_attacks)
-        });
+pub fn order_moves(board: &mut Board, moves: &mut [Move]) {
+    let pawn_attacks = board.pawn_attacks(!board.active_side);
+    let phase = phase(board);
+    sort_by_cached_key(moves, |mov| move_order(board, mov, phase, pawn_attacks));
+}
+
+fn move_order(board: &mut Board, mov: Move, phase: Phase, pawn_attacks: Bitboard) -> i16 {
+    let mut score = 0;
+
+    let piece = unsafe { board.get_square_kind(mov.from()).unwrap_unchecked() };
+
+    let piece_sq_diff = psqt::MG[piece + White][mov.to()] - psqt::MG[piece + White][mov.from()];
+    score += piece_sq_diff * (200 * phase.earlygame()) / 1024;
+
+    if let Some(target_piece) = board.get_square_kind(mov.to()) {
+        unsafe { assert_unchecked(target_piece != PieceKind::King) };
+        score += MVV_LVA[target_piece][piece] as i32 * 4;
+    } else if mov.flags() == MoveFlags::EnPassant {
+        score += MVV_LVA[Pawn][Pawn] as i32 * 4;
     }
 
-    fn move_order(
-        &mut self,
-        mov: Move,
-        killer: Option<Move>,
-        tt_move: Option<Move>,
-        phase: Phase,
-        pawn_attacks: Bitboard,
-    ) -> i16 {
-        let mut score = 0;
-        if let Some(tt_move) = tt_move
-            && tt_move == mov
-        {
-            return i16::MAX;
-        } else if let Some(killer) = killer
-            && killer == mov
-        {
-            return i16::MAX - 1;
-        }
-        let piece = unsafe { self.board.get_square_kind(mov.from()).unwrap_unchecked() };
-
-        let piece_sq_diff = psqt::MG[piece + White][mov.to()] - psqt::MG[piece + White][mov.from()];
-        score += piece_sq_diff * (200 * phase.earlygame()) / 1024;
-
-        if let Some(target_piece) = self.board.get_square_kind(mov.to()) {
-            unsafe { assert_unchecked(target_piece != PieceKind::King) };
-            score += MVV_LVA[target_piece][piece] as i32 * 4;
-        } else if mov.flags() == MoveFlags::EnPassant {
-            score += MVV_LVA[Pawn][Pawn] as i32 * 4;
-        }
-
-        if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-            score += psqt::PIECE_MG[kind] * phase.earlygame();
-            score += psqt::PIECE_EG[kind] * phase.endgame();
-        }
-
-        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
-            score += 10;
-        }
-
-        if !mov.flags().is_capture() && piece != Pawn && !pawn_attacks.contains(mov.to()) {
-            score += 5;
-        }
-
-        score as i16
+    if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
+        score += psqt::PIECE_MG[kind] * phase.earlygame();
+        score += psqt::PIECE_EG[kind] * phase.endgame();
     }
+
+    if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+        score += 10;
+    }
+
+    if !mov.flags().is_capture() && piece != Pawn && !pawn_attacks.contains(mov.to()) {
+        score += 5;
+    }
+
+    score as i16
 }

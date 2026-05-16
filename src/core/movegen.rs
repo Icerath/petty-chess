@@ -3,19 +3,28 @@ pub const KING_MOVES: [Bitboard; 64] = compute_king_moves();
 pub const KNIGHT_MOVES: [Bitboard; 64] = compute_knight_moves();
 pub const PAWN_ATTACKS: [[Bitboard; 64]; 2] = compute_pawn_moves();
 
+pub struct QuietOnly;
 pub struct CapturesOnly;
 pub struct FullGen;
 
 pub trait GenType {
-    const CAPTURES_ONLY: bool;
+    const CAPTURES: bool;
+    const NONCAPTURES: bool;
+}
+
+impl GenType for QuietOnly {
+    const CAPTURES: bool = false;
+    const NONCAPTURES: bool = true;
 }
 
 impl GenType for CapturesOnly {
-    const CAPTURES_ONLY: bool = true;
+    const CAPTURES: bool = true;
+    const NONCAPTURES: bool = false;
 }
 
 impl GenType for FullGen {
-    const CAPTURES_ONLY: bool = false;
+    const CAPTURES: bool = true;
+    const NONCAPTURES: bool = true;
 }
 
 fn gen_legal_moves<G: GenType>(board: &mut Board) -> Moves {
@@ -35,8 +44,10 @@ fn gen_pseudolegal_moves<G: GenType>(board: &Board) -> Moves {
     if checkers.count() >= 2 {
         return moves;
     }
-    gen_pawn_captures(board, &mut moves);
-    if !G::CAPTURES_ONLY {
+    if G::CAPTURES {
+        gen_pawn_captures(board, &mut moves);
+    }
+    if G::NONCAPTURES {
         gen_pawn_push(board, &mut moves);
     }
     for from in pieces[Knight] {
@@ -148,6 +159,11 @@ impl Board {
     }
 
     #[must_use]
+    pub fn pseudolegal_quiet_moves(&self) -> Moves {
+        gen_pseudolegal_moves::<QuietOnly>(self)
+    }
+
+    #[must_use]
     pub fn capture_moves(&mut self) -> Moves {
         gen_legal_moves::<CapturesOnly>(self)
     }
@@ -156,15 +172,147 @@ impl Board {
     pub fn is_valid(&mut self, mov: Move) -> bool {
         self.pseudolegal_moves().contains(&mov) && self.is_legal(mov)
     }
+
+    pub(crate) fn is_pseudolegal(&mut self, mov: Move) -> bool {
+        let result = self.is_pseudolegal_(mov);
+        debug_assert_eq!(result, self.pseudolegal_moves().contains(&mov), "{self:?} - {mov:?}");
+        result
+    }
+
+    #[must_use]
+    #[expect(clippy::too_many_lines)]
+    pub(crate) fn is_pseudolegal_(&mut self, mov: Move) -> bool {
+        let (from, to) = (mov.from(), mov.to());
+
+        let Some(from_piece) = self.get_square(from) else { return false };
+        if from_piece.side() != self.active_side {
+            return false;
+        }
+
+        let checkers = self.gen_checkers(self.active_side);
+
+        if checkers.count() >= 2 && from_piece.kind() != King {
+            return false;
+        }
+
+        if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
+            let can_castle = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {
+                (White, true) => CanCastle::WHITE_KING_SIDE,
+                (White, false) => CanCastle::WHITE_QUEEN_SIDE,
+                (Black, true) => CanCastle::BLACK_KING_SIDE,
+                (Black, false) => CanCastle::BLACK_QUEEN_SIDE,
+            };
+            if !self.can_castle.contains(can_castle) {
+                return false;
+            }
+            if !checkers.is_empty() {
+                return false;
+            }
+            let squares = match (self.active_side, mov.flags() == MoveFlags::KingCastle) {
+                (White, true) => Bitboard::from_iter([Square::F1, Square::G1]),
+                (White, false) => Bitboard::from_iter([Square::B1, Square::C1, Square::D1]),
+                (Black, true) => Bitboard::from_iter([Square::F8, Square::G8]),
+                (Black, false) => Bitboard::from_iter([Square::B8, Square::C8, Square::D8]),
+            };
+            return (squares & self.all_pieces()).is_empty();
+        }
+
+        let mut en_passant = false;
+        if from_piece.kind() == Pawn
+            && let Some(sq) = self.en_passant_target_square
+            && mov.to() == sq
+        {
+            if !PAWN_ATTACKS[!self.active_side][sq].contains(from) {
+                return false;
+            }
+            en_passant = true;
+        }
+
+        if en_passant != (mov.flags() == MoveFlags::EnPassant) {
+            return false;
+        }
+
+        let captured_piece = self.get_square(to);
+        if let Some(captured_piece) = captured_piece {
+            if captured_piece.side() == self.active_side {
+                return false;
+            }
+            if !mov.flags().is_capture() {
+                return false;
+            }
+        } else if mov.flags().is_capture() && !en_passant {
+            return false;
+        }
+
+        if from_piece.kind() == Pawn
+            && ((self.active_side.is_white() && to.rank() == Rank::_8)
+                || (self.active_side.is_black() && to.rank() == Rank::_1))
+            && mov.flags().promotion().is_none()
+        {
+            return false;
+        }
+
+        if mov.flags().promotion().is_some() && from_piece.kind() != Pawn {
+            return false;
+        }
+        if (mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle)
+            && from_piece.kind() != King
+        {
+            return false;
+        }
+
+        let move_options = match from_piece.kind() {
+            Pawn => {
+                if captured_piece.is_some() {
+                    PAWN_ATTACKS[self.active_side][from]
+                } else if en_passant {
+                    return true;
+                } else {
+                    let forward = from.add_rank(self.active_side.forward()).unwrap();
+                    if forward == to {
+                        return true;
+                    }
+                    if mov.flags() != MoveFlags::DoublePawnPush {
+                        return false;
+                    }
+
+                    if ((self.active_side.is_white() && from.rank() == Rank::_2)
+                        || (self.active_side.is_black() && from.rank() == Rank::_7))
+                        && !self.is_piece_at(forward)
+                    {
+                        let forward2 = forward.add_rank(self.active_side.forward()).unwrap();
+                        if forward2 == to {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+            Knight => KNIGHT_MOVES[from],
+            Bishop => bishop_attacks(from, self.all_pieces()),
+            Rook => rook_attacks(from, self.all_pieces()),
+            Queen => queen_attacks(from, self.all_pieces()),
+            King => KING_MOVES[from],
+        };
+        if !move_options.contains(mov.to()) {
+            return false;
+        }
+        if mov.flags() == MoveFlags::DoublePawnPush {
+            return false;
+        }
+        true
+    }
 }
 
 fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, moves: &mut Moves) {
-    let captures = squares & board[!board.active_side];
-    for sq in captures {
-        moves.push(Move::new(from, sq, MoveFlags::Capture));
+    if G::CAPTURES {
+        let captures = squares & board[!board.active_side];
+        for sq in captures {
+            moves.push(Move::new(from, sq, MoveFlags::Capture));
+        }
     }
-    if !G::CAPTURES_ONLY {
-        let noncaptures = squares & !board[!board.active_side] & !board[board.active_side];
+    if G::NONCAPTURES {
+        let noncaptures = squares & !board.all_pieces();
         for sq in noncaptures {
             moves.push(Move::new(from, sq, MoveFlags::Quiet));
         }
@@ -173,7 +321,7 @@ fn push_squares<G: GenType>(board: &Board, from: Square, squares: Bitboard, move
 
 fn gen_king_moves<G: GenType>(board: &Board, from: Square, checkers: Bitboard, moves: &mut Moves) {
     push_squares::<G>(board, from, KING_MOVES[from], moves);
-    if G::CAPTURES_ONLY || !checkers.is_empty() {
+    if !G::NONCAPTURES || !checkers.is_empty() {
         return;
     }
     if board.active_side == White {
