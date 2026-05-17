@@ -55,6 +55,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         total += earlygame * phase.earlygame() + endgame * phase.endgame();
         final_total += total * side.positive();
     }
+    final_total += board.active_side.positive() * 5;
     final_total += board.mg_psqt * phase.earlygame() + board.eg_psqt * phase.endgame();
 
     // mop up evaluation
