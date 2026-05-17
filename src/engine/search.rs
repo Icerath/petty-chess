@@ -110,9 +110,6 @@ impl Engine {
             if !self.board.is_legal(mov) {
                 continue;
             }
-            if self.is_cancelled() {
-                return Score(0);
-            }
             move_count += 1;
 
             let unmake = self.board.make_move(mov);
@@ -132,6 +129,10 @@ impl Engine {
             self.depth_from_root += 1;
             let mut line = Moves::new();
             let mut score = -self.negamax(-beta, -alpha, next_depth, &mut line);
+
+            if self.is_cancelled() {
+                return Score(0);
+            }
 
             if score >= beta && late_move_reduction {
                 line.clear();
@@ -178,20 +179,30 @@ impl Engine {
     fn negamax_search_all_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
         self.total_nodes += 1;
 
-        alpha = alpha.max(evaluation(&self.board) * self.board.active_side);
+        let alpha_orig = alpha;
+
+        let mut best_score = evaluation(&self.board) * self.board.active_side;
+        alpha = alpha.max(best_score);
         if alpha >= beta {
             return beta;
+        }
+        let mut tt_move = None;
+        if self.depth_from_root > 0
+            && let Some(entry) = self.transposition_table.get(self.board.zobrist)
+        {
+            tt_move = entry.mov.opt();
+            if let Some(score) = entry.score(alpha, beta, 0) {
+                return score;
+            }
         }
 
         let mut encountered_legal_move = false;
         let mut moves = MoveList::default();
+        let mut best_move = None;
 
-        while let Some(mov) = moves.next::<true>(&mut self.board, None, None) {
+        while let Some(mov) = moves.next::<true>(&mut self.board, tt_move, None) {
             if !self.board.is_legal(mov) {
                 continue;
-            }
-            if self.is_cancelled() {
-                return Score(0);
             }
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
@@ -199,6 +210,11 @@ impl Engine {
             let score = -self.negamax_search_all_captures(-beta, -alpha);
             self.depth_from_root -= 1;
             self.board.unmake_move(unmake);
+
+            if score > best_score {
+                best_move = Some(mov);
+                best_score = score;
+            }
 
             alpha = alpha.max(score);
 
@@ -218,7 +234,17 @@ impl Engine {
                 };
             }
         }
-        alpha
+
+        let nodetype = if best_score <= alpha_orig {
+            Nodetype::Alpha
+        } else if best_score >= beta {
+            Nodetype::Beta
+        } else {
+            Nodetype::Exact
+        };
+        self.transposition_table.insert(self.board.zobrist, 0, best_score, nodetype, best_move);
+
+        best_score
     }
 
     fn should_null_move_heuristic(&self, depth: u8) -> bool {
