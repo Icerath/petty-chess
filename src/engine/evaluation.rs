@@ -93,18 +93,18 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
         let nearby3 = self.king[side].nearby3();
         let nearby2 = self.king[side].nearby2();
 
-        self.total[side] -= (self.board.get(!side + Bishop) & nearby2).count() as i32 * 15;
-        self.total[side] -= (self.board.get(!side + Knight) & nearby2).count() as i32 * 15;
-        self.total[side] -= (self.board.get(!side + Queen) & nearby2).count() as i32 * 30;
+        self.earlygame[side] -= (self.board.get(!side + Bishop) & nearby2).count() as i32 * 15;
+        self.earlygame[side] -= (self.board.get(!side + Knight) & nearby2).count() as i32 * 15;
+        self.earlygame[side] -= (self.board.get(!side + Queen) & nearby2).count() as i32 * 30;
 
-        self.total[side] -= (self.board.get(!side + Bishop) & nearby3).count() as i32 * 15;
-        self.total[side] -= (self.board.get(!side + Knight) & nearby3).count() as i32 * 15;
-        self.total[side] -= (self.board.get(!side + Rook) & nearby3).count() as i32 * 40;
-        self.total[side] -= (self.board.get(!side + Queen) & nearby3).count() as i32 * 30;
+        self.earlygame[side] -= (self.board.get(!side + Bishop) & nearby3).count() as i32 * 15;
+        self.earlygame[side] -= (self.board.get(!side + Knight) & nearby3).count() as i32 * 15;
+        self.earlygame[side] -= (self.board.get(!side + Rook) & nearby3).count() as i32 * 40;
+        self.earlygame[side] -= (self.board.get(!side + Queen) & nearby3).count() as i32 * 30;
 
-        self.total[side] -=
-            i32::from(queen_attacks(self.king[side], self.occupancy & !self.board[side]).count())
-                * 5;
+        self.earlygame[side] -=
+            i32::from((queen_attacks(self.king[side], self.occupancy) & !self.board[side]).count())
+                * 10;
     }
 
     fn open_kings(&mut self, side: Side) -> i32 {
