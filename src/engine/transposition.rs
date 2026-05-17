@@ -3,6 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct TranspositionTable {
     inner: Box<[Option<Entry>]>,
+    len_minus_1: u64,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -15,23 +16,22 @@ pub enum Nodetype {
 impl TranspositionTable {
     #[must_use]
     pub fn from_mb(mb: usize) -> Self {
-        Self {
-            inner: std::iter::repeat_with(|| None)
-                .take(mb * 1024 * 1024 / size_of::<Entry>())
-                .collect(),
-        }
+        let inner: Box<[Option<Entry>]> = std::iter::repeat_with(|| None)
+            .take((mb * 1024 * 1024 / size_of::<Entry>()).max(1).next_power_of_two())
+            .collect();
+        Self { len_minus_1: inner.len() as u64 - 1, inner }
+    }
+
+    fn index(&self, zobrist: Zobrist) -> usize {
+        let index = (zobrist.0 & self.len_minus_1) as usize;
+        unsafe { std::hint::assert_unchecked(index < self.inner.len()) };
+        index
     }
 
     #[must_use]
     pub fn get(&self, zobrist: Zobrist) -> Option<&Entry> {
-        self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
-            .as_ref()
-            .and_then(|entry| (entry.zobrist == zobrist).then_some(entry))
-    }
-
-    #[must_use]
-    fn get_mut(&mut self, zobrist: Zobrist) -> &mut Option<Entry> {
-        &mut self.inner[(zobrist.0 % self.inner.len() as u64) as usize]
+        let index = self.index(zobrist);
+        self.inner[index].as_ref().and_then(|entry| (entry.zobrist == zobrist).then_some(entry))
     }
 
     pub fn insert(
@@ -43,7 +43,7 @@ impl TranspositionTable {
         mov: Option<Move>,
     ) {
         let entry = Entry { zobrist, eval, nodetype, depth, mov: Move::from_opt(mov) };
-        match self.get_mut(zobrist) {
+        match &mut self.inner[self.index(zobrist)] {
             Some(occupied) => {
                 if occupied.depth <= depth {
                     *occupied = entry;
