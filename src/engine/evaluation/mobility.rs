@@ -4,8 +4,9 @@ use crate::prelude::*;
 impl<F> Evaluation<'_, F> {
     pub fn mobility(&mut self, side: Side) {
         let occupancy = self.board.all_pieces();
+        let knight_mask = !self.pawn_attacks[side] & !self.board[side];
         let knight_total: i32 = (self.board.get(side + Knight).into_iter())
-            .map(|sq| knight_score((KNIGHT_MOVES[sq] & !self.pawn_attacks[side]).count()))
+            .map(|sq| knight_score((KNIGHT_MOVES[sq] & knight_mask).count()))
             .sum();
         let bishop_total: i32 = (self.board.get(side + Bishop).into_iter())
             .map(|sq| bishop_score((bishop_attacks(sq, occupancy)).count()))
@@ -18,7 +19,7 @@ impl<F> Evaluation<'_, F> {
             .sum();
 
         let mut total = 0;
-        total += knight_total * 32;
+        total += knight_total * 50;
         total += bishop_total * 32;
         self.total[side] += total / 1024;
 
