@@ -5,7 +5,7 @@ use std::{
 };
 
 use petty_chess::{
-    engine::{evaluation::raw_evaluation, transposition::TranspositionTable},
+    engine::{evaluation::debug_evaluation, transposition::TranspositionTable},
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
@@ -154,7 +154,11 @@ impl Application {
         }
         println!();
         println!("Endgame: {:?}", phase(board).endgame().as_float());
-        println!("Direct Eval: {:?}", raw_evaluation(board));
+        let eval = debug_evaluation(board, |name, side, value| {
+            println!("{side:?} {name} = {value}");
+        });
+        println!();
+        println!("total eval {eval}");
     }
 }
 

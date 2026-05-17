@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use super::{
-    Engine, evaluation::evaluate, movelist::MoveList, phase::phase, transposition::Nodetype,
+    Engine, evaluation::evaluation, movelist::MoveList, phase::phase, transposition::Nodetype,
 };
 use crate::{
     engine::score::Score,
@@ -178,7 +178,7 @@ impl Engine {
     fn negamax_search_all_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
         self.total_nodes += 1;
 
-        alpha = alpha.max(evaluate(&self.board));
+        alpha = alpha.max(evaluation(&self.board) * self.board.active_side);
         if alpha >= beta {
             return beta;
         }

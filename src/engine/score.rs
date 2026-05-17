@@ -3,6 +3,8 @@ use std::{
     ops::{Mul, Neg},
 };
 
+use crate::core::side::Side;
+
 // A Eval in centipawns
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Score(pub i32);
@@ -46,6 +48,14 @@ impl Neg for Score {
 
     fn neg(self) -> Self::Output {
         Self(-self.0)
+    }
+}
+
+impl Mul<Side> for Score {
+    type Output = Self;
+
+    fn mul(self, side: Side) -> Self::Output {
+        Self(self.0 * side.positive())
     }
 }
 
