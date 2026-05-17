@@ -22,7 +22,7 @@ fn main() {
             std::mem::swap(&mut engine.transposition_table, &mut ttable);
             engine.kill.store(false, Ordering::Release);
             engine.time_available = get_time_available(&engine.board, command.time_control);
-            engine.search();
+            engine.search_root();
             std::mem::swap(&mut engine.transposition_table, &mut ttable);
         }
     });

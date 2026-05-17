@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl Engine {
-    pub fn search(&mut self) {
+    pub fn search_root(&mut self) {
         self.time_started = Instant::now();
         self.total_nodes = 0;
 
@@ -21,7 +21,7 @@ impl Engine {
 
         for depth in 1.. {
             let mut new_pv = Moves::new();
-            let score = self.negamax(-Score::MAX, Score::MAX, depth, &mut new_pv);
+            let score = self.search(-Score::MAX, Score::MAX, depth, &mut new_pv);
             self.total_nodes -= 1;
             if self.is_cancelled() {
                 break;
@@ -57,7 +57,7 @@ impl Engine {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
     }
 
-    pub(crate) fn negamax(
+    pub(crate) fn search(
         &mut self,
         mut alpha: Score,
         beta: Score,
@@ -84,14 +84,14 @@ impl Engine {
             }
         }
         if depth == 0 {
-            return self.negamax_search_all_captures(alpha, beta);
+            return self.search_captures(alpha, beta);
         }
         self.total_nodes += 1;
 
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
-            let score = -self.negamax(-beta, -alpha, depth - 3, &mut Moves::new());
+            let score = -self.search(-beta, -alpha, depth - 3, &mut Moves::new());
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
@@ -128,7 +128,7 @@ impl Engine {
 
             self.depth_from_root += 1;
             let mut line = Moves::new();
-            let mut score = -self.negamax(-beta, -alpha, next_depth, &mut line);
+            let mut score = -self.search(-beta, -alpha, next_depth, &mut line);
 
             if self.is_cancelled() {
                 return Score(0);
@@ -136,7 +136,7 @@ impl Engine {
 
             if score >= beta && late_move_reduction {
                 line.clear();
-                score = -self.negamax(-beta, -alpha, next_depth + 1, &mut line);
+                score = -self.search(-beta, -alpha, next_depth + 1, &mut line);
             }
 
             self.depth_from_root -= 1;
@@ -176,7 +176,7 @@ impl Engine {
         best_score
     }
 
-    fn negamax_search_all_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
+    fn search_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
         self.total_nodes += 1;
 
         let alpha_orig = alpha;
@@ -207,7 +207,7 @@ impl Engine {
             encountered_legal_move = true;
             let unmake = self.board.make_move(mov);
             self.depth_from_root += 1;
-            let score = -self.negamax_search_all_captures(-beta, -alpha);
+            let score = -self.search_captures(-beta, -alpha);
             self.depth_from_root -= 1;
             self.board.unmake_move(unmake);
 
