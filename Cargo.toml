@@ -10,6 +10,7 @@ arrayvec = "0.7.6"
 atoi = "2.0.0"
 bitflags = "2.6.0"
 konst = "0.4.3"
+rustyline = { version = "18.0.0", default-features = false }
 serde = { version = "1.0.217", optional = true }
 
 

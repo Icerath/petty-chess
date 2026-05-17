@@ -1,6 +1,5 @@
 use std::{
     fmt::Write,
-    io::BufRead as _,
     sync::{atomic::Ordering, mpsc::Sender},
     time::{Duration, Instant},
 };
@@ -10,11 +9,9 @@ use petty_chess::{
     prelude::*,
     uci::{GoCommand, TimeControl, UciMessage, UciResponse},
 };
+use rustyline::{DefaultEditor, error::ReadlineError};
 
 fn main() {
-    let mut line = String::new();
-    let mut stdin = std::io::stdin().lock();
-
     let (tx, rx) = std::sync::mpsc::channel();
 
     let mut app = Application::new(tx);
@@ -30,20 +27,31 @@ fn main() {
         }
     });
 
+    let mut rl = DefaultEditor::new().unwrap();
     loop {
-        line.clear();
-        stdin.read_line(&mut line).unwrap();
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-
-        if let Some(message) = UciMessage::parse(line) {
-            if app.process_message(message) {
+        let readline = rl.readline("");
+        match readline {
+            Ok(line) => {
+                if line.trim_start().len() == line.len() {
+                    _ = rl.add_history_entry(line.as_str());
+                }
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                if let Some(message) = UciMessage::parse(line) {
+                    if app.process_message(message) {
+                        break;
+                    }
+                } else {
+                    eprintln!("Unknown command: '{line}'. Type help for more information.");
+                }
+            }
+            Err(ReadlineError::Interrupted | ReadlineError::Eof) => break,
+            Err(err) => {
+                eprintln!("Error: {err:?}");
                 break;
             }
-        } else {
-            eprintln!("Unknown command: '{line}'. Type help for more information.");
         }
     }
 }
