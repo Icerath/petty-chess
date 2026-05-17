@@ -1,11 +1,7 @@
 use std::{
     fmt::Write,
     io::BufRead as _,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-        mpsc::Sender,
-    },
+    sync::{atomic::Ordering, mpsc::Sender},
     time::{Duration, Instant},
 };
 
@@ -34,7 +30,7 @@ fn main() {
         }
     });
 
-    while app.running {
+    loop {
         line.clear();
         stdin.read_line(&mut line).unwrap();
         let line = line.trim();
@@ -43,7 +39,9 @@ fn main() {
         }
 
         if let Some(message) = UciMessage::parse(line) {
-            app.process_message(message);
+            if app.process_message(message) {
+                break;
+            }
         } else {
             eprintln!("Unknown command: '{line}'. Type help for more information.");
         }
@@ -52,59 +50,49 @@ fn main() {
 
 pub struct Application {
     tx: Sender<(Engine, GoCommand)>,
-    kill: Arc<AtomicBool>,
     engine: Engine,
-    running: bool,
     debug: bool,
 }
 
-#[expect(clippy::needless_pass_by_value, clippy::unused_self, clippy::match_same_arms)]
+#[expect(clippy::unused_self, clippy::match_same_arms)]
 impl Application {
     fn new(tx: Sender<(Engine, GoCommand)>) -> Self {
         let engine = Engine::new(Board::start_pos());
-        Self { kill: engine.kill.clone(), engine, running: true, debug: false, tx }
+        Self { engine, debug: false, tx }
     }
 
-    fn process_message(&mut self, msg: UciMessage) {
+    /// returns true if app should exit
+    fn process_message(&mut self, msg: UciMessage) -> bool {
         use UciMessage as Uci;
 
         match msg {
             Uci::Uci => self.respond_with_id(),
-            Uci::Isready => self.respond(UciResponse::Readyok),
+            Uci::Isready => println!("{}", UciResponse::Readyok),
             Uci::Setoption { .. } => {}
             Uci::Debug(on) => self.debug = on,
             Uci::Register(_reg) => {}
             Uci::Ucinewgame => *self = Self::new(self.tx.clone()),
-            Uci::Position { fen, moves } => {
-                if let Some(board) = Board::from_fen(&fen) {
-                    self.startpos_moves(board, moves);
-                }
-            }
-            Uci::Go(command) => {
-                _ = self.tx.send((self.engine.clone(), command));
-            }
-
-            Uci::Stop => self.kill.store(true, Ordering::Relaxed),
+            Uci::Position { fen, moves } => self.position(fen, moves),
+            Uci::Go(command) => _ = self.tx.send((self.engine.clone(), command)),
+            Uci::Stop => self.engine.kill.store(true, Ordering::Relaxed),
             Uci::PonderHit => {}
-            Uci::Quit => self.running = false,
             Uci::Perft { depth } => self.go_perft(depth.unwrap_or(1) as u8),
             Uci::Display => self.display(),
+            Uci::Quit => return true,
         }
+        false
     }
 
     fn respond_with_id(&self) {
-        self.respond(UciResponse::Id {
-            name: "Petty Chess".into(),
-            author: "Dorje Gilfillan".into(),
-        });
-        self.respond(UciResponse::Uciok);
+        println!(
+            "{}",
+            UciResponse::Id { name: "Petty Chess".into(), author: "Dorje Gilfillan".into() }
+        );
+        println!("{}", UciResponse::Uciok);
     }
 
-    fn respond(&self, response: UciResponse) {
-        println!("{response}");
-    }
-
-    fn startpos_moves(&mut self, position: Board, moves: Vec<Move>) {
+    fn position(&mut self, position: String, moves: Vec<Move>) {
+        let Some(position) = Board::from_fen(position) else { return };
         self.engine.seen_positions = vec![position.zobrist];
         self.engine.board = position;
         for mov in moves {
