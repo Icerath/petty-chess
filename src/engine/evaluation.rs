@@ -1,4 +1,4 @@
-use super::mobility::raw_mobility_eval;
+use super::mobility::mobility;
 use crate::{core::board::Pieces, prelude::*};
 
 const ROOK_SAME_FILE_BONUS: i32 = 20;
@@ -51,7 +51,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
                 total += [0, 10, 20, 30, 40, 50, 70, 90][offset];
             }
         }
-
+        total += mobility(board, side, phase);
         total += earlygame * phase.earlygame() + endgame * phase.endgame();
         final_total += total * side.positive();
     }
@@ -69,7 +69,7 @@ pub fn raw_evaluation(board: &Board) -> i32 {
         let mop_up_score = (47 * cmd + 16 * (14 - md as i32)) * mop_up_side.positive();
         final_total += mop_up_score * phase.endgame();
     }
-    final_total + raw_mobility_eval(board)
+    final_total
 }
 
 fn king_safety(board: &Board, side: Side, enemy: &Pieces, king: Square) -> i32 {
