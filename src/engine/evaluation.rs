@@ -72,7 +72,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 bishop_pair,
                 castling_right,
                 passed_pawns,
-                nonisolated_pawns,
+                isolated_pawns,
                 attacked_by_pawn,
                 mobility,
             );
@@ -228,10 +228,10 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
         }
     }
 
-    fn nonisolated_pawns(&mut self, side: Side) {
+    fn isolated_pawns(&mut self, side: Side) {
         for sq in self.board.get(side + Pawn) {
-            if !(sq.file().adjacency_mask() & self.board.get(side + Pawn)).is_empty() {
-                self.total[side] += [15, 18, 23, 25, 25, 23, 18, 15][sq.file()];
+            if (sq.file().adjacency_mask() & self.board.get(side + Pawn)).is_empty() {
+                self.total[side] -= [15, 18, 23, 25, 25, 23, 18, 15][sq.file()];
             }
         }
     }

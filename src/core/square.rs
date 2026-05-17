@@ -232,15 +232,7 @@ macro_rules! impl_file_rank {
             }
 
             const fn compute_adjacency_mask(self) -> Bitboard {
-                unsafe {
-                    match self {
-                        Self::MIN => self.add_int_unchecked(1).mask(),
-                        Self::MAX => self.sub_int_unchecked(1).mask(),
-                        _ => Bitboard(
-                            self.sub_int_unchecked(1).mask().0 | self.add_int_unchecked(1).mask().0,
-                        ),
-                    }
-                }
+                Bitboard(self.mask().shift_left().0 | self.mask().shift_right().0)
             }
         }
     };
