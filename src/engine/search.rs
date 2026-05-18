@@ -45,7 +45,7 @@ impl Engine {
                 break;
             }
 
-            let skip_time = 2.8 - phase(&self.board).endgame().as_float();
+            let skip_time = 2.2 - (phase(&self.board).endgame().as_float() * 0.8);
             if self.time_started.elapsed().mul_f32(skip_time) > self.time_available {
                 break;
             }
