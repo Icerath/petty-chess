@@ -86,7 +86,6 @@ impl Engine {
         if depth == 0 {
             return self.search_captures(alpha, beta);
         }
-        self.total_nodes += 1;
 
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
@@ -95,7 +94,7 @@ impl Engine {
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
-                return beta;
+                return score;
             }
         }
 
