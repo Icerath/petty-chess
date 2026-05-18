@@ -12,15 +12,15 @@ const MVV_LVA: [[u8; 6]; 6] = [
     [0, 0, 0, 0, 0, 0],       // victim K, attacker P, N, B, R, Q, K
 ];
 
-pub fn sort_by_cached_key<F>(moves: &mut [Move], mut f: F)
+pub fn sort_by_cached_key<F, T: Ord + Copy>(moves: &mut [Move], mut f: F)
 where
-    F: FnMut(Move) -> i16,
+    F: FnMut(Move) -> T,
 {
     let mut indices = [MaybeUninit::uninit(); 256];
     for (i, mov) in moves.iter().copied().enumerate() {
         indices[i].write((f(mov), i as u8));
     }
-    let indices = unsafe { &mut *((&raw mut indices[..moves.len()]) as *mut [(i16, u8)]) };
+    let indices = unsafe { &mut *((&raw mut indices[..moves.len()]) as *mut [(T, u8)]) };
     indices.sort_unstable_by_key(|(k, _)| *k);
     for i in 0..moves.len() {
         let mut index = indices[i].1;
@@ -32,10 +32,21 @@ where
     }
 }
 
-pub fn order_moves(board: &mut Board, depth: u8, moves: &mut [Move]) {
-    let pawn_attacks = board.pawn_attacks(!board.active_side);
-    let phase = phase(board);
-    sort_by_cached_key(moves, |mov| move_order(board, mov, phase, depth, pawn_attacks));
+impl Engine {
+    pub fn order_moves_capture(&mut self, depth: u8, moves: &mut [Move]) {
+        let pawn_attacks = self.board.pawn_attacks(!self.board.active_side);
+        let phase = phase(&self.board);
+        sort_by_cached_key(moves, |mov| {
+            move_order(&mut self.board, mov, phase, depth, pawn_attacks)
+        });
+    }
+
+    pub fn order_moves_history(&mut self, moves: &mut [Move]) {
+        sort_by_cached_key(moves, |mov| {
+            let piece = self.board.get_square(mov.from()).unwrap();
+            self.history_table[piece][mov.to()]
+        });
+    }
 }
 
 fn move_order(

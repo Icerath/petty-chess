@@ -32,6 +32,7 @@ pub struct Engine {
     pub depth_from_root: u16,
     pub total_nodes: u64,
     pub transposition_table: TranspositionTable,
+    pub history_table: [[i32; Square::LEN]; Piece::LEN],
     pub killer: Vec<Option<Move>>,
     pub cancel_check: u32,
 }
@@ -49,6 +50,7 @@ impl Engine {
             seen_positions: vec![],
             total_nodes: 0,
             transposition_table: TranspositionTable::from_mb(0),
+            history_table: [[0; _]; _],
             killer: vec![],
             cancel_check: 0,
         }
