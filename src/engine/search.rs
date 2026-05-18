@@ -21,11 +21,10 @@ impl Engine {
 
         for depth in 1.. {
             let mut new_pv = Moves::new();
-            let score = self.search(-Score::MAX, Score::MAX, depth, &mut new_pv);
-            self.total_nodes -= 1;
-            if self.is_cancelled() {
+            let Ok(score) = self.search(-Score::MAX, Score::MAX, depth, &mut new_pv) else {
                 break;
-            }
+            };
+            self.total_nodes -= 1;
             self.pv = new_pv.iter().copied().rev().collect();
             best_move = *self.pv.first().unwrap_or(&best_move);
 
@@ -63,12 +62,16 @@ impl Engine {
         beta: Score,
         depth: u8,
         pline: &mut Moves,
-    ) -> Score {
+    ) -> Result<Score, ()> {
+        if self.is_cancelled() {
+            return Err(());
+        }
+
         if self.depth_from_root != 0 && self.seen_position() {
-            return if self.depth_from_root.is_multiple_of(2) { -Score(20) } else { Score(20) };
+            return Ok(if self.depth_from_root.is_multiple_of(2) { -Score(20) } else { Score(20) });
         }
         if self.depth_from_root != 0 && self.board.halfmove_clock >= 50 {
-            return Score(0);
+            return Ok(Score(0));
         }
 
         let mut tt_move = None;
@@ -80,21 +83,22 @@ impl Engine {
                 if let Some(tt_move) = tt_move {
                     pline.push(tt_move);
                 }
-                return score;
+                return Ok(score);
             }
         }
         if depth == 0 {
-            return self.search_captures(alpha, beta);
+            return Ok(self.search_captures(alpha, beta));
         }
 
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
-            let score = -self.search(-beta, -(Score(beta.0 - 1)), depth - 3, &mut Moves::new());
+            let score = -self.search(-beta, -(Score(beta.0 - 1)), depth - 3, &mut Moves::new())?;
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
+
             if score >= beta {
-                return score;
+                return Ok(score);
             }
         }
 
@@ -127,15 +131,11 @@ impl Engine {
 
             self.depth_from_root += 1;
             let mut line = Moves::new();
-            let mut score = -self.search(-beta, -alpha, next_depth, &mut line);
-
-            if self.is_cancelled() {
-                return Score(0);
-            }
+            let mut score = -self.search(-beta, -alpha, next_depth, &mut line)?;
 
             if score >= beta && late_move_reduction {
                 line.clear();
-                score = -self.search(-beta, -alpha, next_depth + 1, &mut line);
+                score = -self.search(-beta, -alpha, next_depth + 1, &mut line)?;
             }
 
             self.depth_from_root -= 1;
@@ -162,11 +162,11 @@ impl Engine {
         }
 
         if move_count == 0 {
-            return if self.board.in_check() {
+            return Ok(if self.board.in_check() {
                 -Score::mate_in_ply(self.depth_from_root)
             } else {
                 Score(0)
-            };
+            });
         }
         let nodetype = if best_score <= alpha_orig {
             Nodetype::Alpha
@@ -176,7 +176,7 @@ impl Engine {
             Nodetype::Exact
         };
         self.transposition_table.insert(self.board.zobrist, depth, best_score, nodetype, best_move);
-        best_score
+        Ok(best_score)
     }
 
     fn search_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
