@@ -90,7 +90,7 @@ impl Engine {
         if self.should_null_move_heuristic(depth) {
             let unmake = self.board.make_null_move();
             self.depth_from_root += 1;
-            let score = -self.search(-beta, -alpha, depth - 3, &mut Moves::new());
+            let score = -self.search(-beta, -(Score(beta.0 - 1)), depth - 3, &mut Moves::new());
             self.depth_from_root -= 1;
             self.board.unmake_null_move(unmake);
             if score >= beta {
