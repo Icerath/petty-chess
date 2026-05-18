@@ -16,16 +16,19 @@ fn main() {
 
     let mut app = Application::new(tx);
 
-    std::thread::spawn(move || {
-        let mut ttable = TranspositionTable::from_mb(256);
-        for (mut engine, command) in rx {
-            std::mem::swap(&mut engine.transposition_table, &mut ttable);
-            engine.kill.store(false, Ordering::Release);
-            engine.time_available = get_time_available(&engine.board, command.time_control);
-            engine.search_root();
-            std::mem::swap(&mut engine.transposition_table, &mut ttable);
-        }
-    });
+    std::thread::Builder::new()
+        .stack_size(8 * 1024 * 1024)
+        .spawn(move || {
+            let mut ttable = TranspositionTable::from_mb(256);
+            for (mut engine, command) in rx {
+                std::mem::swap(&mut engine.transposition_table, &mut ttable);
+                engine.kill.store(false, Ordering::Release);
+                engine.time_available = get_time_available(&engine.board, command.time_control);
+                engine.search_root();
+                std::mem::swap(&mut engine.transposition_table, &mut ttable);
+            }
+        })
+        .unwrap();
 
     let mut rl = DefaultEditor::new().unwrap();
     loop {
