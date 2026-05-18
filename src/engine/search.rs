@@ -106,7 +106,7 @@ impl Engine {
         let mut best_move = None;
         let mut move_count = 0;
         let killer = self.killer[self.depth_from_root as usize];
-        while let Some(mov) = moves.next::<false>(&mut self.board, tt_move, killer) {
+        while let Some(mov) = moves.next::<false>(&mut self.board, tt_move, killer, depth) {
             if !self.board.is_legal(mov) {
                 continue;
             }
@@ -200,7 +200,7 @@ impl Engine {
         let mut moves = MoveList::default();
         let mut best_move = None;
 
-        while let Some(mov) = moves.next::<true>(&mut self.board, tt_move, None) {
+        while let Some(mov) = moves.next::<true>(&mut self.board, tt_move, None, 0) {
             if !self.board.is_legal(mov) {
                 continue;
             }

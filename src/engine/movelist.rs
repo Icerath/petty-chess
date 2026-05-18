@@ -23,6 +23,7 @@ impl MoveList {
         board: &mut Board,
         tt_move: Option<Move>,
         killer: Option<Move>,
+        depth: u8,
     ) -> Option<Move> {
         loop {
             if let Some(mov) = self.moves.pop() {
@@ -41,7 +42,7 @@ impl MoveList {
                     self.state = if CAPTURES_ONLY { State::Finished } else { State::Killer };
                     self.moves = board.pseudolegal_capture_moves();
                     self.remove_tt_killer(tt_move, killer);
-                    order_moves(board, &mut self.moves);
+                    order_moves(board, depth, &mut self.moves);
                 }
                 State::Killer => {
                     self.state = State::Quiet;
@@ -55,7 +56,7 @@ impl MoveList {
                     self.state = State::Finished;
                     self.moves = board.pseudolegal_quiet_moves();
                     self.remove_tt_killer(tt_move, killer);
-                    order_moves(board, &mut self.moves);
+                    order_moves(board, depth, &mut self.moves);
                 }
                 State::Finished => break None,
             }
@@ -81,7 +82,7 @@ fn test_movelist() {
     let mut board = Board::start_pos();
     let mut moves = board.pseudolegal_moves();
     let mut mlmoves = vec![];
-    while let Some(next) = movelist.next::<false>(&mut board, None, None) {
+    while let Some(next) = movelist.next::<false>(&mut board, None, None, 0) {
         mlmoves.push(next);
     }
     moves.sort();
@@ -95,9 +96,9 @@ fn test_movelist_capture() {
     let mut board = Board::start_pos();
     let mut moves = board.pseudolegal_capture_moves();
     let mut mlmoves = vec![];
-    while let Some(next) = movelist.next::<true>(&mut board, None, None) {
+    while let Some(next) = movelist.next::<true>(&mut board, None, None, 0) {
         mlmoves.push(next);
     }
-    order_moves(&mut board, &mut moves);
+    order_moves(&mut board, 0, &mut moves);
     assert_eq!(&*moves, mlmoves);
 }

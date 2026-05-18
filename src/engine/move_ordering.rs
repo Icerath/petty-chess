@@ -32,13 +32,19 @@ where
     }
 }
 
-pub fn order_moves(board: &mut Board, moves: &mut [Move]) {
+pub fn order_moves(board: &mut Board, depth: u8, moves: &mut [Move]) {
     let pawn_attacks = board.pawn_attacks(!board.active_side);
     let phase = phase(board);
-    sort_by_cached_key(moves, |mov| move_order(board, mov, phase, pawn_attacks));
+    sort_by_cached_key(moves, |mov| move_order(board, mov, phase, depth, pawn_attacks));
 }
 
-fn move_order(board: &mut Board, mov: Move, phase: Phase, pawn_attacks: Bitboard) -> i16 {
+fn move_order(
+    board: &mut Board,
+    mov: Move,
+    phase: Phase,
+    depth: u8,
+    pawn_attacks: Bitboard,
+) -> i16 {
     let mut score = 0;
 
     let piece = unsafe { board.get_square_kind(mov.from()).unwrap_unchecked() };
@@ -64,6 +70,14 @@ fn move_order(board: &mut Board, mov: Move, phase: Phase, pawn_attacks: Bitboard
 
     if !mov.flags().is_capture() && piece != Pawn && !pawn_attacks.contains(mov.to()) {
         score += 5;
+    }
+
+    if depth >= 3 {
+        let unmake = board.make_move(mov);
+        if board.in_check() {
+            score += 10;
+        }
+        board.unmake_move(unmake);
     }
 
     score as i16
