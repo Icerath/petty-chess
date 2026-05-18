@@ -1,6 +1,6 @@
 use std::{hint::assert_unchecked, mem::MaybeUninit};
 
-use super::psqt;
+use super::{evaluation::evaluation, psqt};
 use crate::prelude::*;
 
 const MVV_LVA: [[u8; 6]; 6] = [
@@ -73,7 +73,11 @@ fn move_order(
     }
 
     if depth >= 3 {
+        let old_eval = if mov.flags().is_capture() { None } else { Some(evaluation(board)) };
         let unmake = board.make_move(mov);
+        if let Some(old_eval) = old_eval {
+            score += (Score(evaluation(board).0 - old_eval.0) * !board.active_side).0 / 2;
+        }
         if board.in_check() {
             score += 10;
         }
