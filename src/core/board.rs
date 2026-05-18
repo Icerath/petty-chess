@@ -178,43 +178,6 @@ impl Board {
         }
     }
 
-    #[must_use]
-    pub fn update_flags(&self, mov: Move) -> Move {
-        let is_capture = self[!self.active_side].contains(mov.to());
-        if let Some(promotion) = mov.flags().promotion() {
-            if !is_capture {
-                return mov;
-            }
-
-            return match promotion {
-                Promotion::Knight => mov.with_flags(MoveFlags::KnightPromotionCapture),
-                Promotion::Bishop => mov.with_flags(MoveFlags::BishopPromotionCapture),
-                Promotion::Rook => mov.with_flags(MoveFlags::RookPromotionCapture),
-                Promotion::Queen => mov.with_flags(MoveFlags::QueenPromotionCapture),
-            };
-        }
-        let is_castling = self[King].contains(mov.from()) && mov.file_diff() > 1;
-
-        if is_castling {
-            let flags =
-                if mov.file_diff() == 2 { MoveFlags::KingCastle } else { MoveFlags::QueenCastle };
-            return mov.with_flags(flags);
-        }
-
-        if self[Pawn].contains(mov.from()) && mov.rank_diff() > 1 {
-            return mov.with_flags(MoveFlags::DoublePawnPush);
-        }
-        let is_en_passant = self[Pawn].contains(mov.from())
-            && mov.file_diff() > 0
-            && !self[!self.active_side].contains(mov.to());
-
-        if is_en_passant {
-            return mov.with_flags(MoveFlags::EnPassant);
-        }
-
-        mov.with_flags(if is_capture { MoveFlags::Capture } else { MoveFlags::Quiet })
-    }
-
     pub fn unmake_move(&mut self, unmake: Unmake) {
         *self = unmake.board;
     }

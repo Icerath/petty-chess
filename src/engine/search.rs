@@ -194,7 +194,7 @@ impl Engine {
         if self.depth_from_root > 0
             && let Some(entry) = self.transposition_table.get(self.board.zobrist)
         {
-            tt_move = entry.mov.opt();
+            tt_move = entry.mov.opt().filter(|mov| mov.flags().is_capture());
             if let Some(score) = entry.score(alpha, beta, 0) {
                 return score;
             }
