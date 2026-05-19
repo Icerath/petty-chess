@@ -186,7 +186,7 @@ fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
         TimeControl::TimeLeft { base, incr, .. } => {
             let (base, incr) = (base[board.active_side], incr[board.active_side]);
             let endgame = phase(board).endgame().as_float();
-            base.div_f32(20.0 - endgame * 5.0) + incr.div_f32(2.0 - endgame * 0.5)
+            base.div_f32(20.0 - endgame * 5.0) + incr.div_f32(2.0 - endgame)
         }
         TimeControl::MoveTime(time) => time,
         TimeControl::Infinite => Duration::MAX,
