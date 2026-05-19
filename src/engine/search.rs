@@ -74,6 +74,10 @@ impl Engine {
             return Ok(Score(0));
         }
 
+        if depth == 0 {
+            return Ok(self.search_captures(alpha, beta));
+        }
+
         let mut tt_move = None;
         if self.depth_from_root > 0
             && let Some(entry) = self.transposition_table.get(self.board.zobrist)
@@ -85,9 +89,6 @@ impl Engine {
                 }
                 return Ok(score);
             }
-        }
-        if depth == 0 {
-            return Ok(self.search_captures(alpha, beta));
         }
 
         if self.should_null_move_heuristic(depth) {
