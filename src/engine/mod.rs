@@ -32,7 +32,7 @@ pub struct Engine {
     pub depth_from_root: u16,
     pub total_nodes: u64,
     pub transposition_table: TranspositionTable,
-    pub history_table: [[i32; Square::LEN]; Piece::LEN],
+    pub history_table: [[u32; Square::LEN]; Piece::LEN],
     pub killer: Vec<Option<Move>>,
     pub cancel_check: u32,
 }

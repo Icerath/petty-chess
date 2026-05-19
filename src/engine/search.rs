@@ -158,7 +158,7 @@ impl Engine {
                 if !mov.flags().is_capture() {
                     self.killer[self.depth_from_root as usize] = Some(mov);
                     let piece = self.board.get_square(mov.from()).unwrap();
-                    self.history_table[piece][mov.to()] += i32::from(depth) * i32::from(depth);
+                    self.history_table[piece][mov.to()] += u32::from(depth) * u32::from(depth);
                 }
                 break;
             }

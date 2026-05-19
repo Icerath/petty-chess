@@ -43,6 +43,9 @@ impl Engine {
 
     pub fn order_moves_history(&mut self, moves: &mut [Move]) {
         sort_by_cached_key(moves, |mov| {
+            if let Some(Promotion::Queen) = mov.flags().promotion() {
+                return u32::MAX;
+            }
             let piece = self.board.get_square(mov.from()).unwrap();
             self.history_table[piece][mov.to()]
         });
