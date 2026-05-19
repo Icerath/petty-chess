@@ -52,7 +52,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                             + self.earlygame[side] * phase.earlygame()
                             + self.endgame[side] * phase.endgame();
 
-                        self.$name(side);
+                        let _: () = self.$name(side);
 
                         if total != self.total[side] {
                             (self.debug)(stringify!($name), side, self.total[side] - total);
@@ -66,7 +66,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 open_kings,
                 double_pawns,
                 pawns_close_to_king,
-                outposts,
+                // outposts,
                 rooks_on_open_file,
                 lined_up_rooks,
                 bishop_pair,
@@ -107,8 +107,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 * 10;
     }
 
-    fn open_kings(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    fn open_kings(&mut self, side: Side) {
         for pawns in [self.board.get(side + Pawn), self.board.get(!side + Pawn)] {
             let file = self.king[side].file();
 
@@ -118,22 +117,18 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
 
             let num_open_files = left_open as i32 + middle_open as i32 + right_open as i32;
 
-            total -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file];
+            self.earlygame[side] -= num_open_files * [40, 35, 25, 10, 10, 25, 35, 40][file];
         }
-        total
     }
 
-    fn double_pawns(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    fn double_pawns(&mut self, side: Side) {
         for file in File::ALL {
             let pawns_in_file = (self.board.get(side + Pawn) & file.mask()).count();
-            total -= i32::from(pawns_in_file.saturating_sub(1)) * 25;
+            self.total[side] -= i32::from(pawns_in_file.saturating_sub(1)) * 25;
         }
-        total
     }
 
-    fn pawns_close_to_king(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    fn pawns_close_to_king(&mut self, side: Side) {
         for sq in self.board.get(side + Pawn)
             & self.king[side].nearby2()
             & (self.king[side].file().adjacency_mask() | self.king[side].file().mask())
@@ -150,50 +145,43 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
             ];
             let dif_rank = sq.rank().diff(self.king[side].rank());
             unsafe { std::hint::assert_unchecked(dif_rank < 3) };
-            total += BONUSES[sq.file()][dif_rank as usize];
+            self.earlygame[side] += BONUSES[sq.file()][dif_rank as usize];
         }
-        total
     }
 
-    fn outposts(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    #[expect(unused)]
+    fn outposts(&mut self, side: Side) {
         for sq in Bitboard::ALL.shift_forward_n(side, 4)
             & (self.board.get(side + Knight) | self.board.get(side + Bishop))
         {
             let is_outpost = (sq.outpost_mask(side) & self.board.get(!side + Pawn)).is_empty();
             if is_outpost {
-                total += 20;
+                self.total[side] += 20;
             }
         }
-
-        total
     }
 
-    fn rooks_on_open_file(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    fn rooks_on_open_file(&mut self, side: Side) {
         for sq in self.board.get(side + Rook) {
             if (self.board[Pawn] & sq.file().mask()).is_empty() {
-                total += 20;
+                self.total[side] += 20;
             } else if (self.board.get(side + Pawn) & (sq.file().mask())).is_empty() {
-                total += 10;
+                self.total[side] += 10;
             }
         }
-        total
     }
 
-    fn lined_up_rooks(&mut self, side: Side) -> i32 {
-        let mut total = 0;
+    fn lined_up_rooks(&mut self, side: Side) {
         if self.board.get(side + Rook).count() >= 2 {
             let rook_a = unsafe { self.board.get(side + Rook).bitscan_unchecked() };
             let rook_b = unsafe { self.board.get(side + Rook).rbitscan_unchecked() };
 
             let rook_attacks = rook_attacks(rook_a, self.occupancy);
             if rook_attacks.contains(rook_b) {
-                total += 20;
-                total += (rook_a.file() == rook_b.file()) as i32 * 20;
+                self.total[side] += 20;
+                self.total[side] += (rook_a.file() == rook_b.file()) as i32 * 20;
             }
         }
-        total
     }
 
     fn castling_right(&mut self, side: Side) {
