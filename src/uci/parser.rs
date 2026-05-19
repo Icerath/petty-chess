@@ -80,10 +80,8 @@ impl Uci {
             nodes: None,
             mate: None,
         };
-        let mut wtime = Duration::ZERO;
-        let mut btime = Duration::ZERO;
-        let mut wincr = Duration::ZERO;
-        let mut bincr = Duration::ZERO;
+        let mut base = [Duration::ZERO; 2];
+        let mut incr = [Duration::ZERO; 2];
         let mut moves_to_go = None;
         while let Some(token) = tokens.bump() {
             match token.as_str() {
@@ -97,15 +95,14 @@ impl Uci {
                 token @ ("wtime" | "btime" | "wincr" | "bincr" | "movestogo") => {
                     let Some(next) = tokens.bump_spin() else { continue };
                     match token {
-                        "wtime" => wtime = Duration::from_millis(next),
-                        "btime" => btime = Duration::from_millis(next),
-                        "wincr" => wincr = Duration::from_millis(next),
-                        "bincr" => bincr = Duration::from_millis(next),
+                        "wtime" => base[White] = Duration::from_millis(next),
+                        "btime" => base[Black] = Duration::from_millis(next),
+                        "wincr" => incr[White] = Duration::from_millis(next),
+                        "bincr" => incr[Black] = Duration::from_millis(next),
                         "movestogo" => moves_to_go = Some(next as u32),
                         _ => unreachable!(),
                     }
-                    command.time_control =
-                        TimeControl::TimeLeft { wtime, btime, wincr, bincr, moves_to_go }
+                    command.time_control = TimeControl::TimeLeft { base, incr, moves_to_go }
                 }
                 "searchmoves" => command.searchmoves = Some(tokens.moves()),
                 "mate" => command.mate = tokens.bump_spin().map(|i| i as u32).or(command.mate),
@@ -223,10 +220,8 @@ fn test_uci_parsing() {
         "go depth wtime 10000 btime 10000 wincr 5000bincr 3000movestogo 5".parse(),
         Ok(Uci::Go(GoCommand {
             time_control: TimeControl::TimeLeft {
-                wtime: Duration::from_secs(10),
-                btime: Duration::from_secs(10),
-                wincr: Duration::from_secs(5),
-                bincr: Duration::from_secs(3),
+                base: [Duration::from_secs(10); 2],
+                incr: [Duration::from_secs(3), Duration::from_secs(5)],
                 moves_to_go: Some(5),
             },
             ..GoCommand::default()

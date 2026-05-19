@@ -38,10 +38,8 @@ pub struct GoCommand {
 pub enum TimeControl {
     Ponder,
     TimeLeft {
-        wtime: Duration,
-        btime: Duration,
-        wincr: Duration,
-        bincr: Duration,
+        base: [Duration; Side::LEN],
+        incr: [Duration; Side::LEN],
         moves_to_go: Option<u32>,
     },
     MoveTime(Duration),

@@ -183,10 +183,9 @@ fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
     match time_control {
         // TODO - ponder
         TimeControl::Ponder => Duration::MAX,
-        TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
+        TimeControl::TimeLeft { base, incr, .. } => {
+            let (base, incr) = (base[board.active_side], incr[board.active_side]);
             let endgame = phase(board).endgame().as_float();
-            let (base, incr) =
-                if board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
             base.div_f32(20.0 - endgame * 5.0) + incr.div_f32(2.0 - endgame * 0.5)
         }
         TimeControl::MoveTime(time) => time,
