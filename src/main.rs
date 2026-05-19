@@ -184,12 +184,10 @@ fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
         // TODO - ponder
         TimeControl::Ponder => Duration::MAX,
         TimeControl::TimeLeft { wtime, btime, wincr, bincr, .. } => {
-            let (total, incr) =
+            let endgame = phase(board).endgame().as_float();
+            let (base, incr) =
                 if board.active_side == White { (wtime, wincr) } else { (btime, bincr) };
-            let estimated_total_moves = 30.max(board.fullmove_counter as i32 + 10);
-            let moves_to_end = estimated_total_moves - board.fullmove_counter as i32;
-            let time_per_move = total.div_f32(moves_to_end as f32);
-            (time_per_move + incr).min(total)
+            base.div_f32(20.0 - endgame * 5.0) + incr.div_f32(2.0 - endgame * 0.5)
         }
         TimeControl::MoveTime(time) => time,
         TimeControl::Infinite => Duration::MAX,
