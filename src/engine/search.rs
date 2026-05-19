@@ -123,13 +123,17 @@ impl Engine {
 
             let mut next_depth = depth - 1;
 
+            // extentions and reductions
+            if self.board.in_check() {
+                next_depth += 1;
+            }
             let late_move_reduction = depth > 2 && move_count >= 2;
-
             if late_move_reduction {
                 next_depth -= 1;
             }
-            if self.board.in_check() {
-                next_depth += 1;
+            // iir
+            if depth > 5 && tt_move.is_none() {
+                next_depth -= 1;
             }
 
             self.depth_from_root += 1;
