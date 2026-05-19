@@ -1,6 +1,6 @@
 use std::{hint::assert_unchecked, mem::MaybeUninit};
 
-use super::{evaluation::evaluation, psqt};
+use super::psqt;
 use crate::prelude::*;
 
 const MVV_LVA: [[u8; 6]; 6] = [
@@ -34,11 +34,8 @@ where
 
 impl Engine {
     pub fn order_moves_capture(&mut self, depth: u8, moves: &mut [Move]) {
-        let pawn_attacks = self.board.pawn_attacks(!self.board.active_side);
         let phase = phase(&self.board);
-        sort_by_cached_key(moves, |mov| {
-            move_order(&mut self.board, mov, phase, depth, pawn_attacks)
-        });
+        sort_by_cached_key(moves, |mov| order_capture(&mut self.board, mov, phase, depth));
     }
 
     pub fn order_moves_history(&mut self, moves: &mut [Move]) {
@@ -52,13 +49,7 @@ impl Engine {
     }
 }
 
-fn move_order(
-    board: &mut Board,
-    mov: Move,
-    phase: Phase,
-    depth: u8,
-    pawn_attacks: Bitboard,
-) -> i16 {
+fn order_capture(board: &mut Board, mov: Move, phase: Phase, depth: u8) -> i16 {
     let mut score = 0;
 
     let piece = unsafe { board.get_square_kind(mov.from()).unwrap_unchecked() };
@@ -71,6 +62,8 @@ fn move_order(
         score += MVV_LVA[target_piece][piece] as i32 * 4;
     } else if mov.flags() == MoveFlags::EnPassant {
         score += MVV_LVA[Pawn][Pawn] as i32 * 4;
+    } else {
+        debug_assert!(false);
     }
 
     if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
@@ -78,20 +71,8 @@ fn move_order(
         score += psqt::PIECE_EG[kind] * phase.endgame();
     }
 
-    if mov.flags() == MoveFlags::KingCastle || mov.flags() == MoveFlags::QueenCastle {
-        score += 10;
-    }
-
-    if !mov.flags().is_capture() && piece != Pawn && !pawn_attacks.contains(mov.to()) {
-        score += 5;
-    }
-
     if depth >= 3 {
-        let old_eval = if mov.flags().is_capture() { None } else { Some(evaluation(board)) };
         let unmake = board.make_move(mov);
-        if let Some(old_eval) = old_eval {
-            score += (Score(evaluation(board).0 - old_eval.0) * !board.active_side).0 / 2;
-        }
         if board.in_check() {
             score += 10;
         }
