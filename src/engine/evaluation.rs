@@ -54,8 +54,12 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
 
                         let _: () = self.$name(side);
 
-                        if total != self.total[side] {
-                            (self.debug)(stringify!($name), side, self.total[side] - total);
+                        let new_total = self.total[side]
+                            + self.earlygame[side] * phase.earlygame()
+                            + self.endgame[side] * phase.endgame();
+
+                        if total != new_total {
+                            (self.debug)(stringify!($name), side, new_total - total);
                         }
                     );*
 
