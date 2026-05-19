@@ -40,7 +40,9 @@ impl Engine {
             };
             println!("{}", UciResponse::Info(Box::new(info)));
 
-            if score.mate_ply().is_some() {
+            if let Some(mate) = score.mate_ply()
+                && mate <= i16::from(depth)
+            {
                 break;
             }
 
