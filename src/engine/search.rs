@@ -124,13 +124,18 @@ impl Engine {
             let mut next_depth = depth - 1;
 
             // extentions and reductions
-            if self.board.in_check() {
+            let checking = self.board.in_check();
+            if checking {
                 next_depth += 1;
             }
-            let late_move_reduction = depth > 2 && move_count >= 2;
-            if late_move_reduction {
-                next_depth -= 1;
+            let mut late_move_reduction = 0;
+            if depth > 2 && move_count > 1 {
+                late_move_reduction += 1;
+                if !mov.flags().is_capture() && !checking && move_count > 3 {
+                    late_move_reduction += 1;
+                }
             }
+            next_depth -= late_move_reduction;
             // iir
             if depth > 5 && tt_move.is_none() {
                 next_depth -= 1;
@@ -140,7 +145,10 @@ impl Engine {
             let mut line = Moves::new();
             let mut score = -self.search(-beta, -alpha, next_depth, &mut line)?;
 
-            if score >= beta && late_move_reduction {
+            if score >= beta && late_move_reduction > 0 {
+                line.clear();
+                score = -self.search(-beta, -alpha, next_depth + late_move_reduction, &mut line)?;
+            } else if score > alpha && late_move_reduction > 1 {
                 line.clear();
                 score = -self.search(-beta, -alpha, next_depth + 1, &mut line)?;
             }
