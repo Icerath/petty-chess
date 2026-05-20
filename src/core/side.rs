@@ -43,6 +43,14 @@ impl Side {
             Self::Black => 'b',
         }
     }
+
+    #[must_use]
+    pub const fn not(self) -> Self {
+        match self {
+            Self::White => Self::Black,
+            Self::Black => Self::White,
+        }
+    }
 }
 
 impl From<bool> for Side {
@@ -61,9 +69,6 @@ impl Not for Side {
     type Output = Self;
 
     fn not(self) -> Self::Output {
-        match self {
-            Self::Black => Self::White,
-            Self::White => Self::Black,
-        }
+        self.not()
     }
 }

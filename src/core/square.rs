@@ -105,7 +105,7 @@ impl Square {
 
     #[must_use]
     pub const fn passed_pawn_mask(self, side: Side) -> Bitboard {
-        const LUT: [[Bitboard; 64]; 2] = {
+        static LUT: [[Bitboard; 64]; 2] = {
             let mut black_lut = [Bitboard::EMPTY; 64];
             let mut i = 0;
             while i < 64 {
@@ -135,6 +135,25 @@ impl Square {
             Side::Black => mask.0 = mask.0.wrapping_shr(((8 - rank as u8) * 8) as u32),
         }
         mask
+    }
+
+    #[must_use]
+    pub const fn backwards_pawn_mask(self, side: Side) -> Bitboard {
+        static LUT: [[Bitboard; 64]; 2] = konst::array::from_fn!(|side| {
+            let side = Side::from_int(side as _).unwrap();
+            konst::array::from_fn!(|i| {
+                let sq = Square::from_int(i as _).unwrap();
+                match sq.add_rank(side.forward()) {
+                    Some(forward) => {
+                        let mut mask = forward.passed_pawn_mask(side.not());
+                        mask.remove(sq);
+                        mask
+                    }
+                    None => Bitboard::EMPTY,
+                }
+            })
+        });
+        LUT[side as usize][self as usize]
     }
 
     #[must_use]
