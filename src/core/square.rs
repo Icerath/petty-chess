@@ -216,24 +216,6 @@ macro_rules! impl_file_rank {
             pub const fn diff(self, other: Self) -> u8 {
                 (self as u8).abs_diff(other as u8)
             }
-
-            #[must_use]
-            pub const fn adjacency_mask(self) -> Bitboard {
-                const LUT: [Bitboard; 8] = {
-                    let mut lut = [Bitboard::EMPTY; 8];
-                    let mut i = 0;
-                    while i < 8 {
-                        lut[i as usize] = <$ty>::from_int(i).unwrap().compute_adjacency_mask();
-                        i += 1;
-                    }
-                    lut
-                };
-                LUT[self as usize]
-            }
-
-            const fn compute_adjacency_mask(self) -> Bitboard {
-                Bitboard(self.mask().shift_left().0 | self.mask().shift_right().0)
-            }
         }
     };
     ($($ty: ty),+) => {
@@ -262,6 +244,17 @@ impl File {
     #[must_use]
     pub const fn mask(self) -> Bitboard {
         Bitboard(0x0101_0101_0101_0101 << self as u8)
+    }
+
+    #[must_use]
+    pub const fn adjacency_mask(self) -> Bitboard {
+        const LUT: [Bitboard; 8] =
+            konst::array::from_fn!(|i| File::from_int(i as _).unwrap().compute_adjacency_mask());
+        LUT[self as usize]
+    }
+
+    const fn compute_adjacency_mask(self) -> Bitboard {
+        Bitboard(self.mask().shift_left().0 | self.mask().shift_right().0)
     }
 }
 
