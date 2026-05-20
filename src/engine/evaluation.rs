@@ -222,6 +222,10 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 self.total[side] -= [15, 18, 23, 25, 25, 23, 18, 15][sq.file()];
             } else if (sq.backwards_pawn_mask(side) & self.board.get(side + Pawn)).is_empty() {
                 self.total[side] -= 5;
+            } else if (sq.passed_pawn_mask(!side) & self.board.get(side + Pawn)).is_empty()
+                && self.pawn_attacks[!side].contains(sq.add_rank(side.forward()).unwrap())
+            {
+                self.total[side] -= 6;
             }
         }
     }
