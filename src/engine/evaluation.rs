@@ -70,7 +70,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 open_kings,
                 double_pawns,
                 pawns_close_to_king,
-                // outposts,
+                outposts,
                 rooks_on_open_file,
                 lined_up_rooks,
                 bishop_pair,
@@ -154,14 +154,12 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
         }
     }
 
-    #[expect(unused)]
     fn outposts(&mut self, side: Side) {
-        for sq in Bitboard::ALL.shift_forward_n(side, 4)
-            & (self.board.get(side + Knight) | self.board.get(side + Bishop))
-        {
-            let is_outpost = (sq.outpost_mask(side) & self.board.get(!side + Pawn)).is_empty();
-            if is_outpost {
-                self.total[side] += 20;
+        for sq in self.board.get(side + Knight) | self.board.get(side + Bishop) {
+            if (sq.outpost_mask(side) & self.board.get(!side + Pawn)).is_empty()
+                & self.pawn_attacks[side].contains(sq)
+            {
+                self.total[side] += 40;
             }
         }
     }
