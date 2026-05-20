@@ -1,22 +1,20 @@
-use std::{hint::assert_unchecked, mem::MaybeUninit};
+use std::mem::MaybeUninit;
+
+use arrayvec::ArrayVec;
 
 use super::psqt;
-use crate::prelude::*;
+use crate::{
+    core::movegen::{KING_MOVES, PAWN_ATTACKS},
+    prelude::*,
+};
 
-const MVV_LVA: [[u8; 6]; 6] = [
-    [15, 14, 13, 12, 11, 10], // victim P, attacker P, N, B, R, Q, K
-    [25, 24, 23, 22, 21, 20], // victim N, attacker P, N, B, R, Q, K
-    [35, 34, 33, 32, 31, 30], // victim B, attacker P, N, B, R, Q, K
-    [45, 44, 43, 42, 41, 40], // victim R, attacker P, N, B, R, Q, K
-    [55, 54, 53, 52, 51, 50], // victim Q, attacker P, N, B, R, Q, K
-    [0, 0, 0, 0, 0, 0],       // victim K, attacker P, N, B, R, Q, K
-];
+const MAX_CAPTURES: usize = 80;
 
-pub fn sort_by_cached_key<F, T: Ord + Copy>(moves: &mut [Move], mut f: F)
+fn sort_by_cached_key<F, T: Ord + Copy, U: Copy>(moves: &mut [U], mut f: F)
 where
-    F: FnMut(Move) -> T,
+    F: FnMut(U) -> T,
 {
-    let mut indices = [MaybeUninit::uninit(); 256];
+    let mut indices = [MaybeUninit::uninit(); MAX_CAPTURES];
     for (i, mov) in moves.iter().copied().enumerate() {
         indices[i].write((f(mov), i as u8));
     }
@@ -33,9 +31,23 @@ where
 }
 
 impl Engine {
-    pub fn order_moves_capture(&mut self, depth: u8, moves: &mut [Move]) {
+    pub fn order_moves_capture(&mut self, moves: &[Move]) -> [ArrayVec<Move, 256>; 2] {
+        let mut good_captures = ArrayVec::<_, MAX_CAPTURES>::new();
+        let mut bad_captures = ArrayVec::<_, MAX_CAPTURES>::new();
         let phase = phase(&self.board);
-        sort_by_cached_key(moves, |mov| order_capture(&mut self.board, mov, phase, depth));
+        for &mov in moves {
+            let score = self.order_capture(phase, mov);
+            if score < 0 {
+                bad_captures.push((mov, score));
+            } else {
+                good_captures.push((mov, score));
+            }
+        }
+        sort_by_cached_key(&mut good_captures, |(_, score)| score);
+        sort_by_cached_key(&mut bad_captures, |(_, score)| score);
+        let good = good_captures.iter().map(|(mov, _)| *mov).collect();
+        let bad = bad_captures.iter().map(|(mov, _)| *mov).collect();
+        [good, bad]
     }
 
     pub fn order_moves_history(&mut self, moves: &mut [Move]) {
@@ -47,37 +59,51 @@ impl Engine {
             self.history_table[piece][mov.to()]
         });
     }
+
+    fn order_capture(&mut self, phase: Phase, mov: Move) -> i32 {
+        let captured_piece = self.board.get_square_kind(mov.to()).unwrap_or(Pawn);
+        let captured_piece_value = psqt::PIECE_MG[captured_piece] * phase.earlygame()
+            + psqt::PIECE_EG[captured_piece] * phase.endgame();
+        let board = self.board.clone();
+        self.board.make_move_no_update(mov);
+        let value = captured_piece_value - self.see(mov.to(), phase);
+        self.board = board;
+        value
+    }
+
+    fn see(&mut self, sq: Square, phase: Phase) -> i32 {
+        let mut value = 0;
+        if let Some(attacker) = get_smallest_attacker(&self.board, sq) {
+            let captured_piece = self.board.get_square_kind(sq).unwrap();
+            let captured_piece_value = psqt::PIECE_MG[captured_piece] * phase.earlygame()
+                + psqt::PIECE_EG[captured_piece] * phase.endgame();
+
+            let board = self.board.clone();
+            self.board.make_move_no_update(Move::new(attacker, sq, MoveFlags::Capture));
+            value = captured_piece_value - self.see(sq, phase).max(0);
+            self.board = board;
+        }
+        value
+    }
 }
 
-fn order_capture(board: &mut Board, mov: Move, phase: Phase, depth: u8) -> i16 {
-    let mut score = 0;
-
-    let piece = unsafe { board.get_square_kind(mov.from()).unwrap_unchecked() };
-
-    let piece_sq_diff = psqt::MG[piece + White][mov.to()] - psqt::MG[piece + White][mov.from()];
-    score += piece_sq_diff * (200 * phase.earlygame()) / 1024;
-
-    if let Some(target_piece) = board.get_square_kind(mov.to()) {
-        unsafe { assert_unchecked(target_piece != PieceKind::King) };
-        score += MVV_LVA[target_piece][piece] as i32 * 4;
-    } else if mov.flags() == MoveFlags::EnPassant {
-        score += MVV_LVA[Pawn][Pawn] as i32 * 4;
-    } else {
-        debug_assert!(false);
+fn get_smallest_attacker(board: &Board, sq: Square) -> Option<Square> {
+    let side = !board.active_side;
+    let occupancy = board.all_pieces();
+    if let Some(sq) = (PAWN_ATTACKS[side][sq] & board.get(side + Pawn)).bitscan() {
+        return Some(sq);
     }
-
-    if let Some(kind) = mov.flags().promotion().map(PieceKind::from) {
-        score += psqt::PIECE_MG[kind] * phase.earlygame();
-        score += psqt::PIECE_EG[kind] * phase.endgame();
+    if let Some(sq) = (KNIGHT_MOVES[sq] & board.get(side + Knight)).bitscan() {
+        return Some(sq);
     }
-
-    if depth >= 3 {
-        let unmake = board.make_move(mov);
-        if board.in_check() {
-            score += 10;
-        }
-        board.unmake_move(unmake);
+    if let Some(sq) = (bishop_attacks(sq, occupancy) & board.get(side + Bishop)).bitscan() {
+        return Some(sq);
     }
-
-    score as i16
+    if let Some(sq) = (rook_attacks(sq, occupancy) & board.get(side + Rook)).bitscan() {
+        return Some(sq);
+    }
+    if let Some(sq) = (KING_MOVES[sq] & board.get(side + King)).bitscan() {
+        return Some(sq);
+    }
+    None
 }

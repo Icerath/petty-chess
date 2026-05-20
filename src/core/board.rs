@@ -176,6 +176,7 @@ impl Board {
             let pawn = !self.active_side + Pawn;
             self.remove_piece_no_zobrist(back, pawn);
         }
+        self.swap_side();
     }
 
     pub fn unmake_move(&mut self, unmake: Unmake) {

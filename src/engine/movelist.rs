@@ -4,6 +4,7 @@ use crate::core::{r#move::Move, moves::Moves};
 #[derive(Default)]
 pub struct MoveList {
     moves: Moves,
+    bad_captures: Moves,
     state: State,
 }
 
@@ -14,6 +15,7 @@ enum State {
     Capture,
     Killer,
     Quiet,
+    BadCaptures,
     Finished,
 }
 
@@ -23,7 +25,6 @@ impl MoveList {
         engine: &mut Engine,
         tt_move: Option<Move>,
         killer: Option<Move>,
-        depth: u8,
     ) -> Option<Move> {
         loop {
             if let Some(mov) = self.moves.pop() {
@@ -39,10 +40,12 @@ impl MoveList {
                     }
                 }
                 State::Capture => {
-                    self.state = if CAPTURES_ONLY { State::Finished } else { State::Killer };
+                    self.state = if CAPTURES_ONLY { State::BadCaptures } else { State::Killer };
                     self.moves = engine.board.pseudolegal_capture_moves();
                     self.remove_tt_killer(tt_move, killer);
-                    engine.order_moves_capture(depth, &mut self.moves);
+                    let [good, bad] = engine.order_moves_capture(&self.moves);
+                    self.moves = good;
+                    self.bad_captures = bad;
                 }
                 State::Killer => {
                     self.state = State::Quiet;
@@ -53,10 +56,14 @@ impl MoveList {
                     }
                 }
                 State::Quiet => {
-                    self.state = State::Finished;
+                    self.state = State::BadCaptures;
                     self.moves = engine.board.pseudolegal_quiet_moves();
                     self.remove_tt_killer(tt_move, killer);
                     engine.order_moves_history(&mut self.moves);
+                }
+                State::BadCaptures => {
+                    self.state = State::Finished;
+                    self.moves = self.bad_captures.clone();
                 }
                 State::Finished => break None,
             }

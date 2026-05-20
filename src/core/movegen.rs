@@ -357,17 +357,22 @@ fn gen_king_moves<G: GenType>(board: &Board, from: Square, checkers: Bitboard, m
 
 impl Board {
     #[must_use]
-    pub fn gen_checkers(&self, side: Side) -> Bitboard {
+    pub fn gen_attackers(&self, sq: Square, side: Side) -> Bitboard {
         let mut bb = Bitboard::EMPTY;
         let occupancy = self.all_pieces();
-        let Some(king) = self.get_king_square(side) else { return bb };
-        bb |= PAWN_ATTACKS[side][king] & self[Pawn];
-        bb |= KNIGHT_MOVES[king] & self[Knight];
-        bb |= bishop_attacks(king, occupancy) & (self[Bishop] | self[Queen]);
-        bb |= rook_attacks(king, occupancy) & (self[Rook] | self[Queen]);
-        bb |= KING_MOVES[king] & (self[King]);
+        bb |= PAWN_ATTACKS[side][sq] & self[Pawn];
+        bb |= KNIGHT_MOVES[sq] & self[Knight];
+        bb |= bishop_attacks(sq, occupancy) & (self[Bishop] | self[Queen]);
+        bb |= rook_attacks(sq, occupancy) & (self[Rook] | self[Queen]);
+        bb |= KING_MOVES[sq] & (self[King]);
 
         bb & self[!side]
+    }
+
+    #[must_use]
+    pub fn gen_checkers(&self, side: Side) -> Bitboard {
+        let Some(king) = self.get_king_square(side) else { return Bitboard::EMPTY };
+        self.gen_attackers(king, side)
     }
 
     #[must_use]
