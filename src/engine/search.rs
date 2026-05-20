@@ -118,6 +118,17 @@ impl Engine {
         let mut best_move = None;
         let mut move_count = 0;
         let killer = self.killer[self.depth_from_root as usize];
+
+        let no_tt_move = tt_move.is_none();
+
+        if no_tt_move && depth > 8 {
+            let mut line = Moves::new();
+            self.search(alpha, beta, depth / 2, &mut line)?;
+            if let Some(best) = line.pop() {
+                tt_move = Some(best);
+            }
+        }
+
         while let Some(mov) = moves.next::<false>(self, tt_move, killer) {
             if !self.board.is_legal(mov) {
                 continue;
@@ -142,9 +153,14 @@ impl Engine {
                 }
             }
             next_depth -= late_move_reduction;
-            // iir
-            if depth > 5 && tt_move.is_none() {
-                next_depth -= 1;
+
+            if depth > 5 && no_tt_move {
+                if move_count > 1 {
+                    next_depth -= 1;
+                }
+                if tt_move.is_none() {
+                    next_depth -= 1;
+                }
             }
 
             self.depth_from_root += 1;
