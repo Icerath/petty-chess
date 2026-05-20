@@ -21,6 +21,7 @@ fn main() {
         .spawn(move || {
             let mut ttable = TranspositionTable::from_mb(256);
             for (mut engine, command) in rx {
+                engine.time_started = Instant::now();
                 std::mem::swap(&mut engine.transposition_table, &mut ttable);
                 engine.kill.store(false, Ordering::Release);
                 engine.time_available = get_time_available(&engine.board, command.time_control);
@@ -186,7 +187,7 @@ fn get_time_available(board: &Board, time_control: TimeControl) -> Duration {
         TimeControl::TimeLeft { base, incr, .. } => {
             let (base, incr) = (base[board.active_side], incr[board.active_side]);
             let endgame = phase(board).endgame().as_float();
-            base.div_f32(20.0 - endgame * 5.0) + incr.div_f32(2.0 - endgame)
+            (base.div_f32(20.0 - endgame * 8.0) + incr.div_f32(1.8 - endgame * 0.8)).max(incr)
         }
         TimeControl::MoveTime(time) => time,
         TimeControl::Infinite => Duration::MAX,

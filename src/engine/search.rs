@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use super::{
     Engine, evaluation::evaluation, movelist::MoveList, phase::phase, transposition::Nodetype,
 };
@@ -11,7 +9,6 @@ use crate::{
 
 impl Engine {
     pub fn search_root(&mut self) {
-        self.time_started = Instant::now();
         self.total_nodes = 0;
 
         self.killer.clear();
@@ -46,7 +43,7 @@ impl Engine {
                 break;
             }
 
-            let skip_time = 2.2 - (phase(&self.board).endgame().as_float() * 0.8);
+            let skip_time = 2.2 - phase(&self.board).endgame().as_float();
             if self.time_started.elapsed().mul_f32(skip_time) > self.time_available {
                 break;
             }
