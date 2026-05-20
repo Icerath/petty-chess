@@ -28,6 +28,10 @@ codegen-units = 1
 incremental = false
 rustflags = ["-Ctarget-cpu=native"]
 
+[profile.release-lto]
+inherits = "release"
+lto = true
+
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 cast_lossless = "allow"
