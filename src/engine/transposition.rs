@@ -42,13 +42,19 @@ impl TranspositionTable {
         nodetype: Nodetype,
         mov: Option<Move>,
     ) {
+        fn replace(old: &Entry, new: &Entry) -> bool {
+            if old.depth <= new.depth {
+                return true;
+            }
+            if old.depth == new.depth + 1 && (new.mov != Move::NULL && old.mov == Move::NULL) {
+                return true;
+            }
+            false
+        }
         let entry = Entry { zobrist, eval, nodetype, depth, mov: Move::from_opt(mov) };
         match &mut self.inner[self.index(zobrist)] {
-            Some(occupied) => {
-                if occupied.depth <= depth {
-                    *occupied = entry;
-                }
-            }
+            Some(occupied) if replace(occupied, &entry) => *occupied = entry,
+            Some(_) => {}
             vacant @ None => *vacant = Some(entry),
         }
     }
