@@ -76,7 +76,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 bishop_pair,
                 passed_pawns,
                 isolated_and_backwards_pawns,
-                // pawn_chain,
+                pawn_chain,
                 attacked_by_pawn,
                 mobility,
             );
@@ -228,10 +228,10 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
         }
     }
 
-    // fn pawn_chain(&mut self, side: Side) {
-    //     self.total[side] +=
-    //         (self.pawn_attacks[side] & self.board.get(side + Pawn)).count() as i32 * 5;
-    // }
+    fn pawn_chain(&mut self, side: Side) {
+        self.total[side] +=
+            (self.pawn_attacks[side] & self.board.get(side + Pawn)).count() as i32 * 5;
+    }
 
     fn mop_up_evaluation(&mut self, phase: Phase, total: &mut i32) {
         let mop_up_side = match *total {
