@@ -31,7 +31,7 @@ where
 }
 
 impl Engine {
-    pub fn order_moves_capture(&mut self, moves: &[Move]) -> [ArrayVec<Move, 256>; 2] {
+    pub fn order_moves_capture(&mut self, moves: &[Move]) -> [ArrayVec<Move, 80>; 2] {
         let mut good_captures = ArrayVec::<_, MAX_CAPTURES>::new();
         let mut bad_captures = ArrayVec::<_, MAX_CAPTURES>::new();
         let phase = phase(&self.board);

@@ -1,10 +1,12 @@
+use arrayvec::ArrayVec;
+
 use super::Engine;
 use crate::core::{r#move::Move, moves::Moves};
 
 #[derive(Default)]
 pub struct MoveList {
     moves: Moves,
-    bad_captures: Moves,
+    bad_captures: ArrayVec<Move, 80>,
     state: State,
 }
 
@@ -44,7 +46,8 @@ impl MoveList {
                     self.moves = engine.board.pseudolegal_capture_moves();
                     self.remove_tt_killer(tt_move, killer);
                     let [good, bad] = engine.order_moves_capture(&self.moves);
-                    self.moves = good;
+                    self.moves.clear();
+                    self.moves.extend(good);
                     self.bad_captures = bad;
                 }
                 State::Killer => {
@@ -63,7 +66,7 @@ impl MoveList {
                 }
                 State::BadCaptures => {
                     self.state = State::Finished;
-                    self.moves = self.bad_captures.clone();
+                    self.moves.extend(self.bad_captures.clone());
                 }
                 State::Finished => break None,
             }
