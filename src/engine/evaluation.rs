@@ -33,7 +33,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
             king: [board.get_king_square(Black).unwrap(), board.get_king_square(White).unwrap()],
             occupancy: board.all_pieces(),
             board,
-            pawn_attacks: [board.pawn_attacks(!Black), board.pawn_attacks(!White)],
+            pawn_attacks: [board.pawn_attacks(Black), board.pawn_attacks(White)],
             debug,
         }
     }
@@ -74,13 +74,13 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
                 rooks_on_open_file,
                 lined_up_rooks,
                 bishop_pair,
-                castling_right,
                 passed_pawns,
                 isolated_pawns,
                 attacked_by_pawn,
                 mobility,
             );
         }
+        self.castling_rights();
         self.both += self.board.active_side.positive() * 5;
         self.both += self.board.mg_psqt * phase.earlygame() + self.board.eg_psqt * phase.endgame();
 
@@ -188,12 +188,9 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
         }
     }
 
-    fn castling_right(&mut self, side: Side) {
-        if (side == Side::White && (self.board.can_castle & CanCastle::BOTH_WHITE).bits() > 0)
-            || (side == Side::Black && (self.board.can_castle & CanCastle::BOTH_BLACK).bits() > 0)
-        {
-            self.total[side] += 20;
-        }
+    fn castling_rights(&mut self) {
+        self.both += self.board.can_castle.intersects(CanCastle::BOTH_WHITE) as i32 * 20;
+        self.both -= self.board.can_castle.intersects(CanCastle::BOTH_BLACK) as i32 * 20;
     }
 
     fn bishop_pair(&mut self, side: Side) {
@@ -202,7 +199,7 @@ impl<'a, F: FnMut(&'static str, Side, i32)> Evaluation<'a, F> {
     }
 
     fn attacked_by_pawn(&mut self, side: Side) {
-        let pawn_attacks = self.board.pawn_attacks(!side);
+        let pawn_attacks = self.pawn_attacks[!side];
 
         let non_pawns = self.board.get(side + Knight)
             | self.board.get(side + Bishop)
