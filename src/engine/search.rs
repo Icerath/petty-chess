@@ -16,7 +16,7 @@ impl Engine {
 
         let mut best_move = *self.board.legal_moves().first().unwrap_or(&Move::NULL);
 
-        for depth in 1.. {
+        for depth in 1..=255 {
             let mut new_pv = Moves::new();
             let Ok(score) = self.search(-Score::MAX, Score::MAX, depth, &mut new_pv) else {
                 break;
