@@ -66,7 +66,10 @@ impl Engine {
             + psqt::PIECE_EG[captured_piece] * phase.endgame();
         let board = self.board.clone();
         self.board.make_move_no_update(mov);
-        let value = captured_piece_value - self.see(mov.to(), phase);
+        let promoted_value = mov.flags().promotion().map(PieceKind::from).map_or(0, |piece| {
+            psqt::PIECE_MG[piece] * phase.earlygame() + psqt::PIECE_EG[piece] * phase.endgame()
+        });
+        let value = promoted_value + captured_piece_value - self.see(mov.to(), phase);
         self.board = board;
         value
     }
