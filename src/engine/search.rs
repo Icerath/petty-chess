@@ -79,7 +79,8 @@ impl Engine {
             return Ok(self.search_captures(alpha, beta));
         }
 
-        if depth != 1 && beta.0 - alpha.0 > 1 {
+        // the wrapping_sub here seems questionable, but replacing it with overflow aware code seems to reduce ELO
+        if depth != 1 && beta.0.wrapping_sub(alpha.0) > 1 {
             let score = self.search(Score(beta.0 - 1), beta, depth, &mut Moves::new())?;
             if score >= beta {
                 return Ok(score);
