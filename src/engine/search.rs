@@ -58,6 +58,7 @@ impl Engine {
         self.seen_positions.iter().filter(|&&sq| sq == self.board.zobrist).count() > 1
     }
 
+    #[expect(clippy::too_many_lines)]
     pub(crate) fn search(
         &mut self,
         mut alpha: Score,
@@ -78,6 +79,13 @@ impl Engine {
 
         if depth == 0 {
             return Ok(self.search_captures(alpha, beta));
+        }
+
+        if depth != 1 && beta.0 - alpha.0 > 1 {
+            let score = self.search(Score(beta.0 - 1), beta, depth, &mut Moves::new())?;
+            if score >= beta {
+                return Ok(score);
+            }
         }
 
         let mut tt_move = None;
