@@ -19,14 +19,18 @@ impl<F> Evaluation<'_, F> {
             .sum();
 
         let mut total = 0;
+        let mut mg = 0;
+        let mut eg = 0;
         total += knight_total * 50;
         total += bishop_total * 32;
-        self.total[side] += total / 1024;
+        mg += rook_total * 30;
+        eg += rook_total * 50;
+        mg += queen_total * 30;
+        eg += queen_total * 120;
 
-        self.earlygame[side] += rook_total * 50 / 1024;
-        self.endgame[side] += rook_total * 50 / 1024;
-        self.earlygame[side] += queen_total * 50 / 1024;
-        self.endgame[side] += queen_total * 120 / 1024;
+        self.total[side] += total / 1024;
+        self.earlygame[side] += mg / 1024;
+        self.endgame[side] += eg / 1024;
     }
 }
 const MAX_KNIGHT_MOVES: u8 = 8;
