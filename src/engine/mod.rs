@@ -30,6 +30,7 @@ pub struct Engine {
     pub kill: Arc<AtomicBool>,
     pub pv: Vec<Move>,
     pub depth_from_root: u16,
+    pub seldepth: u16,
     pub total_nodes: u64,
     pub transposition_table: TranspositionTable,
     pub history_table: [[u32; Square::LEN]; Piece::LEN],
@@ -53,6 +54,7 @@ impl Engine {
             history_table: [[0; _]; _],
             killer: vec![],
             cancel_check: 0,
+            seldepth: 0,
         }
     }
 

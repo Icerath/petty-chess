@@ -33,6 +33,7 @@ impl Engine {
                 time: Some(time_taken),
                 nps: Some((self.total_nodes as f64 / time_taken.as_secs_f64()) as u32),
                 pv: Some(self.pv.clone()),
+                seldepth: Some(self.seldepth.into()),
                 ..Info::default()
             };
             println!("{}", UciResponse::Info(Box::new(info)));
@@ -200,6 +201,7 @@ impl Engine {
     }
 
     fn search_captures(&mut self, mut alpha: Score, beta: Score) -> Score {
+        self.seldepth = self.seldepth.max(self.depth_from_root);
         self.total_nodes += 1;
 
         let alpha_orig = alpha;
