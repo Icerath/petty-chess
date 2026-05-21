@@ -190,7 +190,7 @@ impl Engine {
             alpha = alpha.max(best_score);
 
             if score >= beta {
-                if !mov.flags().is_capture() {
+                if !mov.flags().is_capture() && mov.flags().promotion().is_none() {
                     self.killer[self.depth_from_root as usize] = Some(mov);
                     let piece = self.board.get_square(mov.from()).unwrap();
                     self.history_table[piece][mov.to()] += u32::from(depth) * u32::from(depth);
