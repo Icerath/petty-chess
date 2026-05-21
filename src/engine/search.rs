@@ -71,7 +71,8 @@ impl Engine {
         if self.depth_from_root != 0 && self.seen_position() {
             return Ok(if self.depth_from_root.is_multiple_of(2) { -Score(20) } else { Score(20) });
         }
-        if self.depth_from_root != 0 && self.board.halfmove_clock >= 50 {
+        // FIXME: confirm that > 100 is correct
+        if self.depth_from_root != 0 && self.board.halfmove_clock > 100 {
             return Ok(Score(0));
         }
 
