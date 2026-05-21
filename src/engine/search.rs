@@ -200,11 +200,10 @@ impl Engine {
         }
 
         if move_count == 0 {
-            return Ok(if self.board.in_check() {
-                -Score::mate_in_ply(self.depth_from_root)
-            } else {
-                Score(0)
-            });
+            if self.board.in_check() {
+                return Ok(-Score::mate_in_ply(self.depth_from_root));
+            }
+            return Ok(Score(0));
         }
         let nodetype = if best_score <= alpha_orig {
             Nodetype::Alpha
@@ -269,11 +268,10 @@ impl Engine {
             let legal_moves =
                 self.board.pseudolegal_moves().iter().any(|&mov| self.board.is_legal(mov));
             if !legal_moves {
-                return if self.board.in_check() {
-                    -Score::mate_in_ply(self.depth_from_root)
-                } else {
-                    Score(0)
-                };
+                if self.board.in_check() {
+                    return -Score::mate_in_ply(self.depth_from_root);
+                }
+                return Score(0);
             }
         }
 
